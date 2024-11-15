@@ -9,6 +9,7 @@
         integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
     <link rel="icon" type="image/x-icon" href="./assets/Fav-icon.png" />
     <script type="module" src="index.js"></script>
+    <script type="module" src="common.js"></script>
     <title>Health Connector Dashboard</title>
     <link rel="stylesheet" href="./assets/css/styles.css" />
     <link rel="stylesheet" href="./assets/css/responsive.css" />
@@ -26,18 +27,18 @@
                 <div class="d-flex dashboard-login justify-content-center flex-wrap">
                     <div class="dashboard-login__header gap-2 d-flex flex-column pe-5 pt-0">
                         <header class="dashboard-login__title">Health Connector</header>
-                        <header class="dashboard-login__subtitle">
+                        <header class="dashboard-login__subtitle" id="dashboard_login_subtitle">
                             Login into your Account
                         </header>
                     </div>
-                    <div class="dashboard-login__form d-flex flex-column gap-3">
+                    <div class="dashboard-login__form d-flex flex-column gap-3 user_pass" id="usernameinput">
                         <div class="d-flex flex-column">
                             <label class="dashboard-login__input-label" for="username">Username</label>
                             <input class="dashboard-login__input" type="Email" id="email" name="email"
                                 placeholder="Username" tabindex="0" aria-label="Username" required />
                             <div id="warning"></div>
                         </div>
-                        <div class="d-flex flex-column">
+                        <div class="d-flex flex-column" id="passwordinput">
                             <label class="dashboard-login__input-label" for="password">Password</label>
                             <div class="dashboard-login__input d-flex align-items-center">
                                 <input class="dashboard-login-password__input flex-1" type="password" id="password"
@@ -48,11 +49,55 @@
                             </div>
                             <div id="warning"></div>
                         </div>
-                        <div class="d-flex dashboard-login__button flex-1">
+                        <div class="d-flex dashboard-login__button flex-1" id="loginbutton">
                             <button id="login" class="button-primary flex-1 d-flex justify-content-center" type="submit"
                                 aria-label="Login" tabindex="0">
                                 Login
                             </button>
+                        </div> 
+                                    
+                    </div>
+                    </br>
+                    <div id="changepassword" class="hide-div">
+                        <div class="d-flex flex-column">
+                            <label class="dashboard-login__input-label" for="newpasswordval">New Password</label>
+                            <div class="dashboard-login__input d-flex align-items-center">
+                                <input class="dashboard-login-password__input flex-1" type="password" id="newpasswordval"
+                                    name="newpasswordval" placeholder="New Password" required tabindex="0"
+                                    aria-label="New Password" />
+                                <button type="button" id="toggleVisibilityButton" aria-label="toggle New Password"
+                                    tabindex="0"></button>
+                            </div>
+                        </div>
+                        <div class="d-flex flex-column confirmpassstyle">
+                            <label class="dashboard-login__input-label" for="confirmpasswordval">Confirm Password</label>
+                            <div class="dashboard-login__input d-flex align-items-center">
+                                <input class="dashboard-login-password__input flex-1" type="password" id="confirmpasswordval"
+                                    name="confirmpasswordval" placeholder="Confirm Password" required tabindex="0"
+                                    aria-label="Confirm Password" />
+                                <button type="button" id="toggleVisibilityButton" aria-label="toggle New Password"
+                                    tabindex="0"></button>
+                            </div>
+                        </div>
+                        <div class="d-flex flex-column messagestyle">
+                            <p id="matchMessage" class="match-message"></p>
+                        </div>
+                        <div class="d-flex dashboard-login__button flex-1 changepassbuttonstyle">
+                            <button id="newpassword" class="button-primary flex-1 d-flex justify-content-center" type="submit"
+                                aria-label="newpassword" tabindex="0">
+                                Change Password
+                            </button>
+                        </div>
+                        <div class="d-flex flex-column messagestyle hide-div" id="passwordformat">
+                            <div class="help-text" id="passwordHelp">
+                                Password must be at least 8 characters long and include:
+                                <ul>
+                                    <li>At least one uppercase letter</li>
+                                    <li>At least one lowercase letter</li>
+                                    <li>At least one number</li>
+                                    <li>At least one special character (@, $, !, %, *, ?, &)</li>
+                                </ul>
+                            </div>
                         </div>
                     </div>
                 </div>

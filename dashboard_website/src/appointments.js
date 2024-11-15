@@ -9,7 +9,7 @@ import {
     tablePaginationNavigationHandler,
     preRender,
     postRender,
-    GOOGLE_MAPS_KEY
+    // GOOGLE_MAPS_KEY
 } from "./common";
 
 async function EditAppointment() {
@@ -186,7 +186,7 @@ async function addAppointment() {
     xhr.send();
 }
 $(document).ready(async function () {
-    $('head').append(`<script src = "https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_KEY}&libraries=places&callback=googleMapsAutoComplete" async defer></script>`);
+    // $('head').append(`<script src = "https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_KEY}&libraries=places&callback=googleMapsAutoComplete" async defer></script>`);
     preRender();
     $("#logout").click(logoutUser);
     $("#location").keydown(function (event) {

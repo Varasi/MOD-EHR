@@ -1,13 +1,19 @@
 
 import { fetchAuthSession, signOut, } from "aws-amplify/auth";
 import { Amplify } from "aws-amplify";
-export const BASE_URL = process.env.BASE_URL || window.location.origin
-export const { REGION } = process.env;
-export const { POOL_ID } = process.env;
-export const { CLIENT_ID } = process.env;
-export const { IDENTITY_POOL_ID } = process.env;
+// export const BASE_URL = process.env.BASE_URL || window.location.origin
+// export const { REGION } = process.env;
+// export const { POOL_ID } = process.env;
+// export const { CLIENT_ID } = process.env;
+// export const { IDENTITY_POOL_ID } = process.env;
+
+export const BASE_URL = process.env.BASE_URL || window.location.origin;
+export const POOL_ID= process.env.POOL_ID;
+export const CLIENT_ID= process.env.CLIENT_ID;
+export const IDENTITY_POOL_ID = process.env.IDENTITY_POOL_ID;
+export const REGION = process.env.REGION;
 export const PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/
-export const { GOOGLE_MAPS_KEY } = process.env
+// export const { GOOGLE_MAPS_KEY } = process.env
 Amplify.configure({
     Auth: {
         mandatorySignIn: true,
@@ -40,7 +46,7 @@ export async function getIdToken() {
     return session.tokens.idToken.toString()
 }
 export function getIss() {
-    return `cognito-idp.${process.env.REGION}.amazonaws.com/${process.env.POOL_ID}`
+    return `cognito-idp.${REGION}.amazonaws.com/${POOL_ID}`
 }
 export async function getUserGroup() {
     const session = await getUserSession();

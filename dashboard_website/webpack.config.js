@@ -1,4 +1,5 @@
 const path = require("path");
+require('dotenv').config({ path: './.env' });
 const webpack = require('webpack');
 const CopyWebpackPlugin = require("copy-webpack-plugin");
 
@@ -21,8 +22,13 @@ module.exports = (env) => {
         plugins: [
 
             new webpack.DefinePlugin({
-                'process.env': JSON.stringify(env),
-                'process.env.ENV': JSON.stringify(env.ENV || "LOCAL"),
+                // 'process.env': JSON.stringify(env),
+                // 'process.env.ENV': JSON.stringify(env.ENV || "LOCAL"),
+                'process.env.REGION': JSON.stringify(process.env.REGION),
+                'process.env.POOL_ID': JSON.stringify(process.env.POOL_ID),
+                'process.env.CLIENT_ID': JSON.stringify(process.env.CLIENT_ID),
+                'process.env.IDENTITY_POOL_ID': JSON.stringify(process.env.IDENTITY_POOL_ID),
+                'process.env.BASE_URL': JSON.stringify(process.env.BASE_URL)
             }),
 
             new CopyWebpackPlugin({

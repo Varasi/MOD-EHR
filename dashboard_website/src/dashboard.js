@@ -5,7 +5,8 @@ import {
     tablePaginationNavigationHandler,
     preRender,
     postRender,
-    BASE_URL
+    BASE_URL,
+    getIdToken
 } from "./common";
 
 $(document).ready(async function () {
@@ -22,10 +23,12 @@ $(document).ready(async function () {
         $("#user-management-nav").addClass("visible")
     }
     $("#logout").click(logoutUser);
-    const accessToken = await getAccessToken();
+    // const accessToken = await getAccessToken();
+    const idToken = await getIdToken();
     const xhr = new XMLHttpRequest();
     xhr.open("GET", `${BASE_URL}/api/dashboard/`);
-    xhr.setRequestHeader("Authorization", accessToken);
+    // xhr.setRequestHeader("Authorization", accessToken);
+    xhr.setRequestHeader("Authorization", idToken);
     xhr.onreadystatechange = async function () {
         if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
             $("#Loader").remove();

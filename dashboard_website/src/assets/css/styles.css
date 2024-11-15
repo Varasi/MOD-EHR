@@ -645,3 +645,23 @@ tbody>tr>td:last-child {
 .pac-item {
     font-family: "Poppins", sans-serif;
 }
+
+div.hide-div{
+    display: none !important;
+}
+.match-message {
+    font-size: 0.9em;
+}
+.d-flex.flex-column.confirmpassstyle {
+    margin-top: 1rem;
+}
+.d-flex.flex-column.messagestyle {
+    margin-top: 1rem;
+}
+.d-flex.dashboard-login__button.flex-1.changepassbuttonstyle {
+    margin-top: -0.1rem;
+}
+div#passwordHelp {
+    font-size: 0.8rem;
+    color: grey;
+}
