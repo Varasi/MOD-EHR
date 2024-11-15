@@ -6,7 +6,7 @@ from mod_ehr.mod_ehr_stack import ModEhrStack
 app = cdk.App()
 
 ModEhrStack(app, "ModEhrStack",
-    #env=cdk.Environment(account='123456789012', region='us-east-1'),
+    env=cdk.Environment(account='443370714691', region='ap-south-1'),
     )
 
 app.synth()

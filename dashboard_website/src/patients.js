@@ -5,7 +5,8 @@ import {
     tablePaginationNavigationHandler,
     preRender,
     postRender,
-    BASE_URL
+    BASE_URL,
+    getIdToken
 } from "./common";
 
 
@@ -59,10 +60,12 @@ $(document).ready(async function () {
             display: "none",
         });
     });
-    const accessToken = await getAccessToken()
+    // const accessToken = await getAccessToken()
+    const idToken = await getIdToken()
     const xhr = new XMLHttpRequest();
     xhr.open("GET", `${BASE_URL}/api/patients/`);
-    xhr.setRequestHeader("Authorization", accessToken);
+    // xhr.setRequestHeader("Authorization", accessToken);
+    xhr.setRequestHeader("Authorization", idToken);
     xhr.onreadystatechange = async function () {
         if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
             let columns_data = [
@@ -129,11 +132,13 @@ $(document).ready(async function () {
                     };
                     console.log(formData);
 
-                    const accessToken = await getAccessToken();
+                    // const accessToken = await getAccessToken();
+                    const idToken = await getIdToken();
                     let reload_required = false;
                     const xhr = new XMLHttpRequest();
                     xhr.open(type, url);
-                    xhr.setRequestHeader("Authorization", accessToken);
+                    // xhr.setRequestHeader("Authorization", accessToken);
+                    xhr.setRequestHeader("Authorization", idToken);
                     xhr.setRequestHeader("Content-Type", "application/json");
                     xhr.onreadystatechange = async function () {
                         if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {

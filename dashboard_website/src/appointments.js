@@ -9,15 +9,18 @@ import {
     tablePaginationNavigationHandler,
     preRender,
     postRender,
+    getIdToken
     // GOOGLE_MAPS_KEY
 } from "./common";
 
 async function EditAppointment() {
-    const accessToken = await getAccessToken();
+    // const accessToken = await getAccessToken();
+    const idToken = await getIdToken();
     const id = $(this).data("id");
     let xhr1 = new XMLHttpRequest();
     xhr1.open("GET", `${BASE_URL}/api/patients/`);
-    xhr1.setRequestHeader("Authorization", accessToken);
+    // xhr1.setRequestHeader("Authorization", accessToken);
+    xhr1.setRequestHeader("Authorization", idToken);
     xhr1.onreadystatechange = async function () {
         if (xhr1.readyState === XMLHttpRequest.DONE && xhr1.status === 200) {
             const patient_records = JSON.parse(xhr1.responseText);
@@ -35,7 +38,9 @@ async function EditAppointment() {
                 "GET",
                 `${BASE_URL}/api/appointments/` + id
             );
-            xhr.setRequestHeader("Authorization", accessToken);
+            // xhr.setRequestHeader("Authorization", accessToken);
+            xhr.setRequestHeader("Authorization", idToken);
+            
             xhr.onreadystatechange = function () {
                 if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
                     let appointment = JSON.parse(xhr.responseText);
@@ -101,11 +106,13 @@ async function saveAppointment() {
             formData["id"] = id;
             console.log(id);
         }
-        const accessToken = await getAccessToken();
+        // const accessToken = await getAccessToken();
+        const idToken = await getIdToken();
         let reload_required = false;
         const xhr = new XMLHttpRequest();
         xhr.open(type, url);
-        xhr.setRequestHeader("Authorization", accessToken);
+        // xhr.setRequestHeader("Authorization", accessToken);
+        xhr.setRequestHeader("Authorization", idToken);
         xhr.setRequestHeader("Content-Type", "application/json");
         xhr.onreadystatechange = async function () {
             if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
@@ -138,7 +145,8 @@ async function saveAppointment() {
     }
 }
 async function DeleteAppointment() {
-    const accessToken = await getAccessToken();
+    // const accessToken = await getAccessToken();
+    const idToken = await getIdToken();
     $("#spinner").show();
     const id = $(this).data("id");
     const xhr = new XMLHttpRequest();
@@ -146,7 +154,8 @@ async function DeleteAppointment() {
         "DELETE",
         `${BASE_URL}/api/appointments/` + id
     );
-    xhr.setRequestHeader("Authorization", accessToken);
+    // xhr.setRequestHeader("Authorization", accessToken);
+    xhr.setRequestHeader("Authorization", idToken);
     xhr.onreadystatechange = function () {
         if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 204) {
             $("#root")
@@ -162,10 +171,12 @@ async function DeleteAppointment() {
     xhr.send();
 }
 async function addAppointment() {
-    const accessToken = await getAccessToken();
+    // const accessToken = await getAccessToken();
+    const idToken = await getIdToken();
     const xhr = new XMLHttpRequest();
     xhr.open("GET", `${BASE_URL}/api/patients/`);
-    xhr.setRequestHeader("Authorization", accessToken);
+    // xhr.setRequestHeader("Authorization", accessToken);
+    xhr.setRequestHeader("Authorization", idToken);
     xhr.onreadystatechange = async function () {
         if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
             let patient_records = JSON.parse(xhr.responseText);
@@ -241,12 +252,12 @@ $(document).ready(async function () {
 
         },
     });
-    const accessToken = await getAccessToken();
-
+    // const accessToken = await getAccessToken();
+    const idToken = await getIdToken();
     $(".add-appointment").click(addAppointment);
     const xhr = new XMLHttpRequest();
     xhr.open("GET", `${BASE_URL}/api/appointments/`);
-    xhr.setRequestHeader("Authorization", accessToken);
+    xhr.setRequestHeader("Authorization", idToken);
     xhr.onreadystatechange = async function () {
         if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
             let columns_data = [

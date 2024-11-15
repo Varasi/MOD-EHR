@@ -4,12 +4,13 @@ import {
   preRender,
   BASE_URL,
   toggleSkeletonLoader,
+  getIdToken
 } from "./common";
 
 var settingsDataStatus = false;
 const xhr = new XMLHttpRequest();
-const accessToken = await getAccessToken();
-
+// const accessToken = await getAccessToken();
+const idToken = await getIdToken();
 const updateTextContent = async (elementId, value) => {
   const element = document.getElementById(elementId);
   if (element) {
@@ -53,7 +54,8 @@ const handleSettingsClick = async () => {
   if (settingsDataStatus === false) {
     toggleSkeletonLoader("settingsForm", "add");
     xhr.open("GET", `${BASE_URL}/api/settings/`);
-    xhr.setRequestHeader("Authorization", accessToken);
+    // xhr.setRequestHeader("Authorization", accessToken);
+    xhr.setRequestHeader("Authorization", idToken);
     xhr.onreadystatechange = async function () {
       if (xhr.readyState === XMLHttpRequest.DONE) {
         if (xhr.status === 200) {
@@ -85,7 +87,8 @@ const handleFormSubmit = async () => {
   for (const key of keys) {
     const xhr = new XMLHttpRequest();
     xhr.open("POST", `${link}/${key}`);
-    xhr.setRequestHeader("Authorization", accessToken);
+    // xhr.setRequestHeader("Authorization", accessToken);
+    xhr.setRequestHeader("Authorization", idToken);
     xhr.setRequestHeader("Content-Type", "application/json");
     xhr.send(JSON.stringify({ name: key, value: formData[key] }));
   }

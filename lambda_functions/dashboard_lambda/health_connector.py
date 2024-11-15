@@ -1,10 +1,11 @@
 from datetime import datetime, timezone
-
+import json
 from health_connector_base.handlers import Response
 from health_connector_base.models import Dashboard
 
 
 def dashboard_handler(event, context):
+    print('event->'+json.dumps(event))
     group_name = event["requestContext"]["authorizer"]["claims"]["cognito:groups"]
     ride_deletables = ["pickup", "dropoff"]
     res = []
