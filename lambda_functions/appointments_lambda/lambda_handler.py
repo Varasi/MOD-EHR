@@ -16,13 +16,13 @@ class AppointmentAPIHandler(APIHandler):
         response = super(AppointmentAPIHandler, cls).process_event(
             event, *args, **kwargs
         )
-        if event["httpMethod"].lower() != "get":
-            lambda_client = boto3.client("lambda")
-            lambda_client.invoke(
-                FunctionName=f"HealthConnector{environment.title()}DataPopulator",
-                InvocationType="Event",
-                Payload=b"{}",
-            )
+        # if event["httpMethod"].lower() != "get":
+        #     lambda_client = boto3.client("lambda")
+        #     lambda_client.invoke(
+        #         FunctionName=f"HealthConnector{environment.title()}DataPopulator",
+        #         InvocationType="Event",
+        #         Payload=b"{}",
+        #     )
         return response
 
     def delete(self, event: dict, hash_key, *args, **kwargs):
@@ -36,4 +36,5 @@ class AppointmentAPIHandler(APIHandler):
 
 
 def appointments_handler(event, context):
+    print("apppointments handler called")
     return AppointmentAPIHandler.process_event(event)

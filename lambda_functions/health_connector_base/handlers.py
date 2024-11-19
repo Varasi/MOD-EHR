@@ -121,6 +121,7 @@ class APIHandler:
         Returns:
             Response: The response containing the updated object.
         """
+        print("post function called")
         obj = self.get_object(hash_key)
         for key, value in json.loads(event["body"]).items():
             setattr(obj, key, value)
@@ -151,13 +152,20 @@ class APIHandler:
         Returns:
             The result of handling the event based on the HTTP method.
         """
+        print("process event called")
+        print("event->"+event)
+        print("cls->"+cls)
         cls = cls(event)
         http_method = event["httpMethod"].lower()
+        print("http method ->"+http_method)
         handler = getattr(cls, http_method, cls.http_method_not_allowed)
+        print("handler ->"+handler)
         hash_key = (event.get("pathParameters") or {}).get(cls.model._hash_keyname)
+        print("hashkey->"+hash_key)
         try:
             return handler(event, hash_key)
         except HandlerBaseException as e:
+            print('calling exception')
             return cls.handle_exception(e)
 
     def http_method_not_allowed(self, event):

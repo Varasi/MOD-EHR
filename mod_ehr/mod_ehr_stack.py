@@ -131,6 +131,14 @@ class ModEhrStack(Stack):
         Settings.grant_read_write_data(settings_handler)
         Patients.grant_read_write_data(patients_handler)
 
+        appoitments_handler.add_to_role_policy(
+            iam.PolicyStatement(
+                actions=["secretsmanager:*"],
+                resources=["*"],
+                effect=iam.Effect.ALLOW
+            )
+        )
+
 
         user_pool = cognito_.UserPool(
             self,
