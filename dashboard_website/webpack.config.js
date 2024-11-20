@@ -28,7 +28,8 @@ module.exports = (env) => {
                 'process.env.POOL_ID': JSON.stringify(process.env.POOL_ID),
                 'process.env.CLIENT_ID': JSON.stringify(process.env.CLIENT_ID),
                 'process.env.IDENTITY_POOL_ID': JSON.stringify(process.env.IDENTITY_POOL_ID),
-                'process.env.BASE_URL': JSON.stringify(process.env.BASE_URL)
+                'process.env.BASE_URL': JSON.stringify(process.env.BASE_URL),
+                'process.env.GOOGLE_MAPS_KEY': JSON.stringify(process.env.GOOGLE_MAPS_KEY)
             }),
 
             new CopyWebpackPlugin({
