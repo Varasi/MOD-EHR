@@ -281,7 +281,8 @@ class ModEhrStack(Stack):
         appointment_api_path = api_path.add_resource('appointments')
         patients_api_path = api_path.add_resource('patients')
         dashboard_api_path = api_path.add_resource('dashboard')
-        setting_api_path = api_path.add_resource('setting')
+        setting_api_path = api_path.add_resource('settings')
+        settings_key_api_path = setting_api_path.add_resource('{key}')
         appointment_id_api_path = appointment_api_path.add_resource('{id}')
 
         # authorizer = apigw_.CognitoUserPoolsAuthorizer(
@@ -354,7 +355,7 @@ class ModEhrStack(Stack):
             ),
             # authorizer=authorizer
         )
-        setting_api_path.add_method(
+        settings_key_api_path.add_method(
             'POST',
             apigw_.LambdaIntegration(
                 settings_handler
