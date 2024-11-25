@@ -1,6 +1,7 @@
 
 import { fetchAuthSession, signOut, } from "aws-amplify/auth";
 import { Amplify } from "aws-amplify";
+
 // export const BASE_URL = process.env.BASE_URL || window.location.origin
 // export const { REGION } = process.env;
 // export const { POOL_ID } = process.env;
