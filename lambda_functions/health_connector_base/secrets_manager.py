@@ -1,5 +1,5 @@
 import os
-
+import json
 import boto3
 from botocore.exceptions import ClientError
 
@@ -15,7 +15,8 @@ class KMSClient:
         print(secret_id)
         try:
             response = self.client.get_secret_value(SecretId=secret_id)
-            return response["SecretString"]
+            response = json.loads(response["SecretString"])
+            return response[secret_id]
         except ClientError as e:
             if e.response["Error"]["Code"] == "ResourceNotFoundException":
                 print(f"The secret with ID '{secret_id}' was not found.")

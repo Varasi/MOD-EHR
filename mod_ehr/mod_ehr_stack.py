@@ -11,11 +11,17 @@ from constructs import Construct
 
 class ModEhrStack(Stack):
 
-    def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
+    def __init__(self, scope: Construct, construct_id: str, env_name: str, **kwargs) -> None:
         super().__init__(scope, construct_id, **kwargs)
 
+        if env_name=="dev":
+            self.env_name = "DEV"
+        elif env_name == "prod":
+            self.env_name = "PROD"
+        elif env_name == "test":
+            self.env_name = "TEST"
 
-        table_name1 = 'development_appointment_table'
+        table_name1 = self.env_name.lower()+'_'+'appointment_table'
         Appointment = dynamodb_.TableV2(
             self,
             'MODEHRAppoitmentTable',
@@ -28,7 +34,7 @@ class ModEhrStack(Stack):
                 type=dynamodb_.AttributeType.STRING
             )
         )
-        table_name2 = 'development_dashboard_table'
+        table_name2 = self.env_name.lower()+'_'+'dashboard_table'
         Dashboard = dynamodb_.TableV2(
             self,
             'MODEHRDashboardTable',
@@ -41,7 +47,7 @@ class ModEhrStack(Stack):
                 type=dynamodb_.AttributeType.STRING
             )
         )
-        table_name3 = 'development_patients_table'
+        table_name3 = self.env_name.lower()+'_'+'patients_table'
         Patients = dynamodb_.TableV2(
             self,
             'MODEHRPatientsTable',
@@ -54,7 +60,7 @@ class ModEhrStack(Stack):
                 type=dynamodb_.AttributeType.STRING
             )
         )
-        table_name4 = 'development_settings_table'
+        table_name4 = self.env_name.lower()+'_'+'settings_table'
         Settings = dynamodb_.TableV2(
             self,
             'MODEHRSettingsTable',
@@ -70,8 +76,8 @@ class ModEhrStack(Stack):
 
         my_layer = lambda_.LayerVersion(
             self, 
-            "MODEHRLayer",
-            code=lambda_.Code.from_asset("common"),
+            self.env_name+"MODEHRLayer",
+            code=lambda_.Code.from_asset("common/python.zip"),
             compatible_runtimes=[lambda_.Runtime.PYTHON_3_11],
             description="A layer with custom dependencies"
         )
@@ -84,7 +90,10 @@ class ModEhrStack(Stack):
             runtime=lambda_.Runtime.PYTHON_3_11,
             code=lambda_.Code.from_asset("lambda_functions/dashboard_lambda"),
             handler='health_connector.dashboard_handler',
-            layers=[my_layer]
+            layers=[my_layer],
+            environment={
+                'ENVIRONMENT': self.env_name
+            }
         )
         datapopulator_handler = lambda_.Function(
             self,
@@ -92,7 +101,10 @@ class ModEhrStack(Stack):
             runtime=lambda_.Runtime.PYTHON_3_11,
             code=lambda_.Code.from_asset("lambda_functions/datapopulator_lambda"),
             handler='lambda_handler.data_populator',
-            layers=[my_layer]
+            layers=[my_layer],
+            environment={
+                'ENVIRONMENT': self.env_name
+            }
         )
         appoitments_handler = lambda_.Function(
             self,
@@ -100,7 +112,10 @@ class ModEhrStack(Stack):
             runtime=lambda_.Runtime.PYTHON_3_11,
             code=lambda_.Code.from_asset("lambda_functions/appointments_lambda"),
             handler='lambda_handler.appointments_handler',
-            layers=[my_layer]
+            layers=[my_layer],
+            environment={
+                'ENVIRONMENT': self.env_name
+            }
         )
         epic_handler = lambda_.Function(
             self,
@@ -108,7 +123,10 @@ class ModEhrStack(Stack):
             runtime=lambda_.Runtime.PYTHON_3_11,
             code=lambda_.Code.from_asset("lambda_functions/epic_appointments"),
             handler='lambda_handler.epic_handler',
-            layers=[my_layer]
+            layers=[my_layer],
+            environment={
+                'ENVIRONMENT': self.env_name
+            }
         )
         patients_handler = lambda_.Function(
             self,
@@ -116,7 +134,10 @@ class ModEhrStack(Stack):
             runtime=lambda_.Runtime.PYTHON_3_11,
             code=lambda_.Code.from_asset("lambda_functions/patients_lambda"),
             handler='lambda_handler.patients_handler',
-            layers=[my_layer]
+            layers=[my_layer],
+            environment={
+                'ENVIRONMENT': self.env_name
+            }
         )
         settings_handler = lambda_.Function(
             self,
@@ -124,7 +145,10 @@ class ModEhrStack(Stack):
             runtime=lambda_.Runtime.PYTHON_3_11,
             code=lambda_.Code.from_asset("lambda_functions/settings_lambda"),
             handler='lambda_handler.settings_handler',
-            layers=[my_layer]
+            layers=[my_layer],
+            environment={
+                'ENVIRONMENT': self.env_name
+            }
         )
         Dashboard.grant_read_data(dashboard_handler)
         Appointment.grant_read_write_data(appoitments_handler)
@@ -147,7 +171,7 @@ class ModEhrStack(Stack):
             auto_verify=cognito_.AutoVerifiedAttrs(
                 email=True
             ),
-            user_pool_name='mod_ehr_user_pool',
+            user_pool_name=self.env_name+'-'+'mod_ehr_user_pool',
             self_sign_up_enabled=False,
             sign_in_aliases=cognito_.SignInAliases(
                 # email=True,
@@ -188,7 +212,7 @@ class ModEhrStack(Stack):
       
         identity_pool = cognito_.CfnIdentityPool(
             self, "MODEHRIdentityPool",
-            identity_pool_name="MODEHRIdentityPool",
+            identity_pool_name=self.env_name+'-'+"MODEHRIdentityPool",
             allow_unauthenticated_identities=False,  # Do not allow unauthenticated identities
             cognito_identity_providers=[
                 cognito_.CfnIdentityPool.CognitoIdentityProviderProperty(
@@ -261,7 +285,7 @@ class ModEhrStack(Stack):
         )
 
 
-        api_stage_name = 'dev'
+        api_stage_name = self.env_name
         api = apigw_.RestApi(
             self,
             'MODEHRApi',
@@ -285,82 +309,83 @@ class ModEhrStack(Stack):
         settings_key_api_path = setting_api_path.add_resource('{key}')
         appointment_id_api_path = appointment_api_path.add_resource('{id}')
 
-        # authorizer = apigw_.CognitoUserPoolsAuthorizer(
-        #     self,
-        #     "CognitoAuthorizer",
-        #     cognito_user_pools=[user_pool],
-        #     # identity_source='method.request.header.Authorizer'
-        # )
+        authorizer = apigw_.CognitoUserPoolsAuthorizer(
+            self,
+            self.env_name+"CognitoAuthorizer",
+            cognito_user_pools=[user_pool],
+            # identity_source='method.request.header.Authorizer'
+            identity_source=apigw_.IdentitySource.header('Authorization')
+        )
 
         appointment_api_path.add_method(
             'GET',
             apigw_.LambdaIntegration(
                 appoitments_handler
             ),
-            # authorizer=authorizer
+            authorizer=authorizer
         )
         appointment_api_path.add_method(
             'POST',
             apigw_.LambdaIntegration(
                 appoitments_handler
             ),
-            # authorizer=authorizer
+            authorizer=authorizer
         )
         appointment_id_api_path.add_method(
             'PUT',
             apigw_.LambdaIntegration(
                 appoitments_handler
             ),
-            # authorizer=authorizer
+            authorizer=authorizer
         )
         appointment_id_api_path.add_method(
             'DELETE',
             apigw_.LambdaIntegration(
                 appoitments_handler
             ),
-            # authorizer=authorizer
+            authorizer=authorizer
         )
         appointment_id_api_path.add_method(
             'GET',
             apigw_.LambdaIntegration(
                 appoitments_handler
             ),
-            # authorizer=authorizer
+            authorizer=authorizer
         )
         patients_api_path.add_method(
             'GET',
             apigw_.LambdaIntegration(
                 patients_handler
-            )
-            # authorizer=authorizer
+            ),
+            authorizer=authorizer
         )
         patients_api_path.add_method(
             'POST',
             apigw_.LambdaIntegration(
                 patients_handler
             ),
-            # authorizer=authorizer
+            authorizer=authorizer
         )
         dashboard_api_path.add_method(
             'GET',
             apigw_.LambdaIntegration(
                 dashboard_handler
-            )
-            # authorizer=authorizer
+            ),
+            authorizer=authorizer
         )
         setting_api_path.add_method(
             'GET',
             apigw_.LambdaIntegration(
                 settings_handler
             ),
-            # authorizer=authorizer
+            authorizer=authorizer
         )
         settings_key_api_path.add_method(
             'POST',
             apigw_.LambdaIntegration(
                 settings_handler
             ),
-            # authorizer=authorizer
+            authorizer=authorizer
         )
         
 

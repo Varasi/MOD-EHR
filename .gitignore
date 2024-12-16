@@ -12,7 +12,6 @@ package-lock.json
 cdk.out
 node_modules
 layers
-*.zip
 cdk.context.json
 .python-version
 .env
