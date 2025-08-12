@@ -80,7 +80,7 @@ const handleFormSubmit = async () => {
     prior_period: document.getElementById("prior_period").value,
     subsequent_period: document.getElementById("subsequent_period").value,
   };
-
+  const accessToken = await getAccessToken();
   const keys = Object.keys(formData);
   const link = `${BASE_URL}/api/settings`;
 

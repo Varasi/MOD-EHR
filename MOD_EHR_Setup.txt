@@ -1,0 +1,46 @@
+1. Clone the repository to your local machine.
+2. Create a virtual environment and activate it.
+    - `python -m venv .venv`
+    - `.venv\Scripts\activate`
+3. Install the required dependencies. Navigate to the project directory and run:
+    - `pip install -r requirements.txt`
+4. Create a `production.yaml` file in the `mod_ehr/configs` directory with the necessary configurations. Use the sample_config_env.yaml template as a reference to create a replica of production.yaml in the app.
+5. Run `wsl --list -verbose in terminal`. If we don't have linux system like ubuntu installed in local machine, try to install by running command - wsl --install -d Ubuntu.
+6. Open ubuntu terminal in start menu. Move to the project directory by running command
+    - `cd /mnt/d/HIRTA/MOD-EHR/mod_ehr` replace the path with your project directory.
+7. if pip and zip are not installed in ubuntu, run the commands:
+    - `sudo apt update`
+    - `sudo apt install python3-pip`
+    - `sudo apt install zip`
+8. The .sh files in the project dorectory are created and updated in a windows environement. So, we need to convert the line endings from Windows to Unix format. Run the command:
+    - `sudo apt install dos2unix`
+    - `dos2unix deploy.sh` 
+    - `chmod +x deploy.sh` -> This command makes the deploy.sh script executable.
+8. Run the following command to create layers for the lambda functions. It will create two zip files requirements.zip and health_connector_base.zip.
+    - `bash deploy.sh`
+9. Now navigate to your windows code editor terminal and configure the AWS CLI with your credentials:
+    - `aws configure`
+    - Enter your AWS Access Key ID, Secret Access Key, region (e.g., us-west-1), and output format (e.g., json).
+10. Deploy the CloudFormation stack using the AWS CLI:
+    - `cdk bootstrap`
+    - `cdk deploy`
+11. After the deployment is compplete, you can obtain the api endpoint, userpoolid, clientid, and other details from the AWS CloudFormation console or the output of the `cdk deploy` command.
+12. Now to deploy the dashboard website in s3, uncomment the lines in `healthconnect_poc_stack.py` file.
+13. Install the frontend dependencies by running the command:
+    - `cd dashboard_website`
+    - `npm install`
+14. Update the `deploy_website.sh` with the obtained credentials.
+    - Replace the placeholder values in the script with your actual AWS credentials
+15. Navigate to the Ubuntu terminal and run the command:
+    - `chmod +x deploy_website.sh`
+    - `bash deploy_website.sh`
+16. Deploy the stack again using the command:
+    - `cdk deploy`
+17. After the deployment is complete, you can access the dashboard website using the S3 bucket URL provided in the output of the `cdk deploy` command.
+18. To test the API, you can use tools like Postman or cURL to make requests to the API endpoint provided in the output of the `cdk deploy` command.
+19. In aws console, navigate to the Cognito User Pools section and create a new user in the userpool that is created. Also attach it to a group,
+20. Now in the terminal chnage the password for the user by running the command:
+    - `aws cognito-idp admin-set-user-password --user-pool-id <your_userpool_id> --username <your_username> --password <your_password> --permanent`
+21. The dynamodb does not have any data in it. You can refer to datamigration script attached in the repository to migrate the data from the old database to the new one.
+
+

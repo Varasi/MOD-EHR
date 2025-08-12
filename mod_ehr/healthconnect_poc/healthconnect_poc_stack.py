@@ -22,7 +22,7 @@ class HealthconnectPocStack(Stack):
     def __init__(self, scope: Construct, construct_id: str, config, **kwargs):
         self.config = config
         super().__init__(scope, construct_id, **kwargs)
-        self.import_certificate()
+        # self.import_certificate()
         # IAM ROLES
         self.create_roles()
         self.create_lambda_invoke_policy()
@@ -76,7 +76,7 @@ class HealthconnectPocStack(Stack):
             (
                 ec2.Peer.any_ipv4()
                 if self.config.ENVIRONMENT == "development"
-                else self.config.CLIENT_IP
+                else ec2.Peer.ipv4(self.config.CLIENT_IP)
             ),
             ec2.Port.tcp(22),
             "SSH Access to SFTP server from IPv4 addresses",
@@ -206,6 +206,15 @@ class HealthconnectPocStack(Stack):
                 ignore_public_acls=True,
                 restrict_public_buckets=True,
             ),
+            #for deploying the dashboard website in s3 for development/testing
+            # website_index_document='index.html',
+            # public_read_access=True,
+            # block_public_access=s3.BlockPublicAccess(
+            #     block_public_acls=False,
+            #     block_public_policy=False,
+            #     ignore_public_acls=False,
+            #     restrict_public_buckets=False,
+            # ),
         )
         s3_deployment.BucketDeployment(
             self,
@@ -231,8 +240,8 @@ class HealthconnectPocStack(Stack):
                 origin_request_policy=cloudfront.OriginRequestPolicy.CORS_S3_ORIGIN,
                 cache_policy=cloudfront.CachePolicy.CACHING_DISABLED,
             ),
-            domain_names=[self.config.DOMAIN],
-            certificate=self.certificate,
+            # domain_names=[self.config.DOMAIN],
+            # certificate=self.certificate,
             default_root_object="index.html",
         )
         self.cloudfront_distribution.add_behavior(
@@ -289,7 +298,7 @@ class HealthconnectPocStack(Stack):
 
     def create_secrets(self):
         for secret_name, secret_value in self.config.SECRETS.items():
-            secret_name = f"{self.config.ENVIRONMENT}-{secret_name}"
+            secret_name = f"{self.config.ENVIRONMENT.lower()}-{secret_name}"
             secret = secretsmanager.Secret(
                 self,
                 secret_name,
@@ -345,6 +354,7 @@ class HealthconnectPocStack(Stack):
             vpc=self.vpc,
             layers=[self.requirements_layer, self.base_layer],
             timeout=Duration.minutes(10),
+            memory_size=1024,
             environment={
                 "KMS_AVAILABLE": "True",
                 "ENVIRONMENT": self.config.ENVIRONMENT.upper(),

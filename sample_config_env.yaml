@@ -1,0 +1,49 @@
+# Account Configuration
+ACCOUNT:
+  ACCOUNT_ID: ""
+  REGION: "us-west-1"         
+
+# Environment Variables
+ENV:
+  ENVIRONMENT: "production"
+  CIDR: "10.0.0.0/16"         
+  DOMAIN: "dashoboard.hirta.us"
+  DOMAIN_PREFIX: "prod-healthconnect"
+  CLIENT_IP: "0.0.0.0/0"     #get from the client at what ip address they will be accessing the sftp server     
+  BUCKET_NAME: "health-connector-poc-mod-ehr-prod"
+  # REDIS_AUTH_TOKEN: "redis-auth-token"
+
+# Variables
+VARIABLES:
+  SFTP_USERNAME: "hirta"
+  SSH_KEYS: [
+    ""
+  ]
+
+# IAM Roles Configuration
+ROLES:
+  LambdaExecutionRole:
+    ASSUMED_BY: "lambda.amazonaws.com"
+    POLICIES:
+      - "service-role/AmazonS3ObjectLambdaExecutionRolePolicy"
+      - "service-role/AWSLambdaBasicExecutionRole"
+      - "AmazonS3FullAccess"
+      - "service-role/AWSLambdaVPCAccessExecutionRole"
+      - "SecretsManagerReadWrite"
+
+# Secrets Configuration
+SECRETS:
+  google_map_api_key: ""
+  via_client_id: ""
+  via_client_secret: ""
+  via_api_key: ""
+  via_auth_url: ""
+  via_api_url: ""
+  # epic_client_id: "",
+  # epic_private_key: "",
+  # epic_public_key: "",
+  # token_url: "",
+  # base_url: ""
+
+  # REDIS_PASSWORD: "redis-password"
+
