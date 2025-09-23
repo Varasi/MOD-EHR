@@ -178,16 +178,24 @@ async function addAppointment() {
         if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
             let patient_records = JSON.parse(xhr.responseText);
             $("#patientName").empty();
+            patient_records.sort((a, b) => a.name.localeCompare(b.name));
             for (let patient of patient_records) {
                 console.log(patient);
                 let option = $("<option>", {
-                    value: `${patient["name"]}-${patient["epic_id"]}`,
-                    text: `${patient["name"]} (${patient["epic_id"]})`,
+                    // value: `${patient["name"]}-${patient["epic_id"]}`,
+                    // text: `${patient["name"]} (${patient["epic_id"]})`,
+                    value: `${patient["name"]}-${patient["patient_id"]}`,
+                    text: `${patient["name"]} (${patient["patient_id"]})`,
                 });
                 $("#patientName").append(option);
             }
             $("#appointmentModal").css({
                 display: "block",
+            });
+            $("#patientName").select2({
+                width: '100%',
+                placeholder: "Select a patient",
+                allowClear: true
             });
         }
     };

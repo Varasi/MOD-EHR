@@ -15,7 +15,7 @@ class Via(object):
         )
         self.via_api_url = "us-east-1.trip-api.ridewithvia.com"
         self.token = None
-        self.TRIP_STATUSES = ["CONFIRMED", "FINISHED", "ASSIGNED"]
+        self.TRIP_STATUSES = ["CONFIRMED", "FINISHED", "ASSIGNED", "ARRIVED", "BOARDED"]
 
     def set_token(self):
         headers = {"Content-Type": "application/x-www-form-urlencoded"}
@@ -44,6 +44,7 @@ class Via(object):
                 params=body,
                 headers=self.auth_header,
             )
+            print('response', r.json())
             if r.ok:
                 with contextlib.suppress(KeyError):
                     resp = r.json()

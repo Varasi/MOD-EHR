@@ -6,7 +6,9 @@ import boto3
 from config import Config
 from healthconnect_poc.healthconnect_poc_stack import HealthconnectPocStack
 
-config = Config(os.environ.get("ENVIRONMENT", "production"))
+# config = Config(os.environ.get("ENVIRONMENT", "uat"))
+config = Config(os.environ.get("ENVIRONMENT", "development"))
+# config = Config(os.environ.get("ENVIRONMENT", "production"))
 app = cdk.App()
 
 healthconnect_poc_stack = HealthconnectPocStack(
