@@ -19,3 +19,6 @@ cdk.context.json
 .vscode
 configs
 samples
+
+#JWKS 
+jwks-files/

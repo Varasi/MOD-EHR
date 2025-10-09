@@ -53,34 +53,36 @@ class HealthconnectPocStack(Stack):
         self.create_cloudfront_dist()
         self.add_bucket_policy()
         self.add_event_bridge_scheduler()
+        # self.create_jwks_bucket()  #json web key sets
+        # self.create_jwks_distribution()
         # Output
         self.print_output()
 
     def create_sftp(self):
-        subnet_ids = [subnet.subnet_id for subnet in self.vpc.public_subnets]
-        address_allocation_ids = []
-        for subnet_id in self.vpc.public_subnets:
-            elastic_ip = ec2.CfnEIP(
-                scope=self,
-                id=f"TransferElasticIPAssociation{subnet_id.availability_zone}",
-                domain="vpc",
-            )
-            address_allocation_ids.append(elastic_ip.attr_allocation_id)
-        self.sftp_security_group = ec2.SecurityGroup(
-            scope=self,
-            id="SftpSecurityGroup",
-            vpc=self.vpc,
-            description="Security group for SFTP server",
-        )
-        self.sftp_security_group.add_ingress_rule(
-            (
-                ec2.Peer.any_ipv4()
-                if self.config.ENVIRONMENT == "development"
-                else ec2.Peer.ipv4(self.config.CLIENT_IP)
-            ),
-            ec2.Port.tcp(22),
-            "SSH Access to SFTP server from IPv4 addresses",
-        )
+        # subnet_ids = [subnet.subnet_id for subnet in self.vpc.public_subnets]
+        # address_allocation_ids = []
+        # for subnet_id in self.vpc.public_subnets:
+        #     elastic_ip = ec2.CfnEIP(
+        #         scope=self,
+        #         id=f"TransferElasticIPAssociation{subnet_id.availability_zone}",
+        #         domain="vpc",
+        #     )
+        #     address_allocation_ids.append(elastic_ip.attr_allocation_id)
+        # self.sftp_security_group = ec2.SecurityGroup(
+        #     scope=self,
+        #     id="SftpSecurityGroup",
+        #     vpc=self.vpc,
+        #     description="Security group for SFTP server",
+        # )
+        # self.sftp_security_group.add_ingress_rule(
+        #     (
+        #         ec2.Peer.any_ipv4()
+        #         if self.config.ENVIRONMENT == "development"
+        #         else ec2.Peer.ipv4(self.config.CLIENT_IP)
+        #     ),
+        #     ec2.Port.tcp(22),
+        #     "SSH Access to SFTP server from IPv4 addresses",
+        # )
         self.sftp_bucket = s3.Bucket(
             self,
             f"HealthConnector{self.config.ENVIRONMENT.title()}SFTPBucket",
@@ -88,42 +90,42 @@ class HealthconnectPocStack(Stack):
             removal_policy=RemovalPolicy.DESTROY,
             block_public_access=s3.BlockPublicAccess.BLOCK_ALL,
         )
-        self.sftp_role = iam.Role(
-            self,
-            f"HealthConnector{self.config.ENVIRONMENT.title()}SFTPRole",
-            assumed_by=iam.ServicePrincipal("transfer.amazonaws.com"),
-            managed_policies=[
-                iam.ManagedPolicy.from_aws_managed_policy_name("AmazonS3FullAccess"),
-                iam.ManagedPolicy.from_aws_managed_policy_name("CloudWatchFullAccess"),
-            ],
-        )
-        self.sftp_server = transfer.CfnServer(
-            self,
-            "SFTPServer",
-            endpoint_type="VPC",
-            identity_provider_type="SERVICE_MANAGED",
-            logging_role=self.sftp_role.role_arn,
-            endpoint_details=transfer.CfnServer.EndpointDetailsProperty(
-                address_allocation_ids=address_allocation_ids,
-                security_group_ids=[self.sftp_security_group.security_group_id],
-                subnet_ids=subnet_ids,
-                vpc_id=self.vpc.vpc_id,
-            ),
-        )
-        self.sftp_user = transfer.CfnUser(
-            self,
-            f"HealthConnector{self.config.ENVIRONMENT.title()}SFTPUser",
-            server_id=self.sftp_server.attr_server_id,
-            user_name=self.config.SFTP_USERNAME,
-            role=self.sftp_role.role_arn,
-            home_directory_type="PATH",
-            home_directory=f"/{self.sftp_bucket.bucket_name}/",
-            ssh_public_keys=self.config.SSH_KEYS,
-        )
+        # self.sftp_role = iam.Role(
+        #     self,
+        #     f"HealthConnector{self.config.ENVIRONMENT.title()}SFTPRole",
+        #     assumed_by=iam.ServicePrincipal("transfer.amazonaws.com"),
+        #     managed_policies=[
+        #         iam.ManagedPolicy.from_aws_managed_policy_name("AmazonS3FullAccess"),
+        #         iam.ManagedPolicy.from_aws_managed_policy_name("CloudWatchFullAccess"),
+        #     ],
+        # )
+        # self.sftp_server = transfer.CfnServer(
+        #     self,
+        #     "SFTPServer",
+        #     endpoint_type="VPC",
+        #     identity_provider_type="SERVICE_MANAGED",
+        #     logging_role=self.sftp_role.role_arn,
+        #     endpoint_details=transfer.CfnServer.EndpointDetailsProperty(
+        #         address_allocation_ids=address_allocation_ids,
+        #         security_group_ids=[self.sftp_security_group.security_group_id],
+        #         subnet_ids=subnet_ids,
+        #         vpc_id=self.vpc.vpc_id,
+        #     ),
+        # )
+        # self.sftp_user = transfer.CfnUser(
+        #     self,
+        #     f"HealthConnector{self.config.ENVIRONMENT.title()}SFTPUser",
+        #     server_id=self.sftp_server.attr_server_id,
+        #     user_name=self.config.SFTP_USERNAME,
+        #     role=self.sftp_role.role_arn,
+        #     home_directory_type="PATH",
+        #     home_directory=f"/{self.sftp_bucket.bucket_name}/",
+        #     ssh_public_keys=self.config.SSH_KEYS,
+        # )
 
-    @property
-    def sftp_endpoint(self):
-        return f"{self.sftp_server.attr_server_id}.server.transfer.{self.config.REGION}.amazonaws.com"
+    # @property
+    # def sftp_endpoint(self):
+    #     return f"{self.sftp_server.attr_server_id}.server.transfer.{self.config.REGION}.amazonaws.com"
 
     def create_dynamodb_table(self):
         self.dashboard_table = dynamo_db.TableV2(
@@ -195,26 +197,63 @@ class HealthconnectPocStack(Stack):
     def _elasticache_endpoint(self) -> str:
         return f"rediss://:{self.config.REDIS_AUTH_TOKEN}@{self.elasti_cache.attr_primary_end_point_address}:6379/0"
 
+    def create_jwks_bucket(self):
+        self.jwks_bucket = s3.Bucket(
+            self,
+            f"HealthConnector{self.config.ENVIRONMENT.title()}JWKSBucket",
+            bucket_name=f"{self.config.ENVIRONMENT.lower()}-jwks-bucket",
+            public_read_access=True,
+            removal_policy=RemovalPolicy.DESTROY,
+            auto_delete_objects=True,
+            block_public_access=s3.BlockPublicAccess(
+                block_public_acls=False,
+                block_public_policy=False,
+                ignore_public_acls=False,
+                restrict_public_buckets=False,
+            ),
+        )
+        s3_deployment.BucketDeployment(
+            self,
+            f"HealthConnector{self.config.ENVIRONMENT.title()}JWKSBucketDeployment",
+            sources=[s3_deployment.Source.asset("./jwks-files")],
+            destination_bucket=self.jwks_bucket,
+            destination_key_prefix=".well-known",
+            cache_control=[s3_deployment.CacheControl.no_store()],
+        )
+
+    
+    # def create_jwks_distribution(self):
+    #     self.jwks_distribution = cloudfront.Distribution(
+    #         self,
+    #         f"HealthConnector{self.config.ENVIRONMENT.title()}JWKSDistribution",
+    #         default_behavior=cloudfront.BehaviorOptions(
+    #             origin=origins.S3Origin(self.jwks_bucket),
+    #             viewer_protocol_policy=cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
+    #             origin_request_policy=cloudfront.OriginRequestPolicy.CORS_S3_ORIGIN,
+    #             cache_policy=cloudfront.CachePolicy.CACHING_DISABLED,
+    #         ),
+    #     )
+
     def create_bucket(self):
         self.bucket = s3.Bucket(
             self,
             f"HealthConnector{self.config.ENVIRONMENT.title()}Bucket",
             bucket_name=self.config.BUCKET_NAME,
-            block_public_access=s3.BlockPublicAccess(
-                block_public_acls=True,
-                block_public_policy=True,
-                ignore_public_acls=True,
-                restrict_public_buckets=True,
-            ),
-            #for deploying the dashboard website in s3 for development/testing
-            # website_index_document='index.html',
-            # public_read_access=True,
             # block_public_access=s3.BlockPublicAccess(
-            #     block_public_acls=False,
-            #     block_public_policy=False,
-            #     ignore_public_acls=False,
-            #     restrict_public_buckets=False,
+            #     block_public_acls=True,
+            #     block_public_policy=True,
+            #     ignore_public_acls=True,
+            #     restrict_public_buckets=True,
             # ),
+            #for deploying the dashboard website in s3 for development/testing
+            website_index_document='index.html',
+            public_read_access=True,
+            block_public_access=s3.BlockPublicAccess(
+                block_public_acls=False,
+                block_public_policy=False,
+                ignore_public_acls=False,
+                restrict_public_buckets=False,
+            ),
         )
         s3_deployment.BucketDeployment(
             self,
@@ -381,13 +420,13 @@ class HealthconnectPocStack(Stack):
             memory_size=1024,
         )
 
-        self.data_populator_lambda.add_event_source(
-            S3EventSourceV2(
-                self.sftp_bucket,
-                events=[s3.EventType.OBJECT_CREATED],
-                filters=[s3.NotificationKeyFilter(suffix=".csv")],
-            )
-        )
+        # self.data_populator_lambda.add_event_source(
+        #     S3EventSourceV2(
+        #         self.sftp_bucket,
+        #         events=[s3.EventType.OBJECT_CREATED],
+        #         filters=[s3.NotificationKeyFilter(suffix=".csv")],
+        #     )
+        # )
 
     def create_epic_lambda(self):
         self.epic_lambda = aws_lambda.Function(
@@ -746,4 +785,5 @@ class HealthconnectPocStack(Stack):
         )
         CfnOutput(self, "IdentityPoolId", value=self.identity_pool.ref)
         CfnOutput(self, "CdnUrl", value=self.cloudfront_distribution.domain_name)
-        CfnOutput(self, "SFTPEndpoint", value=self.sftp_endpoint)
+        # CfnOutput(self, "SFTPEndpoint", value=self.sftp_endpoint)
+        # CfnOutput(self, "JwksUrl", value=f"{self.jwks_distribution.domain_name}/.well-known/jwks.json")
