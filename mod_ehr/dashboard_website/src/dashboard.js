@@ -11,6 +11,7 @@ import {
 } from "./common";
 
 $(document).ready(async function () {
+    let time1 = new Date().getTime();
     preRender();
     toggleSideNavBar();
     const userRole = await getUserGroup();
@@ -27,9 +28,13 @@ $(document).ready(async function () {
     $("#logout").click(logoutUser);
     const accessToken = await getAccessToken();
     const xhr = new XMLHttpRequest();
+    let time2 = new Date().getTime();
+    console.log("Time taken to get user role:", time2 - time1);
     xhr.open("GET", `${BASE_URL}/api/dashboard/`);
     xhr.setRequestHeader("Authorization", accessToken);
     xhr.onreadystatechange = async function () {
+        let time2_1 = new Date().getTime();
+        console.log("Time taken for dashboard API response:", time2_1 - time2);
         if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
             $("#Loader").remove();
             let data = [];
@@ -182,6 +187,8 @@ $(document).ready(async function () {
                 tablePaginationNavigationHandler(table);
             });
             postRender();
+            let time2_2 = new Date().getTime();
+            console.log("Time taken to render dashboard table from api response:", time2_2 - time2_1);
         } else if (xhr.status !== 200) {
             $("#Loader").remove();
             if ($("#StateChange .emptyState").length === 0) {

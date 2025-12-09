@@ -149,6 +149,14 @@ class HealthconnectPocStack(Stack):
                 name="id", type=dynamo_db.AttributeType.STRING
             ),
         )
+        self.appointment_table.add_global_secondary_index(
+            index_name="patient_id-index",
+            partition_key=dynamo_db.Attribute(
+                name="patient_id",
+                type=dynamo_db.AttributeType.STRING
+            ),
+            projection_type=dynamo_db.ProjectionType.ALL
+        )
         self.appointment_table.grant_full_access(self.LambdaExecutionRole)
         self.patients_table = dynamo_db.TableV2(
             self,
@@ -420,13 +428,13 @@ class HealthconnectPocStack(Stack):
             memory_size=1024,
         )
 
-        # self.data_populator_lambda.add_event_source(
-        #     S3EventSourceV2(
-        #         self.sftp_bucket,
-        #         events=[s3.EventType.OBJECT_CREATED],
-        #         filters=[s3.NotificationKeyFilter(suffix=".csv")],
-        #     )
-        # )
+        self.data_populator_lambda.add_event_source(
+            S3EventSourceV2(
+                self.sftp_bucket,
+                events=[s3.EventType.OBJECT_CREATED],
+                filters=[s3.NotificationKeyFilter(suffix=".csv")],
+            )
+        )
 
     def create_epic_lambda(self):
         self.epic_lambda = aws_lambda.Function(
