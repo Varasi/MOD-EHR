@@ -71,7 +71,7 @@ async function EditAppointment() {
         $("#startTime").val(start_time);
         $("#endTime").val(end_time);
         $("#location").val(appointmentData.location);
-        $("#status").val(appointmentData.status.toLowerCase()); // Normalize status
+        $("#status").val(appointmentData.status); // Normalize status
         
         $(".save").data("id", id);
 
@@ -261,15 +261,20 @@ async function addAppointment() {
     xhr.send();
 }
 $(document).ready(async function () {
-    let tab_start_time = new Date().getTime();
+    let time1 = performance.now();
     $('head').append(`<script src = "https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_KEY}&libraries=places&callback=googleMapsAutoComplete" async defer></script>`);
     preRender();
+    let time2 = performance.now();
+    console.log(`Pre-render time: ${time2 - time1} ms`);
     toggleSideNavBar();
+    let time3 = performance.now();
     $("#logout").click(logoutUser);
     $("#location").keydown(function (event) {
         if (event.keyCode === 13 ) { event.preventDefault() };
     });
     const userRole = await getUserGroup();
+    let time4 = performance.now();
+    console.log(`User role fetch time: ${time4 - time3} ms`);
     if (userRole !== "AppointmentsAdmin" && userRole !== "UserManagementAdmin") {
         window.location.href = "dashboard.html";
     }
@@ -363,6 +368,7 @@ $(document).ready(async function () {
         "</svg>" +
         "</span>"
     );
+    
     $("#mod_ehr_filter").appendTo("#table-filter");
     $(".dt-buttons").appendTo("#table-filter");
     $(".bottom").appendTo("#custom-pagination");
@@ -370,15 +376,15 @@ $(document).ready(async function () {
         SearchIcon
     );
 
-    let tab_end_time = new Date().getTime();
-    console.log(`preprocessing load time: ${tab_end_time - tab_start_time} ms`);
+    let time6 = performance.now();
+    console.log(`Setup time before DataTable: ${time6 - time4} ms`);
     
     let table = $("#mod_ehr").DataTable({
         serverSide: true,
         deferRender: true,
         ajax: async function(data, callback, settings) {
                 try {
-                    let start_time = new Date().getTime();
+                    let start_time = performance.now();
                     preRender();
                     const token = await getAccessToken();
                     
@@ -415,7 +421,7 @@ $(document).ready(async function () {
                     // Call DataTables callback with the result
                     callback(result);
                     postRender();
-                    let end_time = new Date().getTime();
+                    let end_time = performance.now();
                     console.log(`DataTables AJAX load time: ${end_time - start_time} ms`);
                     
                 } catch (error) {
@@ -461,8 +467,9 @@ $(document).ready(async function () {
         //     }
         // },
     });
-    let tab_end_time_2 = new Date().getTime();
-    console.log(`postprocessing load time: ${tab_end_time_2 - tab_end_time} ms`);
+    let time7 = performance.now();
+    console.log(`DataTable initialization time: ${time7 - time6} ms`);
+    
     $(document).on('click', '.editBtn', EditAppointment);
     $(document).on('click', '.deleteBtn', DeleteAppointment);
     table.on("draw.dt", function () {
@@ -471,6 +478,9 @@ $(document).ready(async function () {
         // $(".deleteBtn").click(DeleteAppointment);
         tablePaginationNavigationHandler(table);
     });
+    let time8= performance.now();
+    console.log(`Event handlers setup time: ${time8 - time7} ms`);
+
     $(".close").click(async function () {
         $('label.error').remove();
         $("#appointmentModal").css({
@@ -480,8 +490,8 @@ $(document).ready(async function () {
     });
     $(".save").click(saveAppointment);
     getCachedPatients();
-    let tab_end_time_3 = new Date().getTime();
-    console.log(`Total page load time: ${tab_end_time_3 - tab_start_time} ms`);
+    let time9 = performance.now();
+    console.log(`Cached patients fetch time: ${time9 - time8} ms`);
 
 //     const xhr = new XMLHttpRequest();
 //     xhr.open("GET", `${BASE_URL}/api/appointments/`);

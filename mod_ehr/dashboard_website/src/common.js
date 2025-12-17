@@ -25,7 +25,10 @@ export const COGNITO_PARAMS = {
     UserPoolId: POOL_ID,
 };
 export async function getUserSession(redirect = true) {
+  let time13 = performance.now();
     const session = await fetchAuthSession({ forceRefresh: false });
+    let time14 = performance.now();
+    console.log(`Time taken to fetch auth session: ${time14 - time13} milliseconds`);
     if (!session.tokens && redirect) {
         window.location.href = "index.html";
     }
@@ -43,7 +46,10 @@ export function getIss() {
     return `cognito-idp.${process.env.REGION}.amazonaws.com/${process.env.POOL_ID}`
 }
 export async function getUserGroup() {
+  let time11 = performance.now();
     const session = await getUserSession();
+    let time12 = performance.now();
+    console.log(`Time taken to get user session: ${time12 - time11} milliseconds`); 
     return session.tokens.idToken.payload["cognito:groups"][0];
 }
 export async function logoutUser() {

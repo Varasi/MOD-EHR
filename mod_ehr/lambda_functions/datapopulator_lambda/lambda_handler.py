@@ -120,6 +120,8 @@ class AppointmentsMapperWithVia:
                     ],
                 )
             )
+            print(f"subsequent_period: {self.subsequent_period}, cur_diff: {cur_diff}, prior_period: {self.prior_period}")
+            print(f"cur_diff: {cur_diff}, prev_diff: {prev_diff}, cur_location_diff: {cur_location_diff}, prev_location_diff: {prev_location_diff}")
             if (
                 self.subsequent_period <= cur_diff <= self.prior_period
                 and cur_diff < prev_diff
@@ -129,6 +131,7 @@ class AppointmentsMapperWithVia:
                 prev_diff = cur_diff
                 match_ride = trip
                 prev_location_diff = cur_location_diff
+        print("Matched ride:", match_ride)
         return match_ride
 
     def _map_participants_data(
