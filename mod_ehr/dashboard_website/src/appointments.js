@@ -56,16 +56,14 @@ async function EditAppointment() {
                 })
             );
         });
-        const start_time = formatInTimeZone(
-            new Date(appointmentData.start_time),
-            "America/Chicago",
-            "yyyy-MM-dd'T'HH:mm:ss"
-        );
-        const end_time = formatInTimeZone(
-            new Date(appointmentData.end_time),
-            "America/Chicago", 
-            "yyyy-MM-dd'T'HH:mm:ss"
-        );
+        const start_time = DateTime
+            .fromISO(appointmentData.start_time_raw, { zone: "utc" })
+            .setZone("America/Chicago")
+            .toFormat("yyyy-MM-dd'T'HH:mm:ss");
+        const end_time = DateTime
+            .fromISO(appointmentData.end_time_raw, { zone: "utc" })
+            .setZone("America/Chicago")
+            .toFormat("yyyy-MM-dd'T'HH:mm:ss");
         $("#patientName").val(`${appointmentData.patient_name}-${appointmentData.patient_id}`);
         $("#startTime").val(start_time);
         $("#endTime").val(end_time);
@@ -80,6 +78,7 @@ async function EditAppointment() {
     } finally {
         toggleSkeletonLoader("appointmentModal", "remove");
     }
+
     // let xhr1 = new XMLHttpRequest();
     // xhr1.open("GET", `${BASE_URL}/api/patients/`);
     // xhr1.setRequestHeader("Authorization", accessToken);
@@ -144,16 +143,16 @@ async function saveAppointment() {
         // });
         let formData = {
             end_time:
-                DateTime.fromISO($("#endTime").val() + ":00.000-05:00")
+                DateTime.fromISO($("#endTime").val(), { zone: "America/Chicago" })
                     .toUTC()
-                    .toISO({ includeOffset: false }) + "000+0000",
+                    .toISO(),
             location: $("#location").val(),
             patient_id: $("#patientName").val().split("-")[1],
             patient_name: $("#patientName").val().split("-")[0],
             start_time:
-                DateTime.fromISO($("#startTime").val() + ":00.000-05:00")
+                DateTime.fromISO($("#startTime").val(), { zone: "America/Chicago" })
                     .toUTC()
-                    .toISO({ includeOffset: false }) + "000+0000",
+                    .toISO(),
             status: $("#status").val(),
             provider: "epic",
         };
@@ -343,6 +342,8 @@ $(document).ready(async function () {
                             patient_id: row.patient_id,
                             start_time: row.start_time,
                             end_time: row.end_time,
+                            start_time_raw: row.start_time_raw,
+                            end_time_raw: row.end_time_raw,
                             location: row.location,
                             status: row.status
                         }));
@@ -362,14 +363,20 @@ $(document).ready(async function () {
                 },
             ];
             let appointmentRecords = JSON.parse(xhr.responseText);
-            console.log(appointmentRecords);
+            
             for (let appointmentRecord of appointmentRecords) {
-                appointmentRecord["start_time"] = new Date(
-                    appointmentRecord["start_time"]
-                ).toLocaleString("en-US", { timeZone: "America/Chicago" });
-                appointmentRecord["end_time"] = new Date(
-                    appointmentRecord["end_time"]
-                ).toLocaleString("en-US", { timeZone: "America/Chicago" });
+                appointmentRecord["start_time_raw"] = appointmentRecord.start_time;
+                appointmentRecord["end_time_raw"] = appointmentRecord.end_time;
+                appointmentRecord["start_time"] = 
+                DateTime
+                .fromISO(appointmentRecord.start_time, { zone: "utc" })
+                .setZone("America/Chicago")
+                .toFormat("MM/dd/yyyy hh:mm a");
+                appointmentRecord["end_time"] = 
+                DateTime
+                .fromISO(appointmentRecord.end_time, { zone: "utc" })
+                .setZone("America/Chicago")
+                .toFormat("MM/dd/yyyy hh:mm a");
             }
             const SearchIcon = $(
                 '<span id="searchIconSvg">' +
@@ -379,7 +386,7 @@ $(document).ready(async function () {
                 "</span>"
             );
             console.log(userRole);
-
+            console.log(appointmentRecords);
             let table = $("#mod_ehr").DataTable({
                 data: appointmentRecords,
                 columns: columns_data,
