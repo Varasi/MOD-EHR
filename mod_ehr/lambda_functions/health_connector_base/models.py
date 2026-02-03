@@ -51,6 +51,7 @@ class PatientIdIndex(GlobalSecondaryIndex):
 
 class Appointment(BaseModel):
     id = UnicodeAttribute(hash_key=True, default_for_new=lambda: str(uuid.uuid4()))
+    hospital_id = UnicodeAttribute()
     patient_id = UnicodeAttribute()
     patient_name = UnicodeAttribute()
     location = AddressAttribute()
@@ -78,6 +79,7 @@ class Patient(BaseModel):
 class Settings(BaseModel):
     name = UnicodeAttribute(hash_key=True)
     value = UnicodeAttribute()
+    hospital_id = UnicodeAttribute()
 
     class Meta:
         table_name = "settings_table"
@@ -86,6 +88,19 @@ class Settings(BaseModel):
 class FTPLogs(BaseModel):
     name = UnicodeAttribute(hash_key=True)
     server_last_modified = NumberAttribute()
+    hospital_id = UnicodeAttribute()
 
     class Meta:
         table_name = "ftp_logs_table"
+
+class Hospital(BaseModel):
+    id = UnicodeAttribute(hash_key=True)
+    name = UnicodeAttribute()
+    subdomain = UnicodeAttribute()
+    status = UnicodeAttribute()
+    timezone = UnicodeAttribute()
+    location = AddressAttribute()
+    provider = ChoiceUnicodeAttribute(choices=["epic", "veradigm"], default="epic")
+
+    class Meta:
+        table_name = "hospitals_table"

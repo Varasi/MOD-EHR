@@ -30,6 +30,10 @@ export async function getUserSession(redirect = true) {
         window.location.href = "index.html";
     }
     return session;
+};
+export async function getAccesstokenAndCustomAttribute(attributeName) {
+    const session = await getUserSession();
+    return [session.tokens.accessToken.toString(), session.tokens.idToken.payload[attributeName]];
 }
 export async function getAccessToken() {
     const session = await getUserSession();
@@ -97,21 +101,45 @@ export function toggleSkeletonLoader(elementId, action) {
         });
     }
 };
-export function getUserGroupNameForUser(cognitoIdentityServiceProvider, username) {
-    return new Promise((resolve, reject) => {
-        cognitoIdentityServiceProvider.adminListGroupsForUser(
-            { ...COGNITO_PARAMS, Username: username, Limit: 1 },
+export function getCustomAttributeForUser(cognitoIdentityServiceProvider, username, attributeName) {
+  return new Promise((resolve, reject) => {
+        cognitoIdentityServiceProvider.adminGetUser(
+            { ...COGNITO_PARAMS, Username: username },
             (err, data) => {
                 if (err) {
+                    console.log(err);
                     resolve("N/A");
-                } else if (data.Groups && data.Groups.length > 0) {
-                    resolve(data.Groups[0].GroupName);
                 } else {
-                    resolve("N/A");
+                    const customAttributes = data.UserAttributes;
+                    const hospitalIdAttribute = customAttributes.find(
+                        (attr) => attr.Name === attributeName
+                    );
+                    if (!hospitalIdAttribute) {
+                        resolve("N/A");
+                    } else {
+                        resolve(hospitalIdAttribute.Value);
+                    }
+                    
                 }
             }
         );
     });
+}
+export function getUserGroupNameForUser(cognitoIdentityServiceProvider, username) {
+  return new Promise((resolve, reject) => {
+      cognitoIdentityServiceProvider.adminListGroupsForUser(
+          { ...COGNITO_PARAMS, Username: username, Limit: 1 },
+          (err, data) => {
+              if (err) {
+                  resolve("N/A");
+              } else if (data.Groups && data.Groups.length > 0) {
+                  resolve(data.Groups[0].GroupName);
+              } else {
+                  resolve("N/A");
+              }
+          }
+      );
+  });
 }
 export function toggleLoder(elementId, action) {
   const loader = document.querySelector(`#${elementId} .loader-small`);

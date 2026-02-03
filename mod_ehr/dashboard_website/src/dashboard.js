@@ -6,7 +6,8 @@ import {
     preRender,
     postRender,
     BASE_URL,
-    toggleSideNavBar
+    toggleSideNavBar,
+    getAccesstokenAndCustomAttribute
 
 } from "./common";
 
@@ -25,7 +26,9 @@ $(document).ready(async function () {
         $("#user-management-nav").addClass("visible")
     }
     $("#logout").click(logoutUser);
-    const accessToken = await getAccessToken();
+    // const accessToken = await getAccessToken();
+    const [accessToken, hospitalId] = await getAccesstokenAndCustomAttribute("custom:hospital_id");
+    console.log("Hospital ID:", hospitalId);
     const xhr = new XMLHttpRequest();
     xhr.open("GET", `${BASE_URL}/api/dashboard/`);
     xhr.setRequestHeader("Authorization", accessToken);

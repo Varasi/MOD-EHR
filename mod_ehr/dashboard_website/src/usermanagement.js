@@ -9,6 +9,7 @@ import {
   getUserGroup,
   tablePaginationNavigationHandler,
   getUserGroupNameForUser,
+  getCustomAttributeForUser,
   COGNITO_PARAMS,
   PASSWORD_REGEX,
   toggleLoder,
@@ -53,6 +54,30 @@ async function deleteUser(username) {
         cognitoIdentityServiceProvider.adminDeleteUser(user_params, (err, data) => {
             if (err) {
                 console.log(err)
+                $("#root").append(
+                    `<div id="customAlert" class="custom-alert-danger"><div class="flex-1">${err.message}</div></div>`
+                );
+                resolve(false);
+            }
+            resolve(true)
+        });
+    })
+}
+async function addCustomAttributeToUser(username, attributeName, attributeValue) {
+    return new Promise((resolve, reject) => {
+        const attribute_params = {
+            UserPoolId: COGNITO_PARAMS.UserPoolId,
+            Username: username,
+            UserAttributes: [
+                {
+                    Name: attributeName,
+                    Value: attributeValue
+                }
+            ]
+        }
+        cognitoIdentityServiceProvider.adminUpdateUserAttributes(attribute_params, (err, data) => {
+            if (err) {
+                console.log(err.message)
                 $("#root").append(
                     `<div id="customAlert" class="custom-alert-danger"><div class="flex-1">${err.message}</div></div>`
                 );
@@ -127,6 +152,11 @@ async function addUserToCognito() {
                     }
                     let add_to_group_status = await addUserToGroup(username, $("#role").val())
                     if (!add_to_group_status) {
+                        await deleteUser(username);
+                        resolve(false)
+                    }
+                    let add_hospital_attribute_status = await addCustomAttributeToUser(username, "custom:hospital_id", $("#hospital").val())
+                    if (!add_hospital_attribute_status) {
                         await deleteUser(username);
                         resolve(false)
                     }
@@ -206,11 +236,12 @@ async function editUser() {
     toggleLoder("saveChangeUser", "add");
     const username = $("#changeUsername").val()
     const group = await getUserGroupNameForUser(cognitoIdentityServiceProvider, username);
+    const hospital = $("#changeHospital").val()
     await removeUserFromGroup(username, group)
     console.log(group)
     const new_group = $("#changeRole").val()
     console.log(new_group)
-    if (await addUserToGroup(username, new_group)) {
+    if (await addUserToGroup(username, new_group) && await addCustomAttributeToUser(username, "custom:hospital_id", hospital)) {
         $("#root")
             .append(`<div id="customAlert" class="custom-alert-success">
       <div class="flex-1">User Role Changed successfully</div>
@@ -236,8 +267,11 @@ async function closeChangePassModal() {
 async function editUserButtonAction() {
     const username = $(this).data("username");
     const group = await getUserGroupNameForUser(cognitoIdentityServiceProvider, username);
+    const hospital = await getCustomAttributeForUser(cognitoIdentityServiceProvider, username, "custom:hospital_id");
+    console.log("hospital", hospital)
     $("#changeUsername").val(username)
     $("#changeRole").val(group)
+    $("#changeHospital").val(hospital)
     $("#changeUserModal").show()
 
 
@@ -275,6 +309,9 @@ $(document).ready(async function () {
                 minlength: 8,
                 pattern: PASSWORD_REGEX
 
+            },
+            hospital: {
+                required: true,
             },
             role: {
                 required: true,
@@ -367,6 +404,7 @@ $(document).ready(async function () {
         } else {
             let columns_data = [
                 { data: "Username", title: "Username" },
+                { data: "Hospital", title: "Hospital" },
                 {
                     data: "Group",
                     title: "Group",
@@ -463,6 +501,7 @@ $(document).ready(async function () {
             ];
             for (let user of data.Users) {
                 user["Group"] = await getUserGroupNameForUser(cognitoIdentityServiceProvider, user["Username"]);
+                user["Hospital"] = await getCustomAttributeForUser(cognitoIdentityServiceProvider, user["Username"], "custom:hospital_id");
             }
             const SearchIcon = $(
                 '<span id="searchIconSvg">' +

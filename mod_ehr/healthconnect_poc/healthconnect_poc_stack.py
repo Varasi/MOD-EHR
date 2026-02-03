@@ -190,6 +190,17 @@ class HealthconnectPocStack(Stack):
             ),
         )
         self.sftp_logs_table.grant_full_access(self.LambdaExecutionRole)
+        self.hospital_table = dynamo_db.TableV2(
+            self,
+            f"HealthConnector{self.config.ENVIRONMENT.title()}HospitalTable",
+            table_name=f"{self.config.ENVIRONMENT.lower()}_hospital_table",
+            contributor_insights=True,
+            point_in_time_recovery=True,
+            partition_key=dynamo_db.Attribute(
+                name="id", type=dynamo_db.AttributeType.STRING
+            ),
+        )
+        self.hospital_table.grant_full_access(self.LambdaExecutionRole)
 
     def create_vpc(self):
         self.vpc = ec2.Vpc(
@@ -672,6 +683,11 @@ class HealthconnectPocStack(Stack):
             user_pool_name=f"health_connector_{self.config.ENVIRONMENT.lower()}_user_pool",
             self_sign_up_enabled=False,
             sign_in_aliases=cognito.SignInAliases(username=True),
+            custom_attributes={
+                "hospital_id": cognito.StringAttribute(
+                    mutable=True
+                )
+            }
         )
 
     def create_groups(self):
