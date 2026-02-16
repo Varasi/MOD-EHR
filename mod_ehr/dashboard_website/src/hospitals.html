@@ -1,12 +1,15 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
+    <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Health Connector</title>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.datatables.net/buttons/2.2.3/js/dataTables.buttons.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validate/1.19.3/jquery.validate.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <link rel="stylesheet" href="./assets/css/styles.css" />
     <link rel="stylesheet" href="./assets/css/responsive.css" />
     <link rel="stylesheet" href="./assets/css/status.css" />
@@ -23,14 +26,25 @@
       integrity=""
       crossorigin="anonymous"
     />
+    <script
+      src="https://kit.fontawesome.com/bcf925e6b3.js"
+      crossorigin="anonymous" defer
+    ></script>
 
-    <script src="dashboard.js" defer></script>
+    <script src="hospitals.js" defer></script>
     <script src="settingspanel.js" defer></script>
+    <script type="text/javascript" defer>
+      function googleMapsAutoComplete() {
+        let input_field = document.getElementById("hospitalLocationForm");
+        let autocomplete = new google.maps.places.Autocomplete(input_field, {
+          types: ["geocode"],
+        });
+      }
+    </script>
   </head>
-
   <body>
     <div id="root" class="p-0 overflow-auto">
-     <nav class="top-navb-bar">
+        <nav class="top-navb-bar">
         <div class="d-flex flex-wrap flex-1 align-items-center">
           <div class="d-flex align-items-center gap-3">
             <img
@@ -93,7 +107,7 @@
             <div class="d-flex align-items-center col-12 col-lg-6">
               <ul class="top-nav-items m-0 flex-column flex-lg-row w-100">
                 <li>
-                  <a class="nav-item active" aria-current="page" href="dashboard.html"
+                  <a class="nav-item" aria-current="page" href="dashboard.html"
                     >Dashboard</a
                   >
                 </li>
@@ -106,7 +120,7 @@
                   >
                 </li>
                 <li id="hospitals-nav">
-                  <a class="nav-item" href="hospitals.html"
+                  <a class="nav-item active" href="hospitals.html"
                     >Hospitals</a
                   >
                 </li>
@@ -203,7 +217,191 @@
             class="d-flex flex-column flex-1 overflow-auto"
           >
             <div class="module-header">
-              <div class="module-header-text">Dashboard</div>
+              <div class="module-header-text">Hospitals</div>
+              <div class="d-flex gap-2">
+                <button
+                  id="button-primary"
+                  class="add-hospital button-primary position-relative"
+                  data-toggle="modal"
+                  data-target="#hospitalModal"
+                  tabindex="0"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="14"
+                    height="14"
+                    viewBox="0 0 14 14"
+                    fill="none"
+                  >
+                    <path
+                      d="M2 7H12M7 12V2"
+                      stroke="white"
+                      stroke-width="2.5"
+                      stroke-linecap="square"
+                      stroke-linejoin="round"
+                    />
+                  </svg>
+                  Add Hospital
+                </button>
+                <div
+                  class="modal show"
+                  id="hospitalModal"
+                  tabindex="-1"
+                  role="dialog"
+                  aria-labelledby="hospitalModalLabel"
+                  aria-hidden="true"
+                >
+                  <div
+                    class="modal-dialog-wrapper placement-center m-0 position-absolute"
+                    role="document"
+                  >
+                    <div
+                      class="modal-content border-0 shadow"
+                      id="modal-content"
+                    >
+                      <div class="modal-body p-0">
+                        <div
+                          class="module-header-text modal-header"
+                          id="button-primary"
+                        >
+                          <div>Add Hospital</div>
+                          <button class="modal-close-icon close">
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              width="14"
+                              height="14"
+                              viewBox="0 0 14 14"
+                              fill="none"
+                            >
+                              <path
+                                d="M1.16667 12.8332L12.8333 1.1665M12.8333 12.8332L1.16667 1.1665"
+                                stroke="white"
+                                stroke-width="1.66667"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                              />
+                            </svg>
+                          </button>
+                        </div>
+                        <div id="formContainer" class="flex-1 overflow-auto">
+                          <form
+                            id="hospitalForm"
+                            class="d-flex flex-column gap-4 col-12"
+                          >
+                            <div>
+                                <label for="hospitalNameForm" class="form-label"
+                                  >Hospital Name
+                                  <span class="text-danger">*</span></label
+                                >
+                                <input
+                                  type="text"
+                                  class="form-control skeleton-text"
+                                  id="hospitalNameForm"
+                                  name="hospitalNameForm"
+                                  required="required"
+                                />
+                            </div>
+                            <div>
+                                <label for="hospitalIdForm" class="form-label"
+                                  >Hospital ID
+                                  <span class="text-danger">*</span></label
+                                >
+                                <input
+                                  type="text"
+                                  class="form-control skeleton-text"
+                                  id="hospitalIdForm"
+                                  name="hospitalIdForm"
+                                  required="required"
+                                />
+                            </div>
+                            <div>
+                                <label for="hospitalSubdomainForm" class="form-label"
+                                  >Hospital Subdomain
+                                  <span class="text-danger">*</span></label
+                                >
+                                <input
+                                  type="text"
+                                  class="form-control skeleton-text"
+                                  id="hospitalSubdomainForm"
+                                  name="hospitalSubdomainForm"
+                                  required="required"
+                                />
+                            </div>
+                            <div>
+                              <label for="hospitalLocationForm" class="form-label"
+                                >Location
+                                <span class="text-danger">*</span></label
+                              >
+                              <input
+                                type="text"
+                                class="form-control skeleton-text"
+                                id="hospitalLocationForm"
+                                name="hospitalLocationForm"
+                                required="required"
+                              />
+                            </div>
+                            <div class="d-md-flex gap-2">
+                                <div class="col-6">
+                                    <label for="hospitalProviderForm" class="form-label"
+                                >Provider
+                                <span class="text-danger">*</span></label
+                              >
+                              <select
+                                class="form-select skeleton-text"
+                                id="hospitalProviderForm"
+                                name="hospitalProviderForm"
+                                aria-label="Select an option"
+                              >
+                                <option value="epic">Epic</option>
+                                <option value="veradigm">Veradigm</option>
+                              </select>
+                                </div>
+                                <div class="col-6">
+                                    <label for="hospitalStatusForm" class="form-label"
+                                >Status
+                                <span class="text-danger">*</span></label
+                              >
+                              <select
+                                class="form-select skeleton-text"
+                                id="hospitalStatusForm"
+                                name="hospitalStatusForm"
+                                aria-label="Select an option"
+                              >
+                                <option value="Active">Active</option>
+                                <option value="Inactive">Inactive</option>
+                              </select>
+                                </div>
+                            </div>
+                          </form>
+                        </div>
+                      </div>
+                      <div class="modal-footer" id="modal-footer">
+                        <button
+                          type="button"
+                          class="close button-secondary m-0"
+                          data-dismiss="modal"
+                        >
+                          Close
+                        </button>
+                        <button
+                          id="saveEditHospital"
+                          type="submit"
+                          class="save button-primary m-0 d-none"
+                        >
+                          Save <div class="loader-small d-none" />
+                        </button>
+                        <button
+                          id="saveNewHospital"
+                          type="submit"
+                          class="save button-primary m-0 d-none"
+                        >
+                          Save <div class="loader-small d-none" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
 
             <div id="table-filter"></div>

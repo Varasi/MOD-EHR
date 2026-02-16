@@ -14,20 +14,34 @@ class AppointmentAPIHandler(APIHandler):
     model = models.Appointment
 
     def get(self, event, hash_key=None, *args, **kwargs):
+        query_params = event.get("queryStringParameters", {})
+        if query_params and "hospital_id" in query_params:
+            hospital_id = query_params["hospital_id"]
+
         if hash_key:
             # Single record retrieval
             return super().get(event, hash_key, *args, **kwargs)
 
         valid_patients = {
-            patient.patient_id for patient in Patient.scan(
-                filter_condition = models.Patient.via_rider_id.exists() & (models.Patient.via_rider_id != "")
-            )
-        }
+                patient.patient_id for patient in Patient.scan(
+                    filter_condition = models.Patient.via_rider_id.exists() & (models.Patient.via_rider_id != "")
+                )
+            }
         filtered_appointments = []
-        for pid in valid_patients:
-            filtered_appointments.extend(list(self.model.patient_id_index.query(pid)))
+        
+        if hospital_id == "admin":
+            print(f"Filtering appointments for admin access. Valid patients: {valid_patients}")
+            for pid in valid_patients:
+                filtered_appointments.extend(list(self.model.patient_id_index.query(pid)))
 
-        filtered_appointments.sort(key=lambda apt: apt.start_time, reverse=True)
+            filtered_appointments.sort(key=lambda apt: apt.start_time, reverse=True)
+        else:
+            print(f"Filtering appointments for hospital_id: {hospital_id}")
+            filtered_hosp_appointments = list(self.model.appointments_by_hospitals.query(hospital_id))
+            for apt in filtered_hosp_appointments:
+                if apt.patient_id in valid_patients:
+                    filtered_appointments.append(apt)
+            filtered_appointments.sort(key=lambda apt: apt.start_time, reverse=True)
 
         return Response(body=filtered_appointments, status=200)
         

@@ -13,6 +13,8 @@ import {
   toggleLoder,
   toggleSideNavBar,
   toggleSkeletonLoader,
+  getAccesstokenAndCustomAttribute,
+  loadTenantBranding,
 } from "./common";
 let cachedPatients = null;
 async function getCachedPatients(){
@@ -72,7 +74,7 @@ async function EditAppointment() {
         $("#location").val(appointmentData.location);
         $("#status").val(appointmentData.status); // Normalize status
         
-        $(".save").data("id", id);
+        $("#saveAppointment").data("id", id);
 
     }catch (error) {
         console.error("Error loading appointment:", error);
@@ -138,6 +140,7 @@ async function saveAppointment() {
     let url = `${BASE_URL}/api/appointments/`;
     let type = "POST";
     const is_valid = $("#appointmentForm").valid();
+    const [accessToken, hospital_id] = await getAccesstokenAndCustomAttribute("custom:hospital_id");
     if (is_valid) {
         // $("#appointmentModal").css({
         //     display: "none",
@@ -147,6 +150,7 @@ async function saveAppointment() {
                 DateTime.fromISO($("#endTime").val() + ":00.000-05:00")
                     .toUTC()
                     .toISO({ includeOffset: false }) + "000+0000",
+            hospital_id: hospital_id,
             location: $("#location").val(),
             patient_id: $("#patientName").val().split("-")[1],
             patient_name: $("#patientName").val().split("-")[0],
@@ -162,6 +166,7 @@ async function saveAppointment() {
             url += id;
             type = "PUT";
             formData["id"] = id;
+            formData["hospital_id"] = hospital_id;
             console.log(id);
         }
         const accessToken = await getAccessToken();
@@ -181,7 +186,7 @@ async function saveAppointment() {
                     );
                 } else {
                     $("#root").append(
-                        `<div id="customAlert" class="custom-alert-success"><div class="flex-1">Appointment Updated successfully </div></div>`
+                        `<div id="customAlert" class="custom-alert-success"><div class="flex-1">Appointment updated successfully </div></div>`
                     );
                 }
                 reload_required = true;
@@ -259,8 +264,39 @@ async function addAppointment() {
     };
     xhr.send();
 }
+async function renderHospitalColumn(accessToken) {
+    return new Promise((resolve) => {
+        let hospitals_map = {};
+        const xhr = new XMLHttpRequest();
+        xhr.open("GET", `${BASE_URL}/api/hospitals/`);
+        xhr.setRequestHeader("Authorization", accessToken);
+        xhr.onreadystatechange = function () {
+            if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
+                const hospitals = JSON.parse(xhr.responseText);
+                for (let hospital of hospitals) {
+                    hospitals_map[hospital.id] = hospital.name;
+                }
+                resolve(hospitals_map);
+            } else if (xhr.status !== 200) {
+                $("#Loader").remove();
+                if ($("#StateChange .emptyState").length === 0) {
+                    $("#StateChange").append(
+                        `<div class="emptyState">
+            <img src="./assets/ERROR.svg" alt="" />
+            <h3 class="no-data">ERROR </h3>
+            <p>An error occurred while retrieving data</p>
+        </div>`
+                    );
+                }
+            }
+        }
+        xhr.send();
+    })
+}
 $(document).ready(async function () {
     $('head').append(`<script src = "https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_KEY}&libraries=places&callback=googleMapsAutoComplete" async defer></script>`);
+    const [accessToken, hospital_id] = await getAccesstokenAndCustomAttribute("custom:hospital_id");
+    loadTenantBranding(hospital_id);
     preRender();
     toggleSideNavBar();
     $("#logout").click(logoutUser);
@@ -274,6 +310,14 @@ $(document).ready(async function () {
     if (userRole === "UserManagementAdmin") {
         $("#user-management-nav").removeClass("invisible")
         $("#user-management-nav").addClass("visible")
+    }
+    if(hospital_id === "admin"){
+        $("#hospitals-nav").removeClass("invisible")
+        $("#hospitals-nav").addClass("visible")
+
+    }else{
+        $("#hospitals-nav").removeClass("visible")
+        $("#hospitals-nav").addClass("invisible")
     }
     $("#appointmentForm").validate({
         rules: {
@@ -316,14 +360,17 @@ $(document).ready(async function () {
 
         },
     });
-    const accessToken = await getAccessToken();
-
+    let hospital_map = {};
+    if (hospital_id === "admin"){
+        hospital_map = await renderHospitalColumn(accessToken);
+        console.log("Hospital Map: ", hospital_map);
+    }
     $(".add-appointment").click(addAppointment);
 
 
 
     const xhr = new XMLHttpRequest();
-    xhr.open("GET", `${BASE_URL}/api/appointments/`);
+    xhr.open("GET", `${BASE_URL}/api/appointments/?hospital_id=${hospital_id}`);
     xhr.setRequestHeader("Authorization", accessToken);
     xhr.onreadystatechange = async function () {
         if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
@@ -344,7 +391,8 @@ $(document).ready(async function () {
                             start_time: row.start_time,
                             end_time: row.end_time,
                             location: row.location,
-                            status: row.status
+                            status: row.status,
+                            hospital_id: row.hospital_id
                         }));
                         return (
                             `<div class="d-flex"><button title="edit" class="editBtn btn flex-1" data-id="` +
@@ -361,6 +409,9 @@ $(document).ready(async function () {
                     },
                 },
             ];
+            if (hospital_id === "admin") {
+                columns_data.splice(6,0,{data: "hospital_id", title: "Hospital", render: function(data, type, row) { return hospital_map[data] || data; } });
+            }
             let appointmentRecords = JSON.parse(xhr.responseText);
             console.log(appointmentRecords);
             for (let appointmentRecord of appointmentRecords) {
@@ -417,7 +468,7 @@ $(document).ready(async function () {
                 });
                 $("#appointmentForm").trigger("reset");
             });
-            $(".save").click(saveAppointment);
+            $("#saveAppointment").click(saveAppointment);
         } else if (xhr.status !== 200) {
             $("#Loader").remove();
             if ($("#StateChange .emptyState").length === 0) {

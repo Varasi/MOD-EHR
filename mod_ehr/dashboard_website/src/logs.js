@@ -9,18 +9,66 @@ import {
     toggleLoder,
     toggleSideNavBar,
     toggleSkeletonLoader,
+    getAccesstokenAndCustomAttribute,
+    loadTenantBranding,
 } from "./common";
+
+function renderHospitalColumn(accessToken) {
+    return new Promise((resolve) => {
+        let hospitals_map = {};
+        const xhr = new XMLHttpRequest();
+        xhr.open("GET", `${BASE_URL}/api/hospitals/`);
+        xhr.setRequestHeader("Authorization", accessToken);
+        xhr.onreadystatechange = function () {
+            if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
+                const hospitals = JSON.parse(xhr.responseText);
+                for (let hospital of hospitals) {
+                    hospitals_map[hospital.id] = hospital.name;
+                }
+                resolve(hospitals_map);
+            } else if (xhr.status !== 200) {
+                $("#Loader").remove();
+                if ($("#StateChange .emptyState").length === 0) {
+                    $("#StateChange").append(
+                        `<div class="emptyState">
+            <img src="./assets/ERROR.svg" alt="" />
+            <h3 class="no-data">ERROR </h3>
+            <p>An error occurred while retrieving data</p>
+        </div>`
+                    );
+                }
+            }
+        }
+        xhr.send();
+    })
+}
 $(document).ready(async function () {
-    const accessToken = await getAccessToken();
+    const [accessToken, hospital_id] = await getAccesstokenAndCustomAttribute("custom:hospital_id");
+    loadTenantBranding(hospital_id);
     const userRole = await getUserGroup();
+    let hospital_map = {};
+    if (hospital_id === "admin"){
+        hospital_map = await renderHospitalColumn(accessToken);
+        console.log("Hospital Map: ", hospital_map);
+    }
+    if(hospital_id === "admin"){
+        $("#hospitals-nav").removeClass("invisible")
+        $("#hospitals-nav").addClass("visible")
+
+    }else{
+        $("#hospitals-nav").removeClass("visible")
+        $("#hospitals-nav").addClass("invisible")
+    }
+    
     const xhr = new XMLHttpRequest();
-    xhr.open("GET", `${BASE_URL}/api/logs/`,
+    xhr.open("GET", `${BASE_URL}/api/logs/?hospital_id=${hospital_id}`,
     );
     xhr.setRequestHeader("Authorization", accessToken);
     xhr.onreadystatechange = async function () {
         if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
             const log_records = JSON.parse(xhr.responseText);
             for (let log of log_records) {
+                console.log("log retrived")
                 log["server_last_modified"] = new Date(
                     log["server_last_modified"]*1000
                 ).toLocaleString("en-US", { timeZone: "America/Chicago" });
@@ -29,6 +77,9 @@ $(document).ready(async function () {
                 { data: "name", title: "NAME" },
                 { data: "server_last_modified", title: "Received Time" },
             ]
+            if (hospital_id === "admin") {
+                columns_data.push({ data: "hospital_id", title: "Hospital", render: function(data, type, row) { return hospital_map[data] || data; } });
+            }
             const SearchIcon = $(
                 '<span id="searchIconSvg">' +
                 '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20" fill="none">' +

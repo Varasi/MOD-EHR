@@ -6,6 +6,7 @@ import {
   toggleSkeletonLoader,
   toggleLoder,
   toggleAlertMessage,
+  getAccesstokenAndCustomAttribute,
 } from "./common";
 
 var settingsDataStatus = false;
@@ -52,21 +53,35 @@ const handleInputChange = async () => {
 const handleSettingsClick = async () => {
   toggler("settingsToggler", "settingsModal");
   toggleSkeletonLoader("settingsForm", "add");
-  const accessToken = await getAccessToken();
+  const [accessToken, hospitalId]= await getAccesstokenAndCustomAttribute("custom:hospital_id");
   if (settingsDataStatus === false) {
     
-    xhr.open("GET", `${BASE_URL}/api/settings/`);
+    xhr.open("GET", `${BASE_URL}/api/settings/?hospital_id=${hospitalId}`);
     xhr.setRequestHeader("Authorization", accessToken);
     xhr.onreadystatechange = async function () {
       if (xhr.readyState === XMLHttpRequest.DONE) {
+        console.log(xhr.responseText);
         if (xhr.status === 200) {
           let settings_records = JSON.parse(xhr.responseText);
           settingsDataStatus = true;
           toggleSkeletonLoader("settingsForm", "remove");
-          for (let settings of settings_records) {
-            $(`#${settings.name}`).val(settings.value);
-            $(`#${settings.name}_text`).text(settings.value);
+          if (settings_records.length === 0) {
+            console.log("No settings data found for the hospital.");
+              toggleAlertMessage("No settings data found. Please update the settings.");
+              $("#subsequent_period").val(15);
+              $("#subsequent_period_text").text(15);
+              $("#prior_period").val(15);
+              $("#prior_period_text").text(15);
+          }else{
+            console.log("Settings data fetched successfully:", typeof(settings_records));
+              for (let settings of settings_records) {
+                $(`#${settings.name}`).val(settings.value);
+                $(`#${settings.name}_text`).text(settings.value);
+              }
           }
+        } else {
+          toggleSkeletonLoader("settingsForm", "remove");
+          toggleAlertMessage("Error fetching settings data. Please try again.");
         }
       }
     };
@@ -83,7 +98,7 @@ const handleFormSubmit = async () => {
     prior_period: document.getElementById("prior_period").value,
     subsequent_period: document.getElementById("subsequent_period").value,
   };
-  const accessToken = await getAccessToken();
+  const [accessToken, hospitalId] = await getAccesstokenAndCustomAttribute("custom:hospital_id");
   const keys = Object.keys(formData);
   const link = `${BASE_URL}/api/settings`;
 
@@ -92,7 +107,7 @@ const handleFormSubmit = async () => {
     xhr.open("POST", `${link}/${key}`);
     xhr.setRequestHeader("Authorization", accessToken);
     xhr.setRequestHeader("Content-Type", "application/json");
-    xhr.send(JSON.stringify({ name: key, value: formData[key] }));
+    xhr.send(JSON.stringify({ name: key, value: formData[key], hospital_id: hospitalId }));
   }
 
   settingsDataStatus = false;

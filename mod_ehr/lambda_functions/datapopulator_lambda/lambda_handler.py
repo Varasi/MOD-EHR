@@ -11,6 +11,7 @@ from health_connector_base.constants import (
     MOCK_DATA,
     VIA_RIDE_MOCK,
 )
+import random
 from health_connector_base.location_manager import LocationManager
 from health_connector_base.models import Appointment, FTPLogs, Patient, Settings
 from health_connector_base.smart_epic import JWTHelper, SmartEpicClient
@@ -217,6 +218,7 @@ class AppointmentsMapperWithVia:
         apps = AppointmentsList(appointments=reader)
         new_patients = {}
         patient_trips = {}
+        hospital_id = random.choice(["hospital1001", "hospital1002", "hospital1003", "hospital1004", "hospital1005"]) # Random hospital_id for testing, replace with actual value if available
         with Appointment.batch_write() as batch:
             for app in apps.appointments:
                 trips = patient_trips.get(app.patient_number, {})
@@ -247,13 +249,14 @@ class AppointmentsMapperWithVia:
                         int(appointment_datetime.timestamp()),
                     )
                     or VIA_RIDE_MOCK,
+                    hospital_id=hospital_id,
                 )
                 new_patients[appointment.patient_id] = appointment.patient_name
                 batch.save(appointment)
         with FTPLogs.batch_write() as batch:
             batch.save(
                 FTPLogs(
-                    name=file_key, server_last_modified=int(last_modified.timestamp())
+                    name=file_key, server_last_modified=int(last_modified.timestamp()), hospital_id=hospital_id
                 )
             )
         with Patient.batch_write() as batch:

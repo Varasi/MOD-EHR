@@ -24,6 +24,17 @@ Amplify.configure({
 export const COGNITO_PARAMS = {
     UserPoolId: POOL_ID,
 };
+export async function loadTenantBranding(tenantId) {
+    const response = await fetch(
+        `/assets/tenants/${tenantId}/configs/config.json`
+    );
+    
+    const config = await response.json();
+
+    $("#hospital-name").text(config.hospitalName);
+    $(".top-nav-header-text").text(config.appName);
+    $("#tenant-brand-logo").attr("src", `/assets/tenants/${tenantId}/branding/logo.png`);
+}
 export async function getUserSession(redirect = true) {
     const session = await fetchAuthSession({ forceRefresh: false });
     if (!session.tokens && redirect) {
@@ -34,6 +45,10 @@ export async function getUserSession(redirect = true) {
 export async function getAccesstokenAndCustomAttribute(attributeName) {
     const session = await getUserSession();
     return [session.tokens.accessToken.toString(), session.tokens.idToken.payload[attributeName]];
+}
+export async function getUserIdAndCustomAttribute(attributeName) {
+    const session = await getUserSession();
+    return [session.tokens.idToken.payload["sub"], session.tokens.idToken.payload[attributeName]];
 }
 export async function getAccessToken() {
     const session = await getUserSession();

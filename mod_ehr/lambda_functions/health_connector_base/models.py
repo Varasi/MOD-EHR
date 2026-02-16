@@ -49,6 +49,14 @@ class PatientIdIndex(GlobalSecondaryIndex):
 
     patient_id = UnicodeAttribute(hash_key=True)
 
+class AppointmentsByHospitalsIndex(GlobalSecondaryIndex):
+    class Meta:
+        index_name = "hospital_id-end_time-index"
+        projection = AllProjection()
+
+    hospital_id = UnicodeAttribute(hash_key=True)
+    end_time = UTCDateTimeAttribute(range_key=True)
+
 class Appointment(BaseModel):
     id = UnicodeAttribute(hash_key=True, default_for_new=lambda: str(uuid.uuid4()))
     hospital_id = UnicodeAttribute()
@@ -61,6 +69,7 @@ class Appointment(BaseModel):
     provider = ChoiceUnicodeAttribute(choices=["epic", "veradigm"], default="epic")
     ride = JSONAttribute(default=lambda: VIA_RIDE_MOCK)
     patient_id_index = PatientIdIndex()
+    appointments_by_hospitals = AppointmentsByHospitalsIndex()
 
     class Meta:
         table_name = "appointment_table"
@@ -75,20 +84,36 @@ class Patient(BaseModel):
     class Meta:
         table_name = "patients_table"
 
+class SettingsByHospitalIndex(GlobalSecondaryIndex):
+    class Meta:
+        index_name = "hospital_id-index"
+        projection = AllProjection()
+
+    hospital_id = UnicodeAttribute(hash_key=True)
+    name = UnicodeAttribute(range_key=True)
 
 class Settings(BaseModel):
     name = UnicodeAttribute(hash_key=True)
     value = UnicodeAttribute()
-    hospital_id = UnicodeAttribute()
+    hospital_id = UnicodeAttribute(range_key=True)
+    settings_by_hospital = SettingsByHospitalIndex()
 
     class Meta:
         table_name = "settings_table"
 
+class FTPLogsByHospitalIndex(GlobalSecondaryIndex):
+    class Meta:
+        index_name = "hospital_id-index"
+        projection = AllProjection()
+
+    hospital_id = UnicodeAttribute(hash_key=True)
+    name = UnicodeAttribute(range_key=True)
 
 class FTPLogs(BaseModel):
     name = UnicodeAttribute(hash_key=True)
     server_last_modified = NumberAttribute()
-    hospital_id = UnicodeAttribute()
+    hospital_id = UnicodeAttribute(range_key=True)
+    logs_by_hospital = FTPLogsByHospitalIndex()
 
     class Meta:
         table_name = "ftp_logs_table"
@@ -98,7 +123,7 @@ class Hospital(BaseModel):
     name = UnicodeAttribute()
     subdomain = UnicodeAttribute()
     status = UnicodeAttribute()
-    timezone = UnicodeAttribute()
+    timezone = UnicodeAttribute(default="CT")
     location = AddressAttribute()
     provider = ChoiceUnicodeAttribute(choices=["epic", "veradigm"], default="epic")
 

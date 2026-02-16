@@ -39,6 +39,7 @@ class HealthconnectPocStack(Stack):
         self.create_epic_lambda()
         self.create_patients_lambda()
         self.create_logs_lambda()
+        self.create_hospitals_lambda()
         # Secret Manager
         self.create_secrets()
         # Cognito
@@ -84,8 +85,8 @@ class HealthconnectPocStack(Stack):
         self.sftp_bucket = s3.Bucket(
             self,
             f"HealthConnector{self.config.ENVIRONMENT.title()}SFTPBucket",
-            # bucket_name=f"{self.config.ENVIRONMENT.lower()}-sftp-server-bucket-dev", #dev account
-            bucket_name=f"{self.config.ENVIRONMENT.lower()}-sftp-server-bucket", #uat/prod account
+            bucket_name=f"{self.config.ENVIRONMENT.lower()}-sftp-server-bucket-dev", #dev account
+            # bucket_name=f"{self.config.ENVIRONMENT.lower()}-sftp-server-bucket", #uat/prod account
             removal_policy=RemovalPolicy.DESTROY,
             block_public_access=s3.BlockPublicAccess.BLOCK_ALL,
         )
@@ -127,17 +128,17 @@ class HealthconnectPocStack(Stack):
     #     return f"{self.sftp_server.attr_server_id}.server.transfer.{self.config.REGION}.amazonaws.com"
 
     def create_dynamodb_table(self):
-        self.dashboard_table = dynamo_db.TableV2(
-            self,
-            f"HealthConnector{self.config.ENVIRONMENT.title()}DashboardTable",
-            table_name=f"{self.config.ENVIRONMENT.lower()}_dashboard_table",
-            contributor_insights=True,
-            point_in_time_recovery=True,
-            partition_key=dynamo_db.Attribute(
-                name="id", type=dynamo_db.AttributeType.STRING
-            ),
-        )
-        self.dashboard_table.grant_full_access(self.LambdaExecutionRole)
+        # self.dashboard_table = dynamo_db.TableV2(
+        #     self,
+        #     f"HealthConnector{self.config.ENVIRONMENT.title()}DashboardTable",
+        #     table_name=f"{self.config.ENVIRONMENT.lower()}_dashboard_table",
+        #     contributor_insights=True,
+        #     point_in_time_recovery=True,
+        #     partition_key=dynamo_db.Attribute(
+        #         name="id", type=dynamo_db.AttributeType.STRING
+        #     ),
+        # )
+        # self.dashboard_table.grant_full_access(self.LambdaExecutionRole)
         self.appointment_table = dynamo_db.TableV2(
             self,
             f"HealthConnector{self.config.ENVIRONMENT.title()}AppointmentTable",
@@ -152,6 +153,18 @@ class HealthconnectPocStack(Stack):
             index_name="patient_id-index",
             partition_key=dynamo_db.Attribute(
                 name="patient_id",
+                type=dynamo_db.AttributeType.STRING
+            ),
+            projection_type=dynamo_db.ProjectionType.ALL
+        )
+        self.appointment_table.add_global_secondary_index(
+            index_name="hospital_id-end_time-index",
+            partition_key=dynamo_db.Attribute(
+                name="hospital_id",
+                type=dynamo_db.AttributeType.STRING
+            ),
+            sort_key=dynamo_db.Attribute(
+                name="end_time",
                 type=dynamo_db.AttributeType.STRING
             ),
             projection_type=dynamo_db.ProjectionType.ALL
@@ -177,6 +190,21 @@ class HealthconnectPocStack(Stack):
             partition_key=dynamo_db.Attribute(
                 name="name", type=dynamo_db.AttributeType.STRING
             ),
+            sort_key=dynamo_db.Attribute(
+                name="hospital_id", type=dynamo_db.AttributeType.STRING
+            )
+        )
+        self.settings_table.add_global_secondary_index(
+            index_name="hospital_id-index",
+            partition_key=dynamo_db.Attribute(
+                name="hospital_id",
+                type=dynamo_db.AttributeType.STRING
+            ),
+            sort_key=dynamo_db.Attribute(
+                name="name",
+                type=dynamo_db.AttributeType.STRING
+            ),
+            projection_type=dynamo_db.ProjectionType.ALL
         )
         self.settings_table.grant_full_access(self.LambdaExecutionRole)
         self.sftp_logs_table = dynamo_db.TableV2(
@@ -188,19 +216,34 @@ class HealthconnectPocStack(Stack):
             partition_key=dynamo_db.Attribute(
                 name="name", type=dynamo_db.AttributeType.STRING
             ),
+            sort_key=dynamo_db.Attribute(
+                name="hospital_id", type=dynamo_db.AttributeType.STRING
+            )
+        )
+        self.sftp_logs_table.add_global_secondary_index(
+            index_name="hospital_id-index",
+            partition_key=dynamo_db.Attribute(
+                name="hospital_id",
+                type=dynamo_db.AttributeType.STRING
+            ),
+            sort_key=dynamo_db.Attribute(
+                name="name",
+                type=dynamo_db.AttributeType.STRING
+            ),
+            projection_type=dynamo_db.ProjectionType.ALL
         )
         self.sftp_logs_table.grant_full_access(self.LambdaExecutionRole)
-        self.hospital_table = dynamo_db.TableV2(
+        self.hospitals_table = dynamo_db.TableV2(
             self,
             f"HealthConnector{self.config.ENVIRONMENT.title()}HospitalTable",
-            table_name=f"{self.config.ENVIRONMENT.lower()}_hospital_table",
+            table_name=f"{self.config.ENVIRONMENT.lower()}_hospitals_table",
             contributor_insights=True,
             point_in_time_recovery=True,
             partition_key=dynamo_db.Attribute(
                 name="id", type=dynamo_db.AttributeType.STRING
             ),
         )
-        self.hospital_table.grant_full_access(self.LambdaExecutionRole)
+        self.hospitals_table.grant_full_access(self.LambdaExecutionRole)
 
     def create_vpc(self):
         self.vpc = ec2.Vpc(
@@ -507,7 +550,7 @@ class HealthconnectPocStack(Stack):
             f"HealthConnector{self.config.ENVIRONMENT.title()}SettingsLambdaAlias",
             alias_name=f"HealthConnector{self.config.ENVIRONMENT.title()}SettingsLambdaAlias",
             version=self.settings_lambda_version,
-            provisioned_concurrent_executions=1,
+            # provisioned_concurrent_executions=1,
         )
 
 
@@ -525,6 +568,25 @@ class HealthconnectPocStack(Stack):
             timeout=Duration.minutes(10),
             ephemeral_storage_size=Size.gibibytes(1),
             memory_size=1024,
+            environment={
+                "KMS_AVAILABLE": "True",
+                "ENVIRONMENT": self.config.ENVIRONMENT.upper(),
+            },
+        )
+    
+    def create_hospitals_lambda(self):
+        self.hospitals_lambda = aws_lambda.Function(
+            self,
+            f"HealthConnector{self.config.ENVIRONMENT.title()}HospitalsLambda",
+            function_name=f"HealthConnector{self.config.ENVIRONMENT.title()}HospitalsLambda",
+            runtime=aws_lambda.Runtime.PYTHON_3_11,
+            code=aws_lambda.Code.from_asset("lambda_functions/hospitals_lambda"),
+            handler="lambda_handler.hospitals_handler",
+            role=self.LambdaExecutionRole,
+            layers=[self.requirements_layer, self.base_layer],
+            vpc=self.vpc,
+            timeout=Duration.minutes(10),
+            memory_size=512,
             environment={
                 "KMS_AVAILABLE": "True",
                 "ENVIRONMENT": self.config.ENVIRONMENT.upper(),
@@ -582,6 +644,32 @@ class HealthconnectPocStack(Stack):
         self.appointment_resource.add_method(
             "GET",
             apigw.LambdaIntegration(self.appointments_lambda, proxy=True),
+            authorizer=self.apigw_authorizer,
+            authorization_scopes=["aws.cognito.signin.user.admin"],
+        )
+        self.hospital_resource = self.api.root.add_resource("hospitals")
+        self.hospital_resource.add_method(
+            "GET",
+            apigw.LambdaIntegration(self.hospitals_lambda, proxy=True),
+            authorizer=self.apigw_authorizer,
+            authorization_scopes=["aws.cognito.signin.user.admin"],
+        )
+        self.hospital_resource.add_method(
+            "POST",
+            apigw.LambdaIntegration(self.hospitals_lambda, proxy=True),
+            authorizer=self.apigw_authorizer,
+            authorization_scopes=["aws.cognito.signin.user.admin"],
+        )
+        self.hospital_resource_detail = self.hospital_resource.add_resource("{id}")
+        self.hospital_resource_detail.add_method(
+            "PUT",
+            apigw.LambdaIntegration(self.hospitals_lambda, proxy=True),
+            authorizer=self.apigw_authorizer,
+            authorization_scopes=["aws.cognito.signin.user.admin"],
+        )
+        self.hospital_resource_detail.add_method(
+            "DELETE",
+            apigw.LambdaIntegration(self.hospitals_lambda, proxy=True),
             authorizer=self.apigw_authorizer,
             authorization_scopes=["aws.cognito.signin.user.admin"],
         )
@@ -682,7 +770,10 @@ class HealthconnectPocStack(Stack):
             f"HealthConnector{self.config.ENVIRONMENT.title()}UserPool",
             user_pool_name=f"health_connector_{self.config.ENVIRONMENT.lower()}_user_pool",
             self_sign_up_enabled=False,
-            sign_in_aliases=cognito.SignInAliases(username=True),
+            sign_in_aliases=cognito.SignInAliases(
+                email=True,
+                username=False
+            ),
             custom_attributes={
                 "hospital_id": cognito.StringAttribute(
                     mutable=True
@@ -786,6 +877,7 @@ class HealthconnectPocStack(Stack):
                     "cognito-idp:AdminListGroupsForUser",
                     "cognito-idp:AdminAddUserToGroup",
                     "cognito-idp:AdminRemoveUserFromGroup",
+                    "cognito-idp:AdminUserGlobalSignOut",
                 ],
                 resources=[self.user_pool.user_pool_arn],
             )

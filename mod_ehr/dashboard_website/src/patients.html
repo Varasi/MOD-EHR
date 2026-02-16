@@ -30,10 +30,18 @@
         <nav class="top-navb-bar">
             <div class="d-flex flex-wrap flex-1 align-items-center">
                 <div class="d-flex align-items-center gap-3">
-                    <div class="d-flex">
-                        <img src="./assets/Health-Connector-Logo.png" class="brand-logo" alt="brand-logo" />
-                    </div>
-                    <div class="top-nav-header-text">Health Connector</div>
+                    <img
+                id ="tenant-brand-logo"
+                src="/assets/tenants/admin/branding/logo.png"
+                class="brand-logo"
+                alt="brand-logo"
+              />
+            <div class="d-flex flex-column">
+              <div id="hospital-name" class="hospital-name-text">
+                Health Connector
+              </div>
+              <div class="top-nav-header-text"></div>
+            </div>
                 </div>
                 <div class="d-flex d-lg-none flex-1 justify-content-end">
                     <button class="button-tertiary navbar_toggler">
@@ -64,6 +72,11 @@
                             </li>
                             <li id="appointments-nav">
                                 <a class="nav-item" href="appointments.html">Appointments</a>
+                            </li>
+                            <li id="hospitals-nav">
+                            <a class="nav-item" href="hospitals.html"
+                                >Hospitals</a
+                            >
                             </li>
                             <li id="user-management-nav">
                                 <a class="nav-item" href="userManagement.html">User Management</a>

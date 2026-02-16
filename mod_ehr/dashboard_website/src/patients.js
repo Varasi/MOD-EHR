@@ -9,6 +9,8 @@ import {
     toggleLoder,
     toggleSideNavBar,
     toggleSkeletonLoader,
+    getAccesstokenAndCustomAttribute,
+    loadTenantBranding,
 } from "./common";
 async function editPatient() {
     const accessToken = await getAccessToken();
@@ -32,8 +34,9 @@ async function editPatient() {
     };
     xhr1.send();
 }
-
 $(document).ready(async function () {
+    const [accessToken, hospital_id] = await getAccesstokenAndCustomAttribute("custom:hospital_id");
+    loadTenantBranding(hospital_id);
     preRender();
     toggleSideNavBar();
     $("#logout").click(logoutUser);
@@ -44,6 +47,14 @@ $(document).ready(async function () {
     if (userRole === "UserManagementAdmin") {
         $("#user-management-nav").removeClass("invisible")
         $("#user-management-nav").addClass("visible")
+    }
+    if(hospital_id === "admin"){
+        $("#hospitals-nav").removeClass("invisible")
+        $("#hospitals-nav").addClass("visible")
+
+    }else{
+        $("#hospitals-nav").removeClass("visible")
+        $("#hospitals-nav").addClass("invisible")
     }
     $("#appointmentForm").validate({
         rules: {
@@ -84,7 +95,6 @@ $(document).ready(async function () {
             display: "none",
         });
     });
-    const accessToken = await getAccessToken()
     const xhr = new XMLHttpRequest();
     xhr.open("GET", `${BASE_URL}/api/patients/`);
     xhr.setRequestHeader("Authorization", accessToken);
