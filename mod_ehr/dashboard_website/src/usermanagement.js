@@ -21,6 +21,7 @@ import {
   toggleSideNavBar,
   toggleAlertMessage,
   loadTenantBranding,
+  CUSTOM_DOMAIN,
 } from "./common";
 import AWS from 'aws-sdk';
 const iss = getIss()
@@ -307,8 +308,15 @@ async function editUserButtonAction(hospitalList) {
 
 }
 $(document).ready(async function () {
+    const hostname = window.location.hostname;
+    const dns_tenant = hostname.split('.')[0];
+    loadTenantBranding(dns_tenant);
     const [accessToken, hospital_id] = await getAccesstokenAndCustomAttribute("custom:hospital_id");
-    loadTenantBranding(hospital_id);
+    if (hospital_id !== dns_tenant){
+        alert("You are not authorized for this hospital.");
+        await logoutUser();
+        window.location.replace(`https://${hospital_id}${CUSTOM_DOMAIN}/userManagement.html`);
+    }
     preRender();
     toggleSideNavBar();
     $("#logout").click(logoutUser);

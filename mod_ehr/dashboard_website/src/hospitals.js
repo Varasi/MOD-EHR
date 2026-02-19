@@ -12,6 +12,7 @@ import {
     toggleSkeletonLoader,
     toggleLoder,
     GOOGLE_MAPS_KEY,
+    CUSTOM_DOMAIN,
 } from "./common";
 async function EditHospital(){
     $("#saveEditHospital").removeClass("d-none");
@@ -164,8 +165,15 @@ async function saveNewHospital(){
 }
 $(document).ready(async function () {
     $('head').append(`<script src = "https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_KEY}&libraries=places&callback=googleMapsAutoComplete" async defer></script>`);
+    const hostname = window.location.hostname;
+    const dns_tenant = hostname.split('.')[0];
+    loadTenantBranding(dns_tenant);
     const [accessToken, hospital_id] = await getAccesstokenAndCustomAttribute("custom:hospital_id");
-    loadTenantBranding(hospital_id);
+    if (hospital_id !== dns_tenant){
+        alert("You are not authorized for this hospital.");
+        await logoutUser();
+        window.location.replace(`https://${hospital_id}${CUSTOM_DOMAIN}/hospitals.html`);
+    }
     preRender();
     toggleSideNavBar();
     $("#hospitalLocationForm").keydown(function (event) {
