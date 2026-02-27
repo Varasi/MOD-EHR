@@ -14,7 +14,12 @@ import {
     CUSTOM_DOMAIN,
 } from "./common";
 async function editPatient() {
-    const accessToken = await getAccessToken();
+    const [accessToken, hospital_id] = await getAccesstokenAndCustomAttribute("custom:hospital_id");
+    if (hospital_id === 'admin') {
+        $('#hospital_select_block').removeClass('d-none');
+    } else {
+        $('#hospital_select_block').addClass('d-none');
+    }
     $("#appointmentModal").css({
         display: "block",
     });
@@ -31,19 +36,47 @@ async function editPatient() {
             $("#patient_id").val(patient.patient_id);
             $("#via_rider_id").val(patient.via_rider_id);
             $("#provider").val(patient.provider);
+            if (hospital_id === 'admin') {
+                $("#hospital_id_form").val(patient.hospital_id);
+                $('#hospital_select_block').removeClass('d-none');
+            } else {
+                $("#hospital_id_form").val(patient.hospital_id);
+                $('#hospital_select_block').addClass('d-none');
+            }
+            
         }
     };
     xhr1.send();
 }
+
+function renderHospitalColumn(accessToken) {
+    return new Promise((resolve) => {
+        let hospitals_map = {};
+        const xhr = new XMLHttpRequest();
+        xhr.open("GET", `${BASE_URL}/api/hospitals/`);
+        xhr.setRequestHeader("Authorization", accessToken);
+        xhr.onreadystatechange = function () {
+            if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
+                const hospitals = JSON.parse(xhr.responseText);
+                for (let hospital of hospitals) {
+                    hospitals_map[hospital.id] = hospital.name;
+                }
+                resolve(hospitals_map);
+            }
+        }
+        xhr.send();
+    })
+}
+
 $(document).ready(async function () {
     const hostname = window.location.hostname;
     const dns_tenant = hostname.split('.')[0];
-    loadTenantBranding(dns_tenant);
     const [accessToken, hospital_id] = await getAccesstokenAndCustomAttribute("custom:hospital_id");
-    if (hospital_id !== dns_tenant){
+    const config = await loadTenantBranding(hospital_id);
+    if (config.subdomain !== dns_tenant){
         alert("You are not authorized for this hospital.");
         await logoutUser();
-        window.location.replace(`https://${hospital_id}${CUSTOM_DOMAIN}/patients.html`);
+        window.location.replace(`https://${config.subdomain}${CUSTOM_DOMAIN}/patients.html`);
     }
     preRender();
     toggleSideNavBar();
@@ -64,6 +97,28 @@ $(document).ready(async function () {
         $("#hospitals-nav").removeClass("visible")
         $("#hospitals-nav").addClass("invisible")
     }
+
+    let hospital_map = {};
+    if (hospital_id === "admin") {
+        hospital_map = await renderHospitalColumn(accessToken);
+        const xhr_hospitals = new XMLHttpRequest();
+        xhr_hospitals.open("GET", `${BASE_URL}/api/hospitals/`);
+        xhr_hospitals.setRequestHeader("Authorization", accessToken);
+        xhr_hospitals.onreadystatechange = async function () {
+            if (xhr_hospitals.readyState === XMLHttpRequest.DONE && xhr_hospitals.status === 200) {
+                const hospitals = JSON.parse(xhr_hospitals.responseText);
+                const hospitalSelect = document.getElementById("hospital_id_form");
+                for (let hospital of hospitals) {
+                    const option = document.createElement("option");
+                    option.value = hospital.id;
+                    option.textContent = hospital.name;
+                    hospitalSelect.appendChild(option);
+                }
+            }
+        }
+        xhr_hospitals.send();
+    }
+
     $("#appointmentForm").validate({
         rules: {
             patient_name: {
@@ -75,6 +130,11 @@ $(document).ready(async function () {
             via_rider_id: {
                 required: true,
             },
+            hospital_id_form: {
+                required: function () {
+                    return hospital_id === 'admin';
+                }
+            }
         },
         messages: {
             patient_name: {
@@ -86,6 +146,9 @@ $(document).ready(async function () {
             via_rider_id: {
                 required: "Please enter VIA rider ID",
             },
+            hospital_id_form: {
+                required: "Please select a hospital",
+            }
         },
         errorPlacement: function (error, element) {
             error.insertAfter(element);
@@ -94,6 +157,11 @@ $(document).ready(async function () {
         },
     });
     $(".add-patient").click(async function () {
+        if (hospital_id === 'admin') {
+            $('#hospital_select_block').removeClass('d-none');
+        } else {
+            $('#hospital_select_block').addClass('d-none');
+        }
         $("#appointmentModal").css({
             display: "block",
         });
@@ -102,9 +170,9 @@ $(document).ready(async function () {
         $("#appointmentModal").css({
             display: "none",
         });
-    });
-    const xhr = new XMLHttpRequest();
-    xhr.open("GET", `${BASE_URL}/api/patients/`);
+    });    
+    const xhr = new XMLHttpRequest();    
+    xhr.open("GET", `${BASE_URL}/api/patients/?hospital_id=${hospital_id}`);
     xhr.setRequestHeader("Authorization", accessToken);
     xhr.onreadystatechange = async function () {
         if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
@@ -117,6 +185,11 @@ $(document).ready(async function () {
                     }
                 },
                 { data: "provider", title: "Provider", },
+            ];
+            if (hospital_id === "admin") {
+                columns_data.push({ data: "hospital_id", title: "Hospital", render: function(data, type, row) { return hospital_map[data] || data; } });
+            }
+            columns_data.push(
                 {
                     data: null,
                     render: function (data, type, row) {
@@ -129,7 +202,7 @@ $(document).ready(async function () {
                         );
                     },
                 },
-            ];
+            );
             let patient_records = JSON.parse(xhr.responseText);
             console.log(patient_records);
             const SearchIcon = $(
@@ -188,6 +261,11 @@ $(document).ready(async function () {
                         via_rider_id: $("#via_rider_id").val(),
                         provider: $("#provider").val(),
                     };
+                    if (hospital_id === 'admin') {
+                        formData['hospital_id'] = $('#hospital_id_form').val();
+                    }else{
+                        formData['hospital_id'] = hospital_id;
+                    }
                     if (id !== undefined) {
                         url += id;
                         type = "PUT";

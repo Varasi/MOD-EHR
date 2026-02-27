@@ -28,7 +28,17 @@ async function EditHospital(){
     $("#hospitalIdForm").val(hospital.id).prop("disabled", true);
     $("#hospitalSubdomainForm").val(hospital.subdomain);
     $("#hospitalLocationForm").val(hospital.location);
-    $("#hospitalProviderForm").val(hospital.provider);
+    $("#hospitalProviderForm").val(hospital.provider).trigger("change");
+    if (hospital.provider === "epic") {
+        $("#hospitalEPICClientIdForm").val(hospital.epic_client_id);
+        $("#hospitalEPICPrivateKeyForm").val(hospital.epic_private_key);
+        $("#hospitalEPICJwksUrlForm").val(hospital.epic_jwks_url);
+        $("#hospitalEPICJwksKidForm").val(hospital.epic_jwks_kid);
+    } else {
+        $("#hospitalVeradigmProviderForm").val(hospital.s3_subfolder_name);
+        $("#hospitalSFTPUsernameForm").val(hospital.sftp_username);
+        $("#hospitalSFTPPasswordForm").val(hospital.sftp_password);
+    }
     $("#hospitalStatusForm").val(hospital.status);
     $("#saveEditHospital").data("id", id);
     toggleSkeletonLoader("hospitalModal", "remove");
@@ -70,6 +80,16 @@ async function saveEditHospital(){
             provider: $("#hospitalProviderForm").val(),
             status: $("#hospitalStatusForm").val(),
         }
+        if ($("#hospitalProviderForm").val() === "epic") {
+            formData["epic_client_id"] = $("#hospitalEPICClientIdForm").val();
+            formData["epic_private_key"] = $("#hospitalEPICPrivateKeyForm").val();
+            formData["epic_jwks_url"] = $("#hospitalEPICJwksUrlForm").val();
+            formData["epic_jwks_kid"] = $("#hospitalEPICJwksKidForm").val();
+        }else{
+            formData["s3_subfolder_name"] = $("#hospitalVeradigmProviderForm").val();
+            formData["sftp_username"] = $("#hospitalSFTPUsernameForm").val();
+            formData["sftp_password"] = $("#hospitalSFTPPasswordForm").val();
+        }
         let reload_required = false;
         const xhr = new XMLHttpRequest();
         xhr.open("PUT", `${BASE_URL}/api/hospitals/` + id);
@@ -108,6 +128,7 @@ async function saveEditHospital(){
 }
 async function addHospital(){
     $("#hospitalIdForm").prop("disabled", false);
+    $("#hospitalProviderForm").trigger("change");
     $("#saveNewHospital").removeClass("d-none");
     $("#saveEditHospital").addClass("d-none");
     $("#hospitalModal").css({
@@ -121,6 +142,16 @@ async function saveNewHospital(){
     const is_valid = $("#hospitalForm").valid();
     const accessToken = await getAccessToken();
     if (is_valid) {
+        const fileInput = document.getElementById('hospitalLogoForm');
+        let logo_data = null;
+        if (fileInput && fileInput.files.length > 0) {
+            const file = fileInput.files[0];
+            logo_data = await new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.onload = (e) => resolve(e.target.result.split(",")[1]);
+                reader.readAsDataURL(file);
+            });
+        }
         let formData = {
             id: $("#hospitalIdForm").val(),
             name: $("#hospitalNameForm").val(),
@@ -128,6 +159,17 @@ async function saveNewHospital(){
             location: $("#hospitalLocationForm").val(),
             provider: $("#hospitalProviderForm").val(),
             status: $("#hospitalStatusForm").val(),
+            logo_data: logo_data,
+        }
+        if ($("#hospitalProviderForm").val() === "epic") {
+            formData["epic_client_id"] = $("#hospitalEPICClientIdForm").val();
+            formData["epic_private_key"] = $("#hospitalEPICPrivateKeyForm").val();
+            formData["epic_jwks_url"] = $("#hospitalEPICJwksUrlForm").val();
+            formData["epic_jwks_kid"] = $("#hospitalEPICJwksKidForm").val();
+        }else{
+            formData["s3_subfolder_name"] = $("#hospitalVeradigmProviderForm").val();
+            formData["sftp_username"] = $("#hospitalSFTPUsernameForm").val();
+            formData["sftp_password"] = $("#hospitalSFTPPasswordForm").val();
         }
         let reload_required = false;
         const xhr = new XMLHttpRequest();
@@ -167,17 +209,28 @@ $(document).ready(async function () {
     $('head').append(`<script src = "https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_KEY}&libraries=places&callback=googleMapsAutoComplete" async defer></script>`);
     const hostname = window.location.hostname;
     const dns_tenant = hostname.split('.')[0];
-    loadTenantBranding(dns_tenant);
     const [accessToken, hospital_id] = await getAccesstokenAndCustomAttribute("custom:hospital_id");
-    if (hospital_id !== dns_tenant){
+    const config = await loadTenantBranding(hospital_id);
+    if (config.subdomain !== dns_tenant){
         alert("You are not authorized for this hospital.");
         await logoutUser();
-        window.location.replace(`https://${hospital_id}${CUSTOM_DOMAIN}/hospitals.html`);
+        window.location.replace(`https://${config.subdomain}${CUSTOM_DOMAIN}/hospitals.html`);
     }
     preRender();
     toggleSideNavBar();
     $("#hospitalLocationForm").keydown(function (event) {
         if (event.keyCode === 13 ) { event.preventDefault() };
+    });
+    $("#hospitalProviderForm").on("change", function () {
+        const selectedValue = $(this).val();
+        console.log(selectedValue);
+        if (selectedValue === "epic") {
+            $("#epicInputBlock").removeClass("d-none");
+            $("#veradigmInputBlock").addClass("d-none");
+        } else if (selectedValue === "veradigm") {
+            $("#epicInputBlock").addClass("d-none");
+            $("#veradigmInputBlock").removeClass("d-none");
+        }
     });
     $(".add-hospital").click(addHospital);
     const userRole = await getUserGroup();
@@ -211,6 +264,36 @@ $(document).ready(async function () {
             },
             hospitalStatusForm: {
                 required: true,
+            },
+            hospitalVeradigmProviderForm: {
+                required: function () {
+                    return $("#hospitalProviderForm").val() === "veradigm";
+                },
+            },
+            hospitalSFTPUsernameForm: {
+                required: function () {
+                    return $("#hospitalProviderForm").val() === "veradigm";
+                },
+            },
+            hospitalSFTPPasswordForm: {
+                required: function () {
+                    return $("#hospitalProviderForm").val() === "veradigm";
+                },
+            },
+            hospitalEPICProviderForm: {
+                required: function(){
+                    return $("#hospitalProviderForm").val() === "epic";
+                }
+            },
+            hospitalEPICClientIdForm: {
+                required: function(){
+                    return $("#hospitalProviderForm").val() === "epic";
+                }
+            },
+            hospitalEPICPrivateKeyForm: {
+                required: function(){
+                    return $("#hospitalProviderForm").val() === "epic";
+                }
             }
         },
         messages: {
@@ -229,6 +312,24 @@ $(document).ready(async function () {
             hospitalStatusForm: {
                 required: "Please select a Status",
             },
+            hospitalVeradigmProviderForm: {
+                required: "Please enter S3 subfolder name",
+            },
+            hospitalSFTPUsernameForm: {
+                required: "Please enter SFTP Username",
+            },
+            hospitalSFTPPasswordForm: {
+                required: "Please enter SFTP Password",
+            },
+            hospitalEPICProviderForm: {
+                required: "Please enter Epic API",
+            },
+            hospitalEPICClientIdForm: {
+                required: "Please enter Epic Client ID",
+            },
+            hospitalEPICPrivateKeyForm: {
+                required: "Please enter Epic Private Key",
+            },
         },
         errorPlacement: function (error, element) {
             error.insertAfter(element);
@@ -242,6 +343,63 @@ $(document).ready(async function () {
         { data: "subdomain", title: "Subdomain" },
         { data: "status", title: "Status" },
         { data: "provider", title: "Provider" },
+        {
+            data: null,
+            title: "Subfolder Name",
+            render: function (data, type, row) {
+                if (row.provider === "epic") {
+                    return "N/A";
+                } else if (row.provider === "veradigm") {
+                    return row.s3_subfolder_name || "N/A";
+                }
+                return "N/A";
+            }
+        },
+        { data: null,
+            title: "EPIC Client ID",
+            render: function (data, type, row) {
+                if (row.provider === "epic") {
+                    return  row.epic_client_id || "N/A";
+                } else if (row.provider === "veradigm") {
+                    return "N/A";
+                }
+                return "N/A";
+            }
+        },
+        { data: null,
+            title: "EPIC PRIVATE KEY",
+            render: function (data, type, row) {
+                if (row.provider === "epic") {
+                    const key = row.epic_private_key || "N/A";
+                    return `<div title="${key}" style="max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${key}</div>`;
+                } else if (row.provider === "veradigm") {
+                    return "N/A";
+                }
+                return "N/A";
+            }
+        },
+        { data: null,
+            title: "EPIC JWKS URL",
+            render: function (data, type, row) {
+                if (row.provider === "epic") {
+                    return  row.epic_jwks_url || "N/A";
+                } else if (row.provider === "veradigm") {
+                    return "N/A";
+                }
+                return "N/A";
+            }
+        },
+        { data: null,
+            title: "EPIC Key ID",
+            render: function (data, type, row) {
+                if (row.provider === "epic") {
+                    return  row.epic_jwks_kid || "N/A";
+                } else if (row.provider === "veradigm") {
+                    return "N/A";
+                }
+                return "N/A";
+            }
+        },
         { data: "location", title: "location" },
         {
                     data: null,
@@ -254,6 +412,13 @@ $(document).ready(async function () {
                             status: row.status,
                             location: row.location,
                             provider: row.provider,
+                            s3_subfolder_name: row.s3_subfolder_name,
+                            sftp_username: row.sftp_username,
+                            sftp_password: row.sftp_password,
+                            epic_client_id: row.epic_client_id,
+                            epic_private_key: row.epic_private_key,
+                            epic_jwks_url: row.epic_jwks_url,
+                            epic_jwks_kid: row.epic_jwks_kid,
                         }));
                         return (
                             `<div class="d-flex"><button title="edit" class="editBtn btn flex-1" data-id="` +

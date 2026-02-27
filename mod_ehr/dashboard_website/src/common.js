@@ -38,12 +38,26 @@ export async function loadTenantBranding(tenantId) {
     const response = await fetch(
         `/assets/tenants/${tenantId}/configs/config.json`
     );
+
+    if (!response.ok) {
+        console.error(`Configuration for tenant '${tenantId}' not found. Signing out and redirecting to login.`);
+        try {
+            await signOut({ global: true });
+        } catch (e) {
+            // Ignore sign out errors, we still want to redirect.
+            console.error("Error during sign out:", e);
+        }
+        window.location.href = 'index.html';
+        // Return a promise that never resolves to prevent callers from continuing.
+        return new Promise(() => {});
+    }
     
     const config = await response.json();
 
     $("#hospital-name").text(config.hospitalName);
     $(".top-nav-header-text").text(config.appName);
     $("#tenant-brand-logo").attr("src", `/assets/tenants/${tenantId}/branding/logo.png`);
+    return config;
 }
 export async function getUserSession(redirect = true) {
     const session = await fetchAuthSession({ forceRefresh: false });

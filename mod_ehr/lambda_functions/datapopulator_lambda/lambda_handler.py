@@ -11,9 +11,8 @@ from health_connector_base.constants import (
     MOCK_DATA,
     VIA_RIDE_MOCK,
 )
-import random
 from health_connector_base.location_manager import LocationManager
-from health_connector_base.models import Appointment, FTPLogs, Patient, Settings
+from health_connector_base.models import Appointment, FTPLogs, Patient, Settings, Hospital
 from health_connector_base.smart_epic import JWTHelper, SmartEpicClient
 from health_connector_base.via import Via
 from pydantic_models import AppointmentsList
@@ -213,12 +212,25 @@ class AppointmentsMapperWithVia:
         )
 
     def veradigm_with_via(self, patient_mapping: dict, file_key: str, bucket_name: str):
+        if "/" not in file_key:
+            print(f"Skipping file {file_key} as it is not in a subfolder")
+            return
+
+        subfolder = file_key.split("/")[0]
+        hospital_id = None
+        for hospital in Hospital.scan(Hospital.s3_subfolder_name == subfolder):
+            hospital_id = hospital.id
+            break
+
+        if not hospital_id:
+            print(f"No hospital found for subfolder {subfolder}")
+            return
+
         data, last_modified = self.get_file_data(bucket_name, file_key)
         reader = csv.DictReader(data, delimiter=",")
         apps = AppointmentsList(appointments=reader)
         new_patients = {}
         patient_trips = {}
-        hospital_id = random.choice(["hospital1001", "hospital1002", "hospital1003", "hospital1004", "hospital1005"]) # Random hospital_id for testing, replace with actual value if available
         with Appointment.batch_write() as batch:
             for app in apps.appointments:
                 trips = patient_trips.get(app.patient_number, {})
@@ -263,7 +275,10 @@ class AppointmentsMapperWithVia:
             for patient_id, patient_name in new_patients.items():
                 batch.save(
                     Patient(
-                        name=patient_name, patient_id=patient_id, provider="veradigm"
+                        name=patient_name,
+                        patient_id=patient_id,
+                        provider="veradigm",
+                        hospital_id=hospital_id,
                     )
                 )
 

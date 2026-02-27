@@ -75,11 +75,22 @@ class Appointment(BaseModel):
         table_name = "appointment_table"
 
 
+class HospitalIdIndex(GlobalSecondaryIndex):
+    class Meta:
+        index_name = "hospital_id-index"
+        projection = AllProjection()
+
+    hospital_id = UnicodeAttribute(hash_key=True)
+
+
 class Patient(BaseModel):
     patient_id = UnicodeAttribute(hash_key=True)
     name = UnicodeAttribute()
     via_rider_id = UnicodeAttribute(null=True, default="")
     provider = ChoiceUnicodeAttribute(choices=["epic", "veradigm"], default="epic")
+    hospital_id = UnicodeAttribute()
+    
+    hospital_id_index = HospitalIdIndex()
 
     class Meta:
         table_name = "patients_table"
@@ -126,6 +137,14 @@ class Hospital(BaseModel):
     timezone = UnicodeAttribute(default="CT")
     location = AddressAttribute()
     provider = ChoiceUnicodeAttribute(choices=["epic", "veradigm"], default="epic")
+    epic_client_id = UnicodeAttribute(null=True, default=None)
+    epic_private_key = UnicodeAttribute(null=True, default=None)
+    epic_jwks_url = UnicodeAttribute(null=True, default=None)
+    epic_jwks_kid = UnicodeAttribute(null=True, default=None)
+    s3_subfolder_name = UnicodeAttribute(null=True, default=None)
+    sftp_username = UnicodeAttribute(null=True, default=None)
+    sftp_password = UnicodeAttribute(null=True, default=None)
+
 
     class Meta:
         table_name = "hospitals_table"

@@ -1,5 +1,5 @@
 
-import { getUserSession, togglePasswordVisibility, getAccesstokenAndCustomAttribute, CUSTOM_DOMAIN } from "./common";
+import { getUserSession, togglePasswordVisibility, getAccesstokenAndCustomAttribute, CUSTOM_DOMAIN, loadTenantBranding } from "./common";
 import { signIn } from "aws-amplify/auth";
 
 $(document).ready(async function () {

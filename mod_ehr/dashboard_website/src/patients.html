@@ -183,6 +183,15 @@
                                         <input type="text" class="form-control" id="patient_id" name="patient_id"
                                             required />
                                     </div>
+                                    <div id="hospital_select_block" class="d-none">
+                                        <label for="hospital_id_form" class="form-label">
+                                            Hospital
+                                            <span class="text-danger">*</span>
+                                        </label>
+                                        <select class="form-select skeleton-text" id="hospital_id_form" name="hospital_id_form" aria-label="Select a hospital">
+                                            <option value="" selected disabled>Select a hospital</option>
+                                        </select>
+                                    </div>
                                     <div>
                                         <label for="via_rider_id" class="form-label skeleton-text ">
                                             Via Rider ID <span class="text-danger">*</span></label>

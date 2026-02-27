@@ -310,12 +310,12 @@ async function editUserButtonAction(hospitalList) {
 $(document).ready(async function () {
     const hostname = window.location.hostname;
     const dns_tenant = hostname.split('.')[0];
-    loadTenantBranding(dns_tenant);
     const [accessToken, hospital_id] = await getAccesstokenAndCustomAttribute("custom:hospital_id");
-    if (hospital_id !== dns_tenant){
+    const config = await loadTenantBranding(hospital_id);
+    if (config.subdomain !== dns_tenant){
         alert("You are not authorized for this hospital.");
         await logoutUser();
-        window.location.replace(`https://${hospital_id}${CUSTOM_DOMAIN}/userManagement.html`);
+        window.location.replace(`https://${config.subdomain}${CUSTOM_DOMAIN}/userManagement.html`);
     }
     preRender();
     toggleSideNavBar();

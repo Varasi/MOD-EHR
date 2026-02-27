@@ -22,25 +22,33 @@ class AppointmentAPIHandler(APIHandler):
             # Single record retrieval
             return super().get(event, hash_key, *args, **kwargs)
 
-        valid_patients = {
+        
+        filtered_appointments = []
+        
+        if hospital_id == "admin":
+            valid_patients = {
                 patient.patient_id for patient in Patient.scan(
                     filter_condition = models.Patient.via_rider_id.exists() & (models.Patient.via_rider_id != "")
                 )
             }
-        filtered_appointments = []
-        
-        if hospital_id == "admin":
             print(f"Filtering appointments for admin access. Valid patients: {valid_patients}")
             for pid in valid_patients:
                 filtered_appointments.extend(list(self.model.patient_id_index.query(pid)))
 
             filtered_appointments.sort(key=lambda apt: apt.start_time, reverse=True)
         else:
+            valid_patients = {
+                patient.patient_id for patient in Patient.scan(
+                    filter_condition = models.Patient.via_rider_id.exists() & (models.Patient.via_rider_id != "") & (models.Patient.hospital_id == hospital_id)
+                )
+            }
             print(f"Filtering appointments for hospital_id: {hospital_id}")
-            filtered_hosp_appointments = list(self.model.appointments_by_hospitals.query(hospital_id))
-            for apt in filtered_hosp_appointments:
-                if apt.patient_id in valid_patients:
-                    filtered_appointments.append(apt)
+            for pid in valid_patients:
+                filtered_appointments.extend(list(self.model.patient_id_index.query(pid)))
+            # filtered_hosp_appointments = list(self.model.appointments_by_hospitals.query(hospital_id))
+            # for apt in filtered_hosp_appointments:
+            #     if apt.patient_id in valid_patients:
+            #         filtered_appointments.append(apt)
             filtered_appointments.sort(key=lambda apt: apt.start_time, reverse=True)
 
         return Response(body=filtered_appointments, status=200)

@@ -25,8 +25,8 @@ async function getCachedPatients(){
         return cachedPatients;
     }
     console.log("Fetching patients into cache");
-    const accessToken = await getAccessToken();
-    const response = await fetch(`${BASE_URL}/api/patients/`, {
+    const [accessToken, hospital_id] = await getAccesstokenAndCustomAttribute("custom:hospital_id");
+    const response = await fetch(`${BASE_URL}/api/patients/?hospital_id=${hospital_id}`, {
         headers: { 'Authorization': accessToken }
     });
     
@@ -234,9 +234,9 @@ async function DeleteAppointment() {
     xhr.send();
 }
 async function addAppointment() {
-    const accessToken = await getAccessToken();
+    const [accessToken, hospital_id] = await getAccesstokenAndCustomAttribute("custom:hospital_id");
     const xhr = new XMLHttpRequest();
-    xhr.open("GET", `${BASE_URL}/api/patients/`);
+    xhr.open("GET", `${BASE_URL}/api/patients/?hospital_id=${hospital_id}`);
     xhr.setRequestHeader("Authorization", accessToken);
     xhr.onreadystatechange = async function () {
         if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
@@ -298,12 +298,12 @@ $(document).ready(async function () {
     $('head').append(`<script src = "https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_KEY}&libraries=places&callback=googleMapsAutoComplete" async defer></script>`);
     const hostname = window.location.hostname;
     const dns_tenant = hostname.split('.')[0];
-    loadTenantBranding(dns_tenant);
     const [accessToken, hospital_id] = await getAccesstokenAndCustomAttribute("custom:hospital_id");
-    if (hospital_id !== dns_tenant){
+    const config = await loadTenantBranding(hospital_id);
+    if (config.subdomain !== dns_tenant){
         alert("You are not authorized for this hospital.");
         await logoutUser();
-        window.location.replace(`https://${hospital_id}${CUSTOM_DOMAIN}/appointments.html`);
+        window.location.replace(`https://${config.subdomain}${CUSTOM_DOMAIN}/appointments.html`);
     }
     preRender();
     toggleSideNavBar();
@@ -491,4 +491,7 @@ $(document).ready(async function () {
         }
     };
     xhr.send();
+    if (hospital_id === "admin"){
+        $(".add-appointment").prop("disabled", true);
+    }
 });

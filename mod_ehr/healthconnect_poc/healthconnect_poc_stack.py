@@ -30,6 +30,8 @@ class HealthconnectPocStack(Stack):
         # VPC
         self.create_vpc()
         self.create_sftp()
+        # S3 BUCKET
+        self.create_bucket()
         # AWS LAMDBA
         self.create_lambda_layer()
         self.create_appointments_lambda()
@@ -39,7 +41,9 @@ class HealthconnectPocStack(Stack):
         self.create_epic_lambda()
         self.create_patients_lambda()
         self.create_logs_lambda()
+        self.create_provisioning_lambda()
         self.create_hospitals_lambda()
+        self.create_epic_data_populator_lambda()
         # Secret Manager
         self.create_secrets()
         # Cognito
@@ -50,10 +54,15 @@ class HealthconnectPocStack(Stack):
         self.create_identity_pool()
         self.create_api_gateway()
         # S3 Bucket
-        self.create_bucket()
+        
         self.create_cloudfront_dist()
         self.add_bucket_policy()
         self.add_event_bridge_scheduler()
+        self.add_event_bridge_scheduler_epic()
+
+        #veradigm provider setup
+        # self.create_veradigm_provider_setup() # comment it out if we dont use sftp server
+
         # Output
         self.print_output()
 
@@ -180,6 +189,13 @@ class HealthconnectPocStack(Stack):
                 name="patient_id", type=dynamo_db.AttributeType.STRING
             ),
         )
+        self.patients_table.add_global_secondary_index(
+            index_name="hospital_id-index",
+            partition_key=dynamo_db.Attribute(
+                name="hospital_id",
+                type=dynamo_db.AttributeType.STRING
+            ),
+        )
         self.patients_table.grant_full_access(self.LambdaExecutionRole)
         self.settings_table = dynamo_db.TableV2(
             self,
@@ -284,6 +300,7 @@ class HealthconnectPocStack(Stack):
             f"HealthConnector{self.config.ENVIRONMENT.title()}BucketDeployment",
             sources=[s3_deployment.Source.asset("dashboard_website/dist")],
             destination_bucket=self.bucket,
+            prune=False,
             # cache_control=[s3_deployment.CacheControl.no_cache()],
             cache_control=[
                 s3_deployment.CacheControl.from_string(
@@ -590,7 +607,58 @@ class HealthconnectPocStack(Stack):
             environment={
                 "KMS_AVAILABLE": "True",
                 "ENVIRONMENT": self.config.ENVIRONMENT.upper(),
+                "SFTP_S3_BUCKET": self.sftp_bucket.bucket_name,
+                "PROVISIONING_LAMBDA": self.provisioning_lambda.function_name,
             },
+        )
+    
+    def create_provisioning_lambda(self):
+        self.provisioning_lambda = aws_lambda.Function(
+            self,
+            f"HealthConnector{self.config.ENVIRONMENT.title()}ProvisioningLambda",
+            function_name=f"HealthConnector{self.config.ENVIRONMENT.title()}ProvisioningLambda",
+            runtime=aws_lambda.Runtime.PYTHON_3_11,
+            code=aws_lambda.Code.from_asset("lambda_functions/provisioning_lambda"),
+            handler="lambda_handler.tenant_provisioning",
+            role=self.LambdaExecutionRole,
+            layers=[self.requirements_layer, self.base_layer],
+            vpc=self.vpc,
+            timeout=Duration.minutes(10),
+            memory_size=512,
+            environment={
+                "SFTP_BUCKET": self.sftp_bucket.bucket_name,
+                "WEBSITE_BUCKET": self.bucket.bucket_name,
+            }
+        )
+
+    def create_epic_data_populator_lambda(self):
+        self.epic_data_populator_lambda = aws_lambda.Function(
+            self,
+            f"HealthConnector{self.config.ENVIRONMENT.title()}EpicDataPopulator",
+            function_name=f"HealthConnector{self.config.ENVIRONMENT.title()}EpicDataPopulator",
+            runtime=aws_lambda.Runtime.PYTHON_3_11,
+            code=aws_lambda.Code.from_asset("lambda_functions/epic_data_populator"),
+            handler="lambda_handler.data_populator",
+            role=self.LambdaExecutionRole,
+            layers=[self.requirements_layer, self.base_layer],
+            vpc=self.vpc,
+            timeout=Duration.minutes(10),
+            ephemeral_storage_size=Size.gibibytes(1),
+            memory_size=1024,   
+        )
+    
+    def add_event_bridge_scheduler_epic(self):
+        self.event_bridge_rule = event_bridge.Rule(
+            self,
+            f"HealthConnector{self.config.ENVIRONMENT.title()}EpicEventBridgeRule",
+            rule_name=f"HealthConnector{self.config.ENVIRONMENT.title()}EpicEventBridgeRule",
+            schedule=event_bridge.Schedule.rate(Duration.minutes(2)), # convert to 2 hours
+            enabled=True,
+            targets = [
+                targets.LambdaFunction(
+                    handler = self.epic_data_populator_lambda, max_event_age=Duration.hours(1)
+                )
+            ]
         )
 
     def add_event_bridge_scheduler(self):
@@ -897,6 +965,81 @@ class HealthconnectPocStack(Stack):
             identity_pool_id=self.identity_pool.ref,
             roles={"authenticated": self.usermanagement_role.role_arn},
             # role_mappings={}
+        )
+
+    def create_veradigm_provider_setup(self):
+        self.sftp_policy = iam.ManagedPolicy(
+            self,
+            f"HealthConnector{self.config.ENVIRONMENT.title()}SftpTransferPolicy",
+            managed_policy_name="HealthConnector-sftp-transfer-policy",
+            statements=[
+                iam.PolicyStatement(
+                    effect=iam.Effect.ALLOW,
+                    actions=[
+                        "s3:ListBucket",
+                        "s3:GetBucketLocation"
+                    ],
+                    resources=[self.sftp_bucket.bucket_arn]
+                ),
+                iam.PolicyStatement(
+                    effect=iam.Effect.ALLOW,
+                    actions=[
+                        "s3:PutObject",
+                        "s3:GetObjectAcl",
+                        "s3:GetObject",
+                        "s3:PutObjectRetention",
+                        "s3:DeleteObjectVersion",
+                        "s3:GetObjectAttributes",
+                        "s3:PutObjectLegalHold",
+                        "s3:DeleteObject"
+                    ],
+                    resources=[f"{self.sftp_bucket.bucket_arn}/*"]
+                )
+            ]
+        )
+
+        self.transfer_role = iam.Role(
+            self,
+            f"HealthConnector{self.config.ENVIRONMENT.title()}SftpUserRole",
+            role_name=f"HealthConnector{self.config.ENVIRONMENT.title()}-sftp-user-pass-role",
+            assumed_by=iam.CompositePrincipal(
+                iam.ServicePrincipal("transfer.amazonaws.com"),
+                iam.ServicePrincipal("s3.amazonaws.com"),
+            )
+        )
+
+        self.transfer_role.add_managed_policy(self.sftp_policy)
+
+        self.sftp_identity_lambda = aws_lambda.Function(
+            self,
+            f"HealthConnector{self.config.ENVIRONMENT.title()}SftpIdentityProviderLambda",
+            runtime=aws_lambda.Runtime.PYTHON_3_11,
+            timeout=Duration.seconds(30),
+            code=aws_lambda.Code.from_asset("lambda_functions/sftp_identity_provider"),
+            handler="lambda_handler.lambda_handler",
+            environment={
+                "TABLE_NAME": self.hospitals_table.table_name,
+                "ROLE_ARN": self.transfer_role.role_arn,
+                "BUCKET_NAME": self.sftp_bucket.bucket_name
+            }
+        )
+        self.hospitals_table.grant_read_data(self.sftp_identity_lambda)
+
+        self.sftp_server = transfer.CfnServer(
+            self,
+            f"HealthConnector{self.config.ENVIRONMENT.title()}SftpServer",
+            identity_provider_type="AWS_LAMBDA",
+            identity_provider_details=transfer.CfnServer.IdentityProviderDetailsProperty(
+                function=self.sftp_identity_lambda.function_arn
+            ),
+            endpoint_type="PUBLIC",
+            protocols=["SFTP"],
+        )
+
+        self.sftp_identity_lambda.add_permission(
+            "AllowTransferInvoke",
+            principal=iam.ServicePrincipal("transfer.amazonaws.com"),
+            action="lambda:InvokeFunction",
         )
 
     def print_output(self):
