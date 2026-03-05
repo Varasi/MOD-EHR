@@ -10,10 +10,10 @@ from health_connector_base import SecretsManager
 class JWTHelper(object):
     def __init__(self, client_id=None, private_key=None, jwks_url=None, jwks_kid=None):
         secrets_manager = SecretsManager()
-        self.client_id = client_id or secrets_manager.get_secret_value("epic_client_id")
-        self.jwt_private_key = private_key or secrets_manager.get_secret_value("epic_private_key")
-        self.JWKS_URL = jwks_url or secrets_manager.get_secret_value("epic_jwks_url")
-        self.JWKS_kid = jwks_kid or secrets_manager.get_secret_value("epic_jwks_kid")
+        self.client_id = client_id
+        self.jwt_private_key = private_key
+        self.JWKS_URL = jwks_url
+        self.JWKS_kid = jwks_kid
         self.token_url = "https://fhir.epic.com/interconnect-fhir-oauth/oauth2/token"
         self.auth_headers = {"Content-Type": "application/x-www-form-urlencoded"}
         self.token_expiry_offset = 180  # in seconds

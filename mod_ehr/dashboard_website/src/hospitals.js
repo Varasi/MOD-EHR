@@ -355,6 +355,26 @@ $(document).ready(async function () {
                 return "N/A";
             }
         },
+        {
+            data: null,
+            title: "SFTP Username",
+            render: function (data, type, row) {
+                if (row.provider === "veradigm") {
+                    return row.sftp_username || "N/A";
+                }
+                return "N/A";
+            }
+        },
+        {
+            data: null,
+            title: "SFTP Password",
+            render: function (data, type, row) {
+                if (row.provider === "veradigm") {
+                    return row.sftp_password || "N/A";
+                }
+                return "N/A";
+            }
+        },
         { data: null,
             title: "EPIC Client ID",
             render: function (data, type, row) {

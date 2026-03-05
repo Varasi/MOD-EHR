@@ -70,6 +70,10 @@ class Appointment(BaseModel):
     ride = JSONAttribute(default=lambda: VIA_RIDE_MOCK)
     patient_id_index = PatientIdIndex()
     appointments_by_hospitals = AppointmentsByHospitalsIndex()
+    patient_first_name = UnicodeAttribute(null=True, default="")
+    patient_last_name = UnicodeAttribute(null=True, default="")
+    patient_phone_no = UnicodeAttribute(null=True, default="")
+    patient_email = UnicodeAttribute(null=True, default="")
 
     class Meta:
         table_name = "appointment_table"

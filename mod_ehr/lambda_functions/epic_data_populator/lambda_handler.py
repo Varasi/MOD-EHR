@@ -67,10 +67,10 @@ class AppointmentsMapperWithEpic:
                     continue
             patient_phone_no = dict(sorted(patient_phone_no.items(), key = lambda x: x[1], reverse=False))
             patient_email = dict(sorted(patient_email.items(), key = lambda x: x[1], reverse=False))
-            result["Patient_first_name"] = first_name
-            result["Patient_last_name"] = last_name
-            result["Patient_phone_no"] = str(list(patient_phone_no.keys())) if patient_phone_no else ""
-            result["Patient_email"] = str(list(patient_email.keys())) if patient_email else ""
+            result["patient_first_name"] = first_name
+            result["patient_last_name"] = last_name
+            result["patient_phone_no"] = str(list(patient_phone_no.keys())) if patient_phone_no else ""
+            result["patient_email"] = str(list(patient_email.keys())) if patient_email else ""
             result["patient_id"] = patient_id
             result["patient_name"] = f"{first_name} {last_name}"
         return result
