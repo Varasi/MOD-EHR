@@ -73,12 +73,23 @@ async function saveEditHospital(){
     const id = $(this).data("id");
     const accessToken = await getAccessToken();
     if (is_valid) {
+        const fileInput = document.getElementById('hospitalLogoForm');
+        let logo_data = null;
+        if (fileInput && fileInput.files.length > 0) {
+            const file = fileInput.files[0];
+            logo_data = await new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.onload = (e) => resolve(e.target.result.split(",")[1]);
+                reader.readAsDataURL(file);
+            });
+        }
         let formData = {
             name: $("#hospitalNameForm").val(),
             subdomain: $("#hospitalSubdomainForm").val(),
             location: $("#hospitalLocationForm").val(),
             provider: $("#hospitalProviderForm").val(),
             status: $("#hospitalStatusForm").val(),
+            logo_data: logo_data,
         }
         if ($("#hospitalProviderForm").val() === "epic") {
             formData["epic_client_id"] = $("#hospitalEPICClientIdForm").val();
@@ -280,7 +291,12 @@ $(document).ready(async function () {
                     return $("#hospitalProviderForm").val() === "veradigm";
                 },
             },
-            hospitalEPICProviderForm: {
+            hospitalEPICJwksUrlForm: {
+                required: function(){
+                    return $("#hospitalProviderForm").val() === "epic";
+                }
+            },
+            hospitalEPICJwksKidForm: {
                 required: function(){
                     return $("#hospitalProviderForm").val() === "epic";
                 }
@@ -321,8 +337,8 @@ $(document).ready(async function () {
             hospitalSFTPPasswordForm: {
                 required: "Please enter SFTP Password",
             },
-            hospitalEPICProviderForm: {
-                required: "Please enter Epic API",
+            hospitalEPICJwksKidForm: {
+                required: "Please enter Epic Key ID",
             },
             hospitalEPICClientIdForm: {
                 required: "Please enter Epic Client ID",
@@ -330,6 +346,9 @@ $(document).ready(async function () {
             hospitalEPICPrivateKeyForm: {
                 required: "Please enter Epic Private Key",
             },
+            hospitalEPICJwksUrlForm: {
+                required: "Please enter Epic JWKS URL",
+            }
         },
         errorPlacement: function (error, element) {
             error.insertAfter(element);

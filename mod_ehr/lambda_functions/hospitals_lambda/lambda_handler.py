@@ -34,6 +34,49 @@ class HospitalAPIHandler(APIHandler):
         )
         return Response(body=obj, status=Status.HTTP_200_OK)
 
+    def put(self, event, *args, **kwargs):
+        body = json.loads(event["body"])
+        logo_data = body.pop("logo_data", None)
+        pk = event["pathParameters"]["id"]
+        obj = self.model.get(pk)
+        for k, v in body.items():
+            setattr(obj, k, v)
+        obj.save()
+
+        payload = json.loads(json.dumps(obj, cls=PynamoDBEncoder))
+        if logo_data:
+            payload["logo_data"] = logo_data
+
+        lambda_client = boto3.client("lambda")
+        lambda_client.invoke(
+            FunctionName=provisioning_lambda,
+            InvocationType="Event",
+            Payload=json.dumps(payload),
+        )
+        return Response(body=obj, status=Status.HTTP_200_OK)
+
+    def delete(self, event, *args, **kwargs):
+        pk = event["pathParameters"]["id"]
+        obj = self.model.get(pk)
+
+        # Prepare payload for provisioning_lambda to delete assets
+        payload = json.loads(json.dumps(obj, cls=PynamoDBEncoder))
+        payload["action"] = "DELETE"
+
+        # Invoke provisioning_lambda to delete S3 assets
+        lambda_client = boto3.client("lambda")
+        lambda_client.invoke(
+            FunctionName=provisioning_lambda,
+            InvocationType="Event",  # Fire-and-forget
+            Payload=json.dumps(payload),
+        )
+
+        # Delete the hospital record from DynamoDB
+        obj.delete()
+
+        # Return a 204 No Content response, which is standard for successful DELETE
+        return Response(status=Status.HTTP_204_NO_CONTENT)
+
 
     @classmethod
     def process_event(cls, event: dict, *args, **kwargs):

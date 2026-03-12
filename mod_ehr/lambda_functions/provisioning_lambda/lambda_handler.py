@@ -5,6 +5,7 @@ import base64
 from health_connector_base import models
 
 iam = boto3.client("iam")
+s3_resource = boto3.resource("s3")
 s3 = boto3.client("s3")
 secrets = boto3.client("secretsmanager")
 
@@ -15,6 +16,23 @@ def tenant_provisioning(event, context, **kwargs):
 
     print("provisioning lambda called")
     print(event, context)
+
+    # Handle DELETE action
+    if event.get("action") == "DELETE":
+        hospital_id = event.get("id")
+        if website_bucket and hospital_id:
+            try:
+                bucket = s3_resource.Bucket(website_bucket)
+                prefix_to_delete = f"assets/tenants/{hospital_id}/"
+                print(f"Deleting objects with prefix: {prefix_to_delete} from bucket {website_bucket}")
+                bucket.objects.filter(Prefix=prefix_to_delete).delete()
+                print(f"Successfully deleted assets for hospital {hospital_id}")
+                return
+            except Exception as e:
+                print(f"Error deleting S3 assets for hospital {hospital_id}: {e}")
+        return
+
+
     try:
         # creating s3 sub folder for tenant
         if(event["provider"]=="veradigm"):

@@ -127,14 +127,18 @@ class AppointmentsMapperWithEpic:
         epic_hospitals = Hospital.scan(Hospital.provider == 'epic')
 
         for hospital in epic_hospitals:
-            print(f"Processing hospital: {hospital.id} ({hospital.name})")
-            patient_mapping = self.get_patient_mapping_for_hospital(hospital.id)
+            try:
+                print(f"Processing hospital: {hospital.id} ({hospital.name})")
+                patient_mapping = self.get_patient_mapping_for_hospital(hospital.id)
 
-            if not patient_mapping:
-                print(f"No epic patients with via_rider_id found for hospital {hospital.id}")
+                if not patient_mapping:
+                    print(f"No epic patients with via_rider_id found for hospital {hospital.id}")
+                    continue
+
+                self.fetch_epic_data(patient_mapping, hospital)
+            except Exception as e:
+                print(f"Failed to process hospital {hospital.id} ({hospital.name}). Error: {e}")
                 continue
-
-            self.fetch_epic_data(patient_mapping, hospital)
 
 def data_populator(event, context, **kwargs):
     print("epic_data_populator triggered")
