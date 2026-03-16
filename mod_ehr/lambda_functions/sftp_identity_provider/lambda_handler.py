@@ -1,51 +1,70 @@
 import json
 import boto3
 import os
-import base64
+import hmac
 from boto3.dynamodb.conditions import Attr
- 
 
+
+secrets_client = boto3.client("secretsmanager")
 dynamodb = boto3.resource("dynamodb")
 table = dynamodb.Table(os.environ["TABLE_NAME"])
  
 ROLE_ARN = os.environ["ROLE_ARN"]
 BUCKET = os.environ["BUCKET_NAME"]
+ENV = os.environ["ENV"]
  
 def lambda_handler(event, context):
     username = event.get("username")
-    password = event.get("password")
-    print("password:",password)
+    provided_password = event.get("password")
+    print(f"Authenticating user: {username}")
  
-    if not username or not password:
+    if not username or not provided_password:
         print("[ERROR] No username or password provided")
         return {"isAuthenticated": False}
  
-    # secret_id = f"sftp-user/{username}"
- 
+    secret_id = '' # Initialize secret_id
     try:
+        # 1. Find hospital info from DynamoDB using the SFTP username
         response = table.scan(
             FilterExpression=Attr("sftp_username").eq(username)
         )
-        print("response:", response)
- 
+
         items = response.get("Items", [])
         if not items:
+            print(f"[AUTH] User not found: {username}")
             return {"isAuthenticated": False}
-        item = items[0]
-        print("items:", items)
-        print("item:", item)
-        if not item:
+        
+        hospital_item = items[0]
+        hospital_id = hospital_item.get("id")
+        subfolder = hospital_item.get("s3_subfolder_name")
+
+        if not hospital_id or not subfolder:
+            print(f"[ERROR] Incomplete hospital data for user: {username}")
             return {"isAuthenticated": False}
-       
-        if item.get("status") != "Active":
+            
+        if hospital_item.get("status") != "Active":
+            print(f"[AUTH] Hospital for user {username} is not active.")
             return {"isAuthenticated": False}
- 
-        stored_password = item.get("sftp_password")
-        subfolder = item.get("s3_subfolder_name")
-        print("stored_password:", stored_password)
-        print("subfolder:", subfolder)
- 
-        if stored_password == password:
+
+        # 2. Construct the secret name
+        secret_id = f"{ENV}-hospital-{hospital_id}"
+        print(f"Retrieving secret with ID: {secret_id}")
+
+        # 3. Retrieve the secret from Secrets Manager
+        get_secret_value_response = secrets_client.get_secret_value(SecretId=secret_id)
+        secret_string = get_secret_value_response["SecretString"]
+        secret_dict = json.loads(secret_string)
+
+        stored_password = secret_dict.get("sftp_password")
+
+        if not stored_password:
+            print(f"[ERROR] Secret {secret_id} is missing 'sftp_password'.")
+            return {"isAuthenticated": False}
+
+        # 4. Compare passwords
+        if hmac.compare_digest(provided_password.encode('utf-8'), stored_password.encode('utf-8')):
+            print(f"[AUTH] Successful authentication for user: {username}")
+            # 5. Return success response
             return {
                 "isAuthenticated": True,
                 "Role": ROLE_ARN,
@@ -86,6 +105,9 @@ def lambda_handler(event, context):
             print(f"[AUTH] Invalid password for user: {username}")
             return {"isAuthenticated": False}
  
+    except secrets_client.exceptions.ResourceNotFoundException:
+        print(f"[ERROR] Secret not found for user: {username} with constructed secret_id: {secret_id}")
+        return {"isAuthenticated": False}
     except Exception as e:
-        print(f"[ERROR] Failed to retrieve or parse secret: {e}")
+        print(f"[ERROR] An unexpected error occurred: {e}")
         return {"isAuthenticated": False}

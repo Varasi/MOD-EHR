@@ -62,7 +62,7 @@ class HealthconnectPocStack(Stack):
         self.add_event_bridge_scheduler_epic()
 
         #veradigm provider setup
-        # self.create_veradigm_provider_setup() # comment it out if we dont use sftp server
+        self.create_veradigm_provider_setup() # comment it out if we dont use sftp server
 
         # Output
         self.print_output()
@@ -1037,7 +1037,8 @@ class HealthconnectPocStack(Stack):
             environment={
                 "TABLE_NAME": self.hospitals_table.table_name,
                 "ROLE_ARN": self.transfer_role.role_arn,
-                "BUCKET_NAME": self.sftp_bucket.bucket_name
+                "BUCKET_NAME": self.sftp_bucket.bucket_name,
+                "ENV": self.config.ENVIRONMENT.lower(),
             }
         )
         self.hospitals_table.grant_read_data(self.sftp_identity_lambda)

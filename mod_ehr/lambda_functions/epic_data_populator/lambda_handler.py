@@ -1,10 +1,11 @@
 from datetime import datetime, timedelta, timezone
 from health_connector_base.models import Appointment, Hospital, Patient
 from health_connector_base.smart_epic import JWTHelper, SmartEpicClient
+from health_connector_base.secrets_manager import KMSClient
 
 class AppointmentsMapperWithEpic:
 
-    def _get_jwt(self, hospital):
+    def _get_jwt(self, credentials):
         """
         Generates a JWT token.
         Returns:
@@ -12,10 +13,10 @@ class AppointmentsMapperWithEpic:
         """
 
         return JWTHelper(
-            client_id=hospital.epic_client_id,
-            private_key=hospital.epic_private_key.replace("\\n", "\n") if hospital.epic_private_key else None,
-            jwks_url=hospital.epic_jwks_url,
-            jwks_kid=hospital.epic_jwks_kid
+            client_id=credentials["epic_client_id"],
+            private_key=credentials["epic_private_key"].replace("\\n", "\n"),
+            jwks_url=credentials["epic_jwks_url"],
+            jwks_kid=credentials["epic_jwks_kid"],
         ).generate_jwt()
     
     def get_patient_mapping_for_hospital(self, hospital_id: str) -> dict:
@@ -75,10 +76,10 @@ class AppointmentsMapperWithEpic:
             result["patient_name"] = f"{first_name} {last_name}"
         return result
 
-    def fetch_epic_data(self, patient_mapping: dict, hospital):
+    def fetch_epic_data(self, patient_mapping: dict, hospital, credentials):
         print("fetch_epic_data called")
         print("hospital:",hospital)
-        smart_client = SmartEpicClient(self._get_jwt(hospital))
+        smart_client = SmartEpicClient(self._get_jwt(credentials))
         appointment_objs = []
         print("Fetching Epic data for patients:", patient_mapping)
         for patient_id, rider_id in patient_mapping.items():
@@ -124,18 +125,26 @@ class AppointmentsMapperWithEpic:
             print("Not a scheduled event, skipping.")
             return
 
+        secrets_manager = KMSClient()
         epic_hospitals = Hospital.scan(Hospital.provider == 'epic')
 
         for hospital in epic_hospitals:
             try:
                 print(f"Processing hospital: {hospital.id} ({hospital.name})")
+
+                credentials = secrets_manager.get_hospital_secret(hospital.id)
+                required_keys = ['epic_client_id', 'epic_private_key', 'epic_jwks_url', 'epic_jwks_kid']
+                if not all(k in credentials for k in required_keys):
+                    print(f"Skipping hospital {hospital.id}: Missing one or more required Epic credentials in Secrets Manager.")
+                    continue
+
                 patient_mapping = self.get_patient_mapping_for_hospital(hospital.id)
 
                 if not patient_mapping:
                     print(f"No epic patients with via_rider_id found for hospital {hospital.id}")
                     continue
 
-                self.fetch_epic_data(patient_mapping, hospital)
+                self.fetch_epic_data(patient_mapping, hospital, credentials)
             except Exception as e:
                 print(f"Failed to process hospital {hospital.id} ({hospital.name}). Error: {e}")
                 continue

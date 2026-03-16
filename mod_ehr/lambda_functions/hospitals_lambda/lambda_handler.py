@@ -83,11 +83,12 @@ class HospitalAPIHandler(APIHandler):
         logo_data = body.pop("logo_data", None)
 
         # Extract secrets
-        sensitive_keys = ['epic_client_id', 'epic_private_key', 'epic_jwks_url', 'epic_jwks_kid', 's3_subfolder_name', 'sftp_username', 'sftp_password']
-        secret_data = {k: body[k] for k in sensitive_keys if k in body}
+        secret_keys = ['epic_client_id', 'epic_private_key', 'epic_jwks_url', 'epic_jwks_kid', 's3_subfolder_name', 'sftp_username', 'sftp_password']
+        secret_data = {k: body[k] for k in secret_keys if k in body}
         
         # Remove highly sensitive fields from DB body
-        for k in sensitive_keys:
+        keys_to_remove_from_db = ['epic_client_id', 'epic_private_key', 'epic_jwks_url', 'epic_jwks_kid', 'sftp_password']
+        for k in keys_to_remove_from_db:
             if k in body:
                 del body[k]
 
@@ -120,15 +121,16 @@ class HospitalAPIHandler(APIHandler):
         pk = event["pathParameters"]["id"]
         obj = self.model.get(pk)
         
-        sensitive_keys = ['epic_client_id', 'epic_private_key', 'epic_jwks_url', 'epic_jwks_kid', 's3_subfolder_name', 'sftp_username', 'sftp_password']
-        secret_data = {k: body[k] for k in sensitive_keys if k in body}
+        secret_keys = ['epic_client_id', 'epic_private_key', 'epic_jwks_url', 'epic_jwks_kid', 's3_subfolder_name', 'sftp_username', 'sftp_password']
+        secret_data = {k: body[k] for k in secret_keys if k in body}
         
         if secret_data:
             current_secrets = self._get_secret(pk)
             current_secrets.update(secret_data)
             self._update_secret(pk, current_secrets)
             
-        for k in sensitive_keys:
+        keys_to_remove_from_db = ['epic_client_id', 'epic_private_key', 'epic_jwks_url', 'epic_jwks_kid', 'sftp_password']
+        for k in keys_to_remove_from_db:
             if k in body:
                 del body[k]
 
