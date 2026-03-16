@@ -26,6 +26,7 @@ class HealthconnectPocStack(Stack):
         # IAM ROLES
         self.create_roles()
         self.create_lambda_invoke_policy()
+        self.create_secrets_manager_policy()
         self.create_dynamodb_table()
         # VPC
         self.create_vpc()
@@ -392,6 +393,22 @@ class HealthconnectPocStack(Stack):
             effect=iam.Effect.ALLOW, actions=["lambda:InvokeFunction"], resources=["*"]
         )
         self.LambdaExecutionRole.add_to_policy(self.lambda_invoke_policy)
+
+    def create_secrets_manager_policy(self):
+        self.secrets_manager_policy = iam.PolicyStatement(
+            effect=iam.Effect.ALLOW,
+            actions=[
+                "secretsmanager:CreateSecret",
+                "secretsmanager:GetSecretValue",
+                "secretsmanager:PutSecretValue",
+                "secretsmanager:UpdateSecret",
+                "secretsmanager:DeleteSecret",
+                "secretsmanager:DescribeSecret",
+                "secretsmanager:TagResource",
+            ],
+            resources=["*"],
+        )
+        self.LambdaExecutionRole.add_to_policy(self.secrets_manager_policy)
 
     def create_roles(self):
         for role, role_config in self.config.ROLES.items():
@@ -1024,6 +1041,13 @@ class HealthconnectPocStack(Stack):
             }
         )
         self.hospitals_table.grant_read_data(self.sftp_identity_lambda)
+        self.sftp_identity_lambda.add_to_role_policy(
+            iam.PolicyStatement(
+                effect=iam.Effect.ALLOW,
+                actions=["secretsmanager:GetSecretValue"],
+                resources=["*"],
+            )
+        )
 
         self.sftp_server = transfer.CfnServer(
             self,

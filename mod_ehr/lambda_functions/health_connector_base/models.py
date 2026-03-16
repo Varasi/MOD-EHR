@@ -141,13 +141,13 @@ class Hospital(BaseModel):
     timezone = UnicodeAttribute(default="CT")
     location = AddressAttribute()
     provider = ChoiceUnicodeAttribute(choices=["epic", "veradigm"], default="epic")
-    epic_client_id = UnicodeAttribute(null=True, default=None)
-    epic_private_key = UnicodeAttribute(null=True, default=None)
-    epic_jwks_url = UnicodeAttribute(null=True, default=None)
-    epic_jwks_kid = UnicodeAttribute(null=True, default=None)
-    s3_subfolder_name = UnicodeAttribute(null=True, default=None)
-    sftp_username = UnicodeAttribute(null=True, default=None)
-    sftp_password = UnicodeAttribute(null=True, default=None)
+    # epic_client_id = UnicodeAttribute(null=True, default=None)
+    # epic_private_key = UnicodeAttribute(null=True, default=None)
+    # epic_jwks_url = UnicodeAttribute(null=True, default=None)
+    # epic_jwks_kid = UnicodeAttribute(null=True, default=None)
+    # s3_subfolder_name = UnicodeAttribute(null=True, default=None)
+    # sftp_username = UnicodeAttribute(null=True, default=None)
+    # sftp_password = UnicodeAttribute(null=True, default=None)
 
 
     class Meta:
