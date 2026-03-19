@@ -5,6 +5,7 @@ from health_connector_base import models
 from health_connector_base.handlers import APIHandler
 from health_connector_base.models import Patient
 from health_connector_base.handlers import Response
+from health_connector_base.auth import require_tenant_isolation
 import time
 
 environment = os.environ.get("ENVIRONMENT", "LOCAL")
@@ -94,6 +95,6 @@ class AppointmentAPIHandler(APIHandler):
         #         print(f"Error decoding JSON: {e}")
         return response
 
-
+@require_tenant_isolation
 def appointments_handler(event, context):
     return AppointmentAPIHandler.process_event(event)

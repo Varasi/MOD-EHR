@@ -705,6 +705,15 @@ class HealthconnectPocStack(Stack):
             default_cors_preflight_options=apigw.CorsOptions(
                 allow_origins=apigw.Cors.ALL_ORIGINS,
                 allow_methods=apigw.Cors.ALL_METHODS,
+                allow_headers=[
+                    "Content-Type",
+                    "X-Amz-Date",
+                    "Authorization",
+                    "X-Api-Key",
+                    "X-Amz-Security-Token",
+                    "X-Amz-User-Agent",
+                    "X-Id-Token"
+                ]
             ),
         )
         # self.api.deployment_stage.options = apigw.StageOptions(
@@ -754,6 +763,12 @@ class HealthconnectPocStack(Stack):
         )
         self.hospital_resource_detail.add_method(
             "DELETE",
+            apigw.LambdaIntegration(self.hospitals_lambda, proxy=True),
+            authorizer=self.apigw_authorizer,
+            authorization_scopes=["aws.cognito.signin.user.admin"],
+        )
+        self.hospital_resource_detail.add_method(
+            "GET",
             apigw.LambdaIntegration(self.hospitals_lambda, proxy=True),
             authorizer=self.apigw_authorizer,
             authorization_scopes=["aws.cognito.signin.user.admin"],

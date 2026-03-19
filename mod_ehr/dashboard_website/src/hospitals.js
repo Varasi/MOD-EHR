@@ -13,6 +13,7 @@ import {
     toggleLoder,
     GOOGLE_MAPS_KEY,
     CUSTOM_DOMAIN,
+    getIdToken,
 } from "./common";
 async function EditHospital(){
     $("#saveEditHospital").removeClass("d-none");
@@ -53,6 +54,7 @@ async function deleteHospital(){
         `${BASE_URL}/api/hospitals/` + id
     );
     xhr.setRequestHeader("Authorization", accessToken);
+    xhr.setRequestHeader("X-Id-Token", await getIdToken());
     xhr.onreadystatechange = function () {
         if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 204) {
             $("#root")
@@ -106,6 +108,7 @@ async function saveEditHospital(){
         xhr.open("PUT", `${BASE_URL}/api/hospitals/` + id);
         xhr.setRequestHeader("Content-Type", "application/json");
         xhr.setRequestHeader("Authorization", accessToken);
+        xhr.setRequestHeader("X-Id-Token", await getIdToken());
         xhr.onreadystatechange = async function () {
             $("#hospitalModal").css({
               display: "none",
@@ -152,6 +155,7 @@ async function saveNewHospital(){
     toggleLoder("button-primary", "add");
     const is_valid = $("#hospitalForm").valid();
     const accessToken = await getAccessToken();
+    const idToken = await getIdToken();
     if (is_valid) {
         const fileInput = document.getElementById('hospitalLogoForm');
         let logo_data = null;
@@ -187,6 +191,7 @@ async function saveNewHospital(){
         xhr.open("POST", `${BASE_URL}/api/hospitals/`);
         xhr.setRequestHeader("Content-Type", "application/json");
         xhr.setRequestHeader("Authorization", accessToken);
+        xhr.setRequestHeader("X-Id-Token", idToken);
         xhr.onreadystatechange = async function () {
             $("#hospitalModal").css({
               display: "none",
@@ -221,6 +226,7 @@ $(document).ready(async function () {
     const hostname = window.location.hostname;
     const dns_tenant = hostname.split('.')[0];
     const [accessToken, hospital_id] = await getAccesstokenAndCustomAttribute("custom:hospital_id");
+    const idToken = await getIdToken();
     const config = await loadTenantBranding(hospital_id);
     if (config.subdomain !== dns_tenant){
         alert("You are not authorized for this hospital.");
@@ -484,6 +490,7 @@ $(document).ready(async function () {
     const xhr = new XMLHttpRequest();
     xhr.open("GET", `${BASE_URL}/api/hospitals`);
     xhr.setRequestHeader("Authorization", accessToken);
+    xhr.setRequestHeader("X-Id-Token", idToken);
     xhr.onreadystatechange = async function (){
         if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
             $("#Loader").remove();

@@ -1,5 +1,6 @@
 import {
     getAccessToken,
+    getIdToken,
     logoutUser,
     getUserGroup,
     tablePaginationNavigationHandler,
@@ -14,12 +15,14 @@ import {
     CUSTOM_DOMAIN,
 } from "./common";
 
-function renderHospitalColumn(accessToken) {
+async function renderHospitalColumn(accessToken) {
+    const idToken = await getIdToken();
     return new Promise((resolve) => {
         let hospitals_map = {};
         const xhr = new XMLHttpRequest();
         xhr.open("GET", `${BASE_URL}/api/hospitals/`);
         xhr.setRequestHeader("Authorization", accessToken);
+        xhr.setRequestHeader("X-Id-Token", idToken);
         xhr.onreadystatechange = function () {
             if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
                 const hospitals = JSON.parse(xhr.responseText);
@@ -72,6 +75,7 @@ $(document).ready(async function () {
     xhr.open("GET", `${BASE_URL}/api/logs/?hospital_id=${hospital_id}`,
     );
     xhr.setRequestHeader("Authorization", accessToken);
+    xhr.setRequestHeader("X-Id-Token", await getIdToken());
     xhr.onreadystatechange = async function () {
         if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
             const log_records = JSON.parse(xhr.responseText);

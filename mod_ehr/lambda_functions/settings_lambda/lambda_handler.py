@@ -2,6 +2,7 @@ from health_connector_base import models  # noqa
 from health_connector_base.handlers import APIHandler, Response # noqa
 import json
 from health_connector_base.constants import ORIGINS_ALLOWED, Status
+from health_connector_base.auth import require_tenant_isolation
 
 class SettingsHandler(APIHandler):
     model = models.Settings
@@ -23,5 +24,6 @@ class SettingsHandler(APIHandler):
         # Default behavior for other requests
         return super().process_event(event, *args, **kwargs)
 
+@require_tenant_isolation
 def settings_handler(event, context):
     return SettingsHandler.process_event(event)

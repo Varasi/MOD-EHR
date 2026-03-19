@@ -16,6 +16,7 @@ import {
   getAccesstokenAndCustomAttribute,
   loadTenantBranding,
   CUSTOM_DOMAIN,
+  getIdToken
 } from "./common";
 let cachedPatients = null;
 async function getCachedPatients(){
@@ -27,7 +28,7 @@ async function getCachedPatients(){
     console.log("Fetching patients into cache");
     const [accessToken, hospital_id] = await getAccesstokenAndCustomAttribute("custom:hospital_id");
     const response = await fetch(`${BASE_URL}/api/patients/?hospital_id=${hospital_id}`, {
-        headers: { 'Authorization': accessToken }
+        headers: { 'Authorization': accessToken, 'X-Id-Token': await getIdToken()}
     });
     
     if (response.ok) {
@@ -142,6 +143,8 @@ async function saveAppointment() {
     let type = "POST";
     const is_valid = $("#appointmentForm").valid();
     const [accessToken, hospital_id] = await getAccesstokenAndCustomAttribute("custom:hospital_id");
+    const idToken = await getIdToken();
+
     if (is_valid) {
         // $("#appointmentModal").css({
         //     display: "none",
@@ -175,6 +178,7 @@ async function saveAppointment() {
         const xhr = new XMLHttpRequest();
         xhr.open(type, url);
         xhr.setRequestHeader("Authorization", accessToken);
+        xhr.setRequestHeader("X-Id-Token", await getIdToken());
         xhr.setRequestHeader("Content-Type", "application/json");
         xhr.onreadystatechange = async function () {
             $("#appointmentModal").css({
@@ -219,6 +223,7 @@ async function DeleteAppointment() {
         `${BASE_URL}/api/appointments/` + id
     );
     xhr.setRequestHeader("Authorization", accessToken);
+    xhr.setRequestHeader("X-Id-Token", await getIdToken());
     xhr.onreadystatechange = function () {
         if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 204) {
             $("#root")
@@ -238,6 +243,7 @@ async function addAppointment() {
     const xhr = new XMLHttpRequest();
     xhr.open("GET", `${BASE_URL}/api/patients/?hospital_id=${hospital_id}`);
     xhr.setRequestHeader("Authorization", accessToken);
+    xhr.setRequestHeader("X-Id-Token", await getIdToken());
     xhr.onreadystatechange = async function () {
         if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
             let patient_records = JSON.parse(xhr.responseText);
@@ -266,11 +272,13 @@ async function addAppointment() {
     xhr.send();
 }
 async function renderHospitalColumn(accessToken) {
+    const idToken = await getIdToken();
     return new Promise((resolve) => {
         let hospitals_map = {};
         const xhr = new XMLHttpRequest();
         xhr.open("GET", `${BASE_URL}/api/hospitals/`);
         xhr.setRequestHeader("Authorization", accessToken);
+        xhr.setRequestHeader("X-Id-Token", idToken);
         xhr.onreadystatechange = function () {
             if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
                 const hospitals = JSON.parse(xhr.responseText);
@@ -380,6 +388,7 @@ $(document).ready(async function () {
     const xhr = new XMLHttpRequest();
     xhr.open("GET", `${BASE_URL}/api/appointments/?hospital_id=${hospital_id}`);
     xhr.setRequestHeader("Authorization", accessToken);
+    xhr.setRequestHeader("X-Id-Token", await getIdToken());
     xhr.onreadystatechange = async function () {
         if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
             let columns_data = [

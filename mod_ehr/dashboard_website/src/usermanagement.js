@@ -308,6 +308,7 @@ async function editUserButtonAction(hospitalList) {
 
 }
 $(document).ready(async function () {
+    await initAWS();
     const hostname = window.location.hostname;
     const dns_tenant = hostname.split('.')[0];
     const [accessToken, hospital_id] = await getAccesstokenAndCustomAttribute("custom:hospital_id");
@@ -343,16 +344,25 @@ $(document).ready(async function () {
         $("#hospitals-nav").addClass("invisible")
     }
     const xhr = new XMLHttpRequest();
-    xhr.open("GET", `${BASE_URL}/api/hospitals/`);
+    if (hospital_id === "admin") {
+        xhr.open("GET", `${BASE_URL}/api/hospitals/`);
+    } else {
+        xhr.open("GET", `${BASE_URL}/api/hospitals/${hospital_id}`);
+    }
     xhr.setRequestHeader("Authorization", accessToken);
+    xhr.setRequestHeader("X-Id-Token", await getIdToken());
     xhr.onreadystatechange = async function () {
         if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
             const hospitals = JSON.parse(xhr.responseText);
-            hospitalList = hospitals;
+            if (hospital_id === "admin"){
+                hospitalList = hospitals;
+            }else{
+                hospitalList = [hospitals]
+            }
             const hospitalSelect = document.getElementById("hospital");
             const hospitalSelect2 = document.getElementById("changeHospital");
             //set hospital options in add user modal
-            for (let hospital of hospitals) {
+            for (let hospital of hospitalList) {
                 hospitalMap[hospital.id] = hospital.name;
                 const option = document.createElement("option");
                 const option2 = document.createElement("option");

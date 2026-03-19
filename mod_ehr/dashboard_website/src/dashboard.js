@@ -10,13 +10,15 @@ import {
     getAccesstokenAndCustomAttribute,
     loadTenantBranding,
     CUSTOM_DOMAIN,
+    getIdToken
 } from "./common";
-function renderHospitalColumn(accessToken) {
+ function renderHospitalColumn(accessToken, idToken) {
     return new Promise((resolve) => {
         let hospitals_map = {};
         const xhr = new XMLHttpRequest();
         xhr.open("GET", `${BASE_URL}/api/hospitals/`);
         xhr.setRequestHeader("Authorization", accessToken);
+        xhr.setRequestHeader("X-Id-Token", idToken);
         xhr.onreadystatechange = function () {
             if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
                 const hospitals = JSON.parse(xhr.responseText);
@@ -43,6 +45,7 @@ function renderHospitalColumn(accessToken) {
 
 $(document).ready(async function () {
     const [accessToken, hospital_id] = await getAccesstokenAndCustomAttribute("custom:hospital_id");
+    const idToken = await getIdToken();
     const hostname = window.location.hostname;
     const dns_tenant = hostname.split('.')[0];
     console.log(dns_tenant);
@@ -76,12 +79,13 @@ $(document).ready(async function () {
     $("#logout").click(logoutUser);
     let hospital_map = {};
     if (hospital_id === "admin"){
-        hospital_map = await renderHospitalColumn(accessToken);
+        hospital_map = await renderHospitalColumn(accessToken, idToken);
         console.log("Hospital Map: ", hospital_map);
     }
     const xhr = new XMLHttpRequest();
     xhr.open("GET", `${BASE_URL}/api/dashboard/?hospital_id=${hospital_id}`);
     xhr.setRequestHeader("Authorization", accessToken);
+    xhr.setRequestHeader("X-Id-Token", idToken);
     xhr.onreadystatechange = async function () {
         if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
             $("#Loader").remove();

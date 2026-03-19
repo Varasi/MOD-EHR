@@ -1,6 +1,7 @@
 from health_connector_base import models
 from health_connector_base.handlers import APIHandler, Response
 from health_connector_base.constants import Status
+from health_connector_base.auth import require_tenant_isolation
 
 
 class LogsHandler(APIHandler):
@@ -24,5 +25,6 @@ class LogsHandler(APIHandler):
         # Default behavior for other requests
         return super().process_event(event, *args, **kwargs)
 
+@require_tenant_isolation
 def lambda_handler(event, context):
     return LogsHandler.process_event(event)

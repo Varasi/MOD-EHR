@@ -2,8 +2,9 @@ from datetime import datetime, timezone
 
 from health_connector_base.handlers import Response
 from health_connector_base.models import Appointment,Patient
+from health_connector_base.auth import require_tenant_isolation
 
-
+@require_tenant_isolation
 def dashboard_handler(event, context):
     group_name = event["requestContext"]["authorizer"]["claims"]["cognito:groups"]
     ride_deletables = ["pickup", "dropoff"]

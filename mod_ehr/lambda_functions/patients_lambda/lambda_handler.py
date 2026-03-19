@@ -2,6 +2,9 @@ import os
 import json
 from health_connector_base import models
 from health_connector_base.handlers import APIHandler, Response, Status
+from health_connector_base.auth import require_tenant_isolation
+
+
 
 class PatientAPIHandler(APIHandler):
     model = models.Patient
@@ -97,6 +100,6 @@ class PatientAPIHandler(APIHandler):
     #     except self.model.DoesNotExist:
     #         return Response(body={"message": "Not Found"}, status=Status.HTTP_404_NOT_FOUND)
 
-
+@require_tenant_isolation
 def patients_handler(event, context):
     return PatientAPIHandler.process_event(event, context)

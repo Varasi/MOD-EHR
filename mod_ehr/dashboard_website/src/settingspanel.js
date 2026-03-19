@@ -7,6 +7,7 @@ import {
   toggleLoder,
   toggleAlertMessage,
   getAccesstokenAndCustomAttribute,
+  getIdToken
 } from "./common";
 
 var settingsDataStatus = false;
@@ -58,6 +59,7 @@ const handleSettingsClick = async () => {
     
     xhr.open("GET", `${BASE_URL}/api/settings/?hospital_id=${hospitalId}`);
     xhr.setRequestHeader("Authorization", accessToken);
+    xhr.setRequestHeader("X-Id-Token", await getIdToken());
     xhr.onreadystatechange = async function () {
       if (xhr.readyState === XMLHttpRequest.DONE) {
         console.log(xhr.responseText);
@@ -106,6 +108,7 @@ const handleFormSubmit = async () => {
     const xhr = new XMLHttpRequest();
     xhr.open("POST", `${link}/${key}`);
     xhr.setRequestHeader("Authorization", accessToken);
+    xhr.setRequestHeader("X-Id-Token", await getIdToken());
     xhr.setRequestHeader("Content-Type", "application/json");
     xhr.send(JSON.stringify({ name: key, value: formData[key], hospital_id: hospitalId }));
   }

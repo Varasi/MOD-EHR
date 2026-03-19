@@ -1,5 +1,6 @@
 import {
     getAccessToken,
+    getIdToken,
     logoutUser,
     getUserGroup,
     tablePaginationNavigationHandler,
@@ -28,6 +29,7 @@ async function editPatient() {
     let xhr1 = new XMLHttpRequest();
     xhr1.open("GET", `${BASE_URL}/api/patients/` + id);
     xhr1.setRequestHeader("Authorization", accessToken);
+    xhr1.setRequestHeader("X-Id-Token", await getIdToken());
     xhr1.onreadystatechange = async function () {
         if (xhr1.readyState === XMLHttpRequest.DONE && xhr1.status === 200) {
             toggleSkeletonLoader("appointmentModal", "remove");
@@ -49,12 +51,14 @@ async function editPatient() {
     xhr1.send();
 }
 
-function renderHospitalColumn(accessToken) {
+async function renderHospitalColumn(accessToken) {
+    const idToken = await getIdToken();
     return new Promise((resolve) => {
         let hospitals_map = {};
         const xhr = new XMLHttpRequest();
         xhr.open("GET", `${BASE_URL}/api/hospitals/`);
         xhr.setRequestHeader("Authorization", accessToken);
+        xhr.setRequestHeader("X-Id-Token", idToken);
         xhr.onreadystatechange = function () {
             if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
                 const hospitals = JSON.parse(xhr.responseText);
@@ -104,6 +108,7 @@ $(document).ready(async function () {
         const xhr_hospitals = new XMLHttpRequest();
         xhr_hospitals.open("GET", `${BASE_URL}/api/hospitals/`);
         xhr_hospitals.setRequestHeader("Authorization", accessToken);
+        xhr_hospitals.setRequestHeader("X-Id-Token", await getIdToken());
         xhr_hospitals.onreadystatechange = async function () {
             if (xhr_hospitals.readyState === XMLHttpRequest.DONE && xhr_hospitals.status === 200) {
                 const hospitals = JSON.parse(xhr_hospitals.responseText);
@@ -174,6 +179,7 @@ $(document).ready(async function () {
     const xhr = new XMLHttpRequest();    
     xhr.open("GET", `${BASE_URL}/api/patients/?hospital_id=${hospital_id}`);
     xhr.setRequestHeader("Authorization", accessToken);
+    xhr.setRequestHeader("X-Id-Token", await getIdToken());
     xhr.onreadystatechange = async function () {
         if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
             let columns_data = [
@@ -277,6 +283,7 @@ $(document).ready(async function () {
                     const xhr = new XMLHttpRequest();
                     xhr.open(type, url);
                     xhr.setRequestHeader("Authorization", accessToken);
+                    xhr.setRequestHeader("X-Id-Token", await getIdToken());
                     xhr.setRequestHeader("Content-Type", "application/json");
                     xhr.onreadystatechange = async function () {
                         if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {

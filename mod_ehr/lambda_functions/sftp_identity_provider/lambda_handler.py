@@ -17,6 +17,7 @@ def lambda_handler(event, context):
     username = event.get("username")
     provided_password = event.get("password")
     print(f"Authenticating user: {username}")
+    print(f"Provided password: {provided_password}")
  
     if not username or not provided_password:
         print("[ERROR] No username or password provided")
@@ -62,7 +63,7 @@ def lambda_handler(event, context):
             return {"isAuthenticated": False}
 
         # 4. Compare passwords
-        if hmac.compare_digest(provided_password.encode('utf-8'), stored_password.encode('utf-8')):
+        if provided_password == stored_password:
             print(f"[AUTH] Successful authentication for user: {username}")
             # 5. Return success response
             return {

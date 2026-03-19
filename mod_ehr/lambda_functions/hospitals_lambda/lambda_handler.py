@@ -5,6 +5,7 @@ from botocore.exceptions import ClientError
 from health_connector_base import models
 from health_connector_base.handlers import APIHandler, Response, PynamoDBEncoder
 from health_connector_base.constants import Status
+from health_connector_base.auth import require_tenant_isolation
 
 
 environment = os.environ.get("ENVIRONMENT", "LOCAL")
@@ -57,6 +58,7 @@ class HospitalAPIHandler(APIHandler):
     def get(self, event, *args, **kwargs):
         if event.get("pathParameters") and event["pathParameters"].get("id"):
             pk = event["pathParameters"]["id"]
+            print("pk:",pk)
             try:
                 obj = self.model.get(pk)
                 data = json.loads(json.dumps(obj, cls=PynamoDBEncoder))
@@ -116,6 +118,7 @@ class HospitalAPIHandler(APIHandler):
         return Response(body=obj, status=Status.HTTP_200_OK)
 
     def put(self, event, *args, **kwargs):
+        print("put called")
         body = json.loads(event["body"])
         logo_data = body.pop("logo_data", None)
         pk = event["pathParameters"]["id"]
@@ -185,5 +188,7 @@ class HospitalAPIHandler(APIHandler):
         )
         return response
 
+@require_tenant_isolation
 def hospitals_handler(event, context):
+    print("hospitals_handler called")
     return HospitalAPIHandler.process_event(event, context)
