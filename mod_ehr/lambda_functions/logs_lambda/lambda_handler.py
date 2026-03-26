@@ -14,9 +14,8 @@ class LogsHandler(APIHandler):
         if query_params and "hospital_id" in query_params:
             hospital_id = query_params["hospital_id"]
             logs = []
-            # Query using the GSI
             if hospital_id and hospital_id != "admin":
-                logs = list(cls.model.logs_by_hospital.query(hospital_id))
+                logs = list(cls.model.query(hospital_id))
                 print(f"Queried logs for hospital_id {hospital_id}: {logs}")
             else:
                 logs = list(cls.model.scan())

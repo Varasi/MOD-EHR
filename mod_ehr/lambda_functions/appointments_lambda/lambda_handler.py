@@ -1,10 +1,10 @@
 import os
 import json
 import boto3
+from pynamodb.exceptions import PutError
 from health_connector_base import models
-from health_connector_base.handlers import APIHandler
+from health_connector_base.handlers import APIHandler, Response, Status
 from health_connector_base.models import Patient
-from health_connector_base.handlers import Response
 from health_connector_base.auth import require_tenant_isolation
 import time
 
@@ -15,45 +15,146 @@ class AppointmentAPIHandler(APIHandler):
     model = models.Appointment
 
     def get(self, event, hash_key=None, *args, **kwargs):
-        query_params = event.get("queryStringParameters", {})
-        if query_params and "hospital_id" in query_params:
-            hospital_id = query_params["hospital_id"]
+        path_params = event.get("pathParameters") or {}
+        query_params = event.get("queryStringParameters") or {}
+        is_single_item_get = "id" in path_params
 
-        if hash_key:
-            # Single record retrieval
-            return super().get(event, hash_key, *args, **kwargs)
+        # if hash_key:
+        is_admin = event.get("is_admin", False)
+        user_hospital_id = event.get("user_hospital_id")
+
+        if is_single_item_get:
+            appointment_id = path_params["id"]
+            hospital_id = user_hospital_id
+            if is_admin and "hospital_id" in query_params:
+                hospital_id = query_params["hospital_id"]
+
+            if not hospital_id:
+                return Response(body={"error": "hospital_id is required"}, status=Status.HTTP_400_BAD_REQUEST)
+
+            try:
+                appointment = self.model.get(hospital_id, appointment_id)
+                return Response(body=appointment, status=Status.HTTP_200_OK)
+            except self.model.DoesNotExist:
+                return Response(body={"error": "Appointment not found"}, status=Status.HTTP_404_NOT_FOUND)
+
+        hospital_id = user_hospital_id
+        if is_admin and "hospital_id" in query_params:
+            hospital_id = query_params.get("hospital_id")
 
         
         filtered_appointments = []
         
         if hospital_id == "admin":
             valid_patients = {
-                patient.patient_id for patient in Patient.scan(
+                (patient.hospital_id, patient.patient_id) for patient in Patient.scan(
                     filter_condition = models.Patient.via_rider_id.exists() & (models.Patient.via_rider_id != "")
                 )
             }
-            print(f"Filtering appointments for admin access. Valid patients: {valid_patients}")
-            for pid in valid_patients:
-                filtered_appointments.extend(list(self.model.patient_id_index.query(pid)))
+            print(f"Filtering appointments for admin access. Valid patients: {len(valid_patients)}")
+            for hosp_id, pid in valid_patients:
+                apts = list(self.model.patient_id_index.query(pid))
+                filtered_appointments.extend([a for a in apts if getattr(a, 'hospital_id', None) == hosp_id])
 
             filtered_appointments.sort(key=lambda apt: apt.start_time, reverse=True)
         else:
+            if not hospital_id:
+                return Response(body={"error": "hospital_id is required for non-admin users"}, status=Status.HTTP_400_BAD_REQUEST)
+                
             valid_patients = {
-                patient.patient_id for patient in Patient.scan(
-                    filter_condition = models.Patient.via_rider_id.exists() & (models.Patient.via_rider_id != "") & (models.Patient.hospital_id == hospital_id)
+                patient.patient_id for patient in Patient.query(
+                    hospital_id,
+                    filter_condition = models.Patient.via_rider_id.exists() & (models.Patient.via_rider_id != "")
                 )
             }
             print(f"Filtering appointments for hospital_id: {hospital_id}")
             for pid in valid_patients:
-                filtered_appointments.extend(list(self.model.patient_id_index.query(pid)))
+                apts = list(self.model.patient_id_index.query(pid))
+                filtered_appointments.extend([a for a in apts if getattr(a, 'hospital_id', None) == hospital_id])
             # filtered_hosp_appointments = list(self.model.appointments_by_hospitals.query(hospital_id))
-            # for apt in filtered_hosp_appointments:
-            #     if apt.patient_id in valid_patients:
-            #         filtered_appointments.append(apt)
-            filtered_appointments.sort(key=lambda apt: apt.start_time, reverse=True)
 
         return Response(body=filtered_appointments, status=200)
         
+    def post(self, event, *args, **kwargs):
+        body = json.loads(event["body"])
+        user_hospital_id = event.get("user_hospital_id")
+        is_admin = event.get("is_admin", False)
+
+        if not is_admin:
+            body["hospital_id"] = user_hospital_id
+        elif "hospital_id" not in body:
+            return Response(body={"error": "hospital_id is required for admin users"}, status=Status.HTTP_400_BAD_REQUEST)
+
+        obj = self.model(**body)
+        try:
+            obj.save()
+            return Response(body=obj, status=Status.HTTP_201_CREATED)
+        except PutError:
+            return Response(body={"error": "Error saving appointment"}, status=Status.HTTP_409_CONFLICT)
+        except Exception as e:
+            return Response(body={"error": str(e)}, status=Status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    def put(self, event, *args, **kwargs):
+        path_params = event.get("pathParameters") or {}
+        query_params = event.get("queryStringParameters") or {}
+        appointment_id = path_params["id"]
+        user_hospital_id = event.get("user_hospital_id")
+        is_admin = event.get("is_admin", False)
+
+        hospital_id = user_hospital_id
+        if is_admin and "hospital_id" in query_params:
+            hospital_id = query_params["hospital_id"]
+
+        if not hospital_id:
+            return Response(body={"error": "hospital_id is required"}, status=Status.HTTP_400_BAD_REQUEST)
+
+        try:
+            appointment = self.model.get(hospital_id, appointment_id)
+            
+            body = json.loads(event["body"])
+            
+            if "hospital_id" in body and body["hospital_id"] != hospital_id:
+                 return Response(body={"error": "Cannot change hospital_id"}, status=Status.HTTP_400_BAD_REQUEST)
+            if "id" in body and body["id"] != appointment_id:
+                return Response(body={"error": "Cannot change id"}, status=Status.HTTP_400_BAD_REQUEST)
+
+            actions = []
+            for key, value in body.items():
+                if key not in ('hospital_id', 'id') and hasattr(self.model, key):
+                    actions.append(getattr(self.model, key).set(value))
+            
+            if actions:
+                appointment.update(actions=actions)
+
+            return Response(body=appointment, status=Status.HTTP_200_OK)
+
+        except self.model.DoesNotExist:
+            return Response(body={"error": "Appointment not found"}, status=Status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response(body={"error": str(e)}, status=Status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    def delete(self, event, *args, **kwargs):
+        path_params = event.get("pathParameters") or {}
+        query_params = event.get("queryStringParameters") or {}
+        appointment_id = path_params["id"]
+        user_hospital_id = event.get("user_hospital_id")
+        is_admin = event.get("is_admin", False)
+
+        hospital_id = user_hospital_id
+        if is_admin and "hospital_id" in query_params:
+            hospital_id = query_params["hospital_id"]
+
+        if not hospital_id:
+            return Response(body={"error": "hospital_id is required"}, status=Status.HTTP_400_BAD_REQUEST)
+
+        try:
+            appointment = self.model.get(hospital_id, appointment_id)
+            appointment.delete()
+            return Response(status=Status.HTTP_204_NO_CONTENT)
+        except self.model.DoesNotExist:
+            return Response(body={"error": "Appointment not found"}, status=Status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response(body={"error": str(e)}, status=Status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     @classmethod
     def process_event(cls, event: dict, *args, **kwargs):

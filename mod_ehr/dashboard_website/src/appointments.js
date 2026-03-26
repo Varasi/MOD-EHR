@@ -181,31 +181,32 @@ async function saveAppointment() {
         xhr.setRequestHeader("X-Id-Token", await getIdToken());
         xhr.setRequestHeader("Content-Type", "application/json");
         xhr.onreadystatechange = async function () {
-            $("#appointmentModal").css({
-              display: "none",
-            });
-            if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) { 
-                if (type == "POST") {
-                    $("#root").append(
-                        `<div id="customAlert" class="custom-alert-success"><div class="flex-1">Appointment created successfully</div></div>`
-                    );
+            if (xhr.readyState === XMLHttpRequest.DONE) {
+                $("#appointmentModal").css({
+                  display: "none",
+                });
+                if (xhr.status === 200 || xhr.status === 201) { 
+                    if (type == "POST") {
+                        $("#root").append(
+                            `<div id="customAlert" class="custom-alert-success"><div class="flex-1">Appointment created successfully</div></div>`
+                        );
+                    } else {
+                        $("#root").append(
+                            `<div id="customAlert" class="custom-alert-success"><div class="flex-1">Appointment updated successfully </div></div>`
+                        );
+                    }
+                    reload_required = true;
                 } else {
                     $("#root").append(
-                        `<div id="customAlert" class="custom-alert-success"><div class="flex-1">Appointment updated successfully </div></div>`
+                        `<div id="customAlert" class="custom-alert-danger"><div class="flex-1">Error Saving Appointment</div></div>`
                     );
                 }
-                reload_required = true;
-            } else {
-                $("#root").append(
-                    `<div id="customAlert" class="custom-alert-danger"><div class="flex-1">Error Saving Appointment</div></div>`
-                );
-
+                setTimeout(function () {
+                    $("#customAlert").remove();
+                    $("#appointmentForm").trigger("reset");
+                    if (reload_required) { window.location.reload(); }
+                }, 1000);
             }
-            setTimeout(function () {
-                $("#customAlert").remove();
-                $("#appointmentForm").trigger("reset");
-                if (reload_required) { window.location.reload(); }
-            }, 1000);
         };
         xhr.send(JSON.stringify(formData));
     }
@@ -214,13 +215,13 @@ async function saveAppointment() {
     }
 }
 async function DeleteAppointment() {
-    const accessToken = await getAccessToken();
+    const [accessToken, hospital_id] = await getAccesstokenAndCustomAttribute("custom:hospital_id");
     $("#spinner").show();
     const id = $(this).data("id");
     const xhr = new XMLHttpRequest();
     xhr.open(
         "DELETE",
-        `${BASE_URL}/api/appointments/` + id
+        `${BASE_URL}/api/appointments/${id}?hospital_id=${hospital_id}`
     );
     xhr.setRequestHeader("Authorization", accessToken);
     xhr.setRequestHeader("X-Id-Token", await getIdToken());

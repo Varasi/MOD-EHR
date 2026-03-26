@@ -21,12 +21,12 @@ def dashboard_handler(event, context):
     
     if hospital_id == "admin":
         valid_patients = {
-            patient.patient_id for patient in Patient.scan(
+            (patient.hospital_id, patient.patient_id) for patient in Patient.scan(
                 filter_condition = Patient.via_rider_id.exists() & (Patient.via_rider_id != "")
             )
         }
         for mapping in Appointment.scan(Appointment.end_time >= datetime.now(timezone.utc)):
-            if mapping.patient_id in valid_patients: 
+            if (getattr(mapping, 'hospital_id', None), mapping.patient_id) in valid_patients: 
                 if group_name in [
                     "DallasCountyHealthDepartmentHealthNavigators",
                     "HealthcareFacilityStaff",
@@ -36,11 +36,12 @@ def dashboard_handler(event, context):
                 res.append(mapping)
     else:
         valid_patients = {
-            patient.patient_id for patient in Patient.scan(
-                filter_condition = Patient.via_rider_id.exists() & (Patient.via_rider_id != "") & (Patient.hospital_id == hospital_id)
+            patient.patient_id for patient in Patient.query(
+                hospital_id,
+                filter_condition = Patient.via_rider_id.exists() & (Patient.via_rider_id != "")
             )
         }
-        for mapping in Appointment.scan(Appointment.end_time >= datetime.now(timezone.utc)):
+        for mapping in Appointment.query(hospital_id, filter_condition=(Appointment.end_time >= datetime.now(timezone.utc))):
             if mapping.patient_id in valid_patients: 
                 if group_name in [
                     "DallasCountyHealthDepartmentHealthNavigators",

@@ -26,8 +26,9 @@ class AppointmentsMapperWithEpic:
         """
         return {
             patient.patient_id: patient.via_rider_id
-            for patient in Patient.scan(
-                (Patient.provider == "epic") & (Patient.hospital_id == hospital_id) & (Patient.via_rider_id.exists())
+            for patient in Patient.query(
+                hospital_id,
+                filter_condition=(Patient.provider == "epic") & (Patient.via_rider_id.exists())
             )
         }
         

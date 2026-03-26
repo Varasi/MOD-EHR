@@ -25,9 +25,10 @@ async function editPatient() {
         display: "block",
     });
     toggleSkeletonLoader("appointmentModal", "add");
-    const id = $(this).data("id");
+    const id = $(this).attr("data-id");
+    const req_hospital_id = $(this).attr("data-hospital-id") || hospital_id;
     let xhr1 = new XMLHttpRequest();
-    xhr1.open("GET", `${BASE_URL}/api/patients/` + id);
+    xhr1.open("GET", `${BASE_URL}/api/patients/${id}?hospital_id=${req_hospital_id}`);
     xhr1.setRequestHeader("Authorization", accessToken);
     xhr1.setRequestHeader("X-Id-Token", await getIdToken());
     xhr1.onreadystatechange = async function () {
@@ -45,6 +46,7 @@ async function editPatient() {
                 $("#hospital_id_form").val(patient.hospital_id);
                 $('#hospital_select_block').addClass('d-none');
             }
+            $(".save").data("id", id);
             
         }
     };
@@ -105,23 +107,14 @@ $(document).ready(async function () {
     let hospital_map = {};
     if (hospital_id === "admin") {
         hospital_map = await renderHospitalColumn(accessToken);
-        const xhr_hospitals = new XMLHttpRequest();
-        xhr_hospitals.open("GET", `${BASE_URL}/api/hospitals/`);
-        xhr_hospitals.setRequestHeader("Authorization", accessToken);
-        xhr_hospitals.setRequestHeader("X-Id-Token", await getIdToken());
-        xhr_hospitals.onreadystatechange = async function () {
-            if (xhr_hospitals.readyState === XMLHttpRequest.DONE && xhr_hospitals.status === 200) {
-                const hospitals = JSON.parse(xhr_hospitals.responseText);
-                const hospitalSelect = document.getElementById("hospital_id_form");
-                for (let hospital of hospitals) {
-                    const option = document.createElement("option");
-                    option.value = hospital.id;
-                    option.textContent = hospital.name;
-                    hospitalSelect.appendChild(option);
-                }
-            }
+        
+        const hospitalSelect = document.getElementById("hospital_id_form");
+        for (const [id, name] of Object.entries(hospital_map)) {
+            const option = document.createElement("option");
+            option.value = id;
+            option.textContent = name;
+            hospitalSelect.appendChild(option);
         }
-        xhr_hospitals.send();
     }
 
     $("#appointmentForm").validate({
@@ -167,6 +160,7 @@ $(document).ready(async function () {
         } else {
             $('#hospital_select_block').addClass('d-none');
         }
+        $(".save").removeData("id");
         $("#appointmentModal").css({
             display: "block",
         });
@@ -175,6 +169,7 @@ $(document).ready(async function () {
         $("#appointmentModal").css({
             display: "none",
         });
+        $(".save").removeData("id");
     });    
     const xhr = new XMLHttpRequest();    
     xhr.open("GET", `${BASE_URL}/api/patients/?hospital_id=${hospital_id}`);
@@ -201,7 +196,7 @@ $(document).ready(async function () {
                     render: function (data, type, row) {
                         return (
                             `<div class="d-flex"><button title="edit" class="editBtn btn flex-1" data-id="` +
-                            row.patient_id +
+                            row.patient_id +  `" data-hospital-id="` + row.hospital_id +
                             `" ><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 18 18" fill="none">
   <path d="M14 7.33326L10.6667 3.99993M1.08331 16.9166L3.90362 16.6032C4.24819 16.5649 4.42048 16.5458 4.58152 16.4937C4.72439 16.4474 4.86035 16.3821 4.98572 16.2994C5.12702 16.2062 5.2496 16.0836 5.49475 15.8385L16.5 4.83326C17.4205 3.91279 17.4205 2.4204 16.5 1.49993C15.5795 0.579452 14.0871 0.579451 13.1667 1.49992L2.16142 12.5052C1.91627 12.7503 1.79369 12.8729 1.70051 13.0142C1.61784 13.1396 1.55249 13.2755 1.50624 13.4184C1.45411 13.5794 1.43497 13.7517 1.39668 14.0963L1.08331 16.9166Z" stroke="#111827" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
 </svg></button>`
@@ -253,6 +248,7 @@ $(document).ready(async function () {
                     display: "none",
                 });
                 $("#appointmentForm").trigger("reset");
+                $(".save").removeData("id");
             });
             $(".save").click(async function () {
                 toggleLoder("button-primary", "add");
@@ -273,7 +269,7 @@ $(document).ready(async function () {
                         formData['hospital_id'] = hospital_id;
                     }
                     if (id !== undefined) {
-                        url += id;
+                        url += `${id}?hospital_id=${formData['hospital_id']}`;
                         type = "PUT";
                         formData["id"] = id;
                         console.log(id);
@@ -286,27 +282,32 @@ $(document).ready(async function () {
                     xhr.setRequestHeader("X-Id-Token", await getIdToken());
                     xhr.setRequestHeader("Content-Type", "application/json");
                     xhr.onreadystatechange = async function () {
-                        if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
-                            if (type == "POST") {
+                        if (xhr.readyState === XMLHttpRequest.DONE) {
+                            $("#appointmentModal").css({
+                                display: "none",
+                            });
+                            if (xhr.status === 200 || xhr.status === 201) {
+                                if (type == "POST") {
+                                    $("#root").append(
+                                        `<div id="customAlert" class="custom-alert-success"><div class="flex-1">Saved Patient Details successfully</div></div>`
+                                    );
+                                } else {
+                                    $("#root").append(
+                                        `<div id="customAlert" class="custom-alert-success"><div class="flex-1">Updated Patient Details successfully</div></div>`
+                                    );
+                                }
+                                reload_required = true;
+                            } else {
                                 $("#root").append(
-                                    `<div id="customAlert" class="custom-alert-success"><div class="flex-1">Saved Patient Details successfully</div></div>`
+                                    `<div id="customAlert" class="custom-alert-danger"><div class="flex-1">Error Saving Patient</div></div>`
                                 );
                             }
-                            reload_required = true;
-                        } else {
-                            $("#root").append(
-                                `<div id="customAlert" class="custom-alert-danger"><div class="flex-1">Error Saving Patient</div></div>`
-                            );
-
+                            setTimeout(function () {
+                                $("#customAlert").remove();
+                                $("#appointmentForm").trigger("reset");
+                                if (reload_required) { window.location.reload(); }
+                            }, 1000);
                         }
-                        // $("#appointmentModal").css({
-                        //     display: "none",
-                        // });
-                        setTimeout(function () {
-                            $("#customAlert").remove();
-                            $("#appointmentForm").trigger("reset");
-                            if (reload_required) { window.location.reload(); }
-                        }, 1000);
                     };
                     xhr.send(JSON.stringify(formData));
                 }

@@ -58,8 +58,8 @@ class AppointmentsByHospitalsIndex(GlobalSecondaryIndex):
     end_time = UTCDateTimeAttribute(range_key=True)
 
 class Appointment(BaseModel):
-    id = UnicodeAttribute(hash_key=True, default_for_new=lambda: str(uuid.uuid4()))
-    hospital_id = UnicodeAttribute()
+    hospital_id = UnicodeAttribute(hash_key=True)
+    id = UnicodeAttribute(range_key=True, default_for_new=lambda: str(uuid.uuid4()))
     patient_id = UnicodeAttribute()
     patient_name = UnicodeAttribute()
     location = AddressAttribute()
@@ -79,56 +79,28 @@ class Appointment(BaseModel):
         table_name = "appointment_table"
 
 
-class HospitalIdIndex(GlobalSecondaryIndex):
-    class Meta:
-        index_name = "hospital_id-index"
-        projection = AllProjection()
-
-    hospital_id = UnicodeAttribute(hash_key=True)
-
-
 class Patient(BaseModel):
-    patient_id = UnicodeAttribute(hash_key=True)
+    hospital_id = UnicodeAttribute(hash_key=True)
+    patient_id = UnicodeAttribute(range_key=True)
     name = UnicodeAttribute()
     via_rider_id = UnicodeAttribute(null=True, default="")
     provider = ChoiceUnicodeAttribute(choices=["epic", "veradigm"], default="epic")
-    hospital_id = UnicodeAttribute()
-    
-    hospital_id_index = HospitalIdIndex()
 
     class Meta:
         table_name = "patients_table"
 
-class SettingsByHospitalIndex(GlobalSecondaryIndex):
-    class Meta:
-        index_name = "hospital_id-index"
-        projection = AllProjection()
-
+class Settings(BaseModel):
     hospital_id = UnicodeAttribute(hash_key=True)
     name = UnicodeAttribute(range_key=True)
-
-class Settings(BaseModel):
-    name = UnicodeAttribute(hash_key=True)
     value = UnicodeAttribute()
-    hospital_id = UnicodeAttribute(range_key=True)
-    settings_by_hospital = SettingsByHospitalIndex()
 
     class Meta:
         table_name = "settings_table"
 
-class FTPLogsByHospitalIndex(GlobalSecondaryIndex):
-    class Meta:
-        index_name = "hospital_id-index"
-        projection = AllProjection()
-
+class FTPLogs(BaseModel):
     hospital_id = UnicodeAttribute(hash_key=True)
     name = UnicodeAttribute(range_key=True)
-
-class FTPLogs(BaseModel):
-    name = UnicodeAttribute(hash_key=True)
     server_last_modified = NumberAttribute()
-    hospital_id = UnicodeAttribute(range_key=True)
-    logs_by_hospital = FTPLogsByHospitalIndex()
 
     class Meta:
         table_name = "ftp_logs_table"

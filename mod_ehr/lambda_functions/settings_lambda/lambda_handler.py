@@ -14,9 +14,8 @@ class SettingsHandler(APIHandler):
         if query_params and "hospital_id" in query_params:
             hospital_id = query_params["hospital_id"]
             settings = []
-            # Query using the GSI
             if hospital_id:
-                settings = list(cls.model.settings_by_hospital.query(hospital_id))
+                settings = list(cls.model.query(hospital_id))
                 print(f"Queried settings for hospital_id {hospital_id}: {settings}")
             print(f"Response body: {settings}")
             return Response(body=settings, status=Status.HTTP_200_OK)

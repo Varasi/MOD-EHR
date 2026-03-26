@@ -2,6 +2,7 @@ import os
 import json
 import boto3
 from botocore.exceptions import ClientError
+from pynamodb.exceptions import PutError
 from health_connector_base import models
 from health_connector_base.handlers import APIHandler, Response, PynamoDBEncoder
 from health_connector_base.constants import Status
@@ -96,7 +97,10 @@ class HospitalAPIHandler(APIHandler):
 
         obj = self.model(**body)
         obj.status = "PENDING"
-        obj.save()
+        try:
+            obj.save(self.model.id.does_not_exist())
+        except PutError:
+            return Response(body={"error": f"Hospital ID '{obj.id}' is already in use."}, status=409)
 
         if secret_data:
             self._update_secret(obj.id, secret_data)

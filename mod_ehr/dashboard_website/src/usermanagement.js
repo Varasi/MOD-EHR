@@ -308,7 +308,7 @@ async function editUserButtonAction(hospitalList) {
 
 }
 $(document).ready(async function () {
-    await initAWS();
+    // await initAWS();
     const hostname = window.location.hostname;
     const dns_tenant = hostname.split('.')[0];
     const [accessToken, hospital_id] = await getAccesstokenAndCustomAttribute("custom:hospital_id");

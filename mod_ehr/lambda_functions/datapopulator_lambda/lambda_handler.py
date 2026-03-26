@@ -30,16 +30,14 @@ class AppointmentsMapperWithVia:
     def __init__(self) -> None:
         self._connections = threading.local()
 
-    @cached_property
-    def prior_period(self):
+    def get_prior_period(self, hospital_id: str):
         with contextlib.suppress(Settings.DoesNotExist):
-            return int(Settings.get("prior_period").value) * 60
+            return int(Settings.get(hospital_id, "prior_period").value) * 60
         return DIFF_MATCH_IN_SEC
 
-    @cached_property
-    def subsequent_period(self):
+    def get_subsequent_period(self, hospital_id: str):
         with contextlib.suppress(Settings.DoesNotExist):
-            return int(Settings.get("subsequent_period").value) * -60
+            return int(Settings.get(hospital_id, "subsequent_period").value) * -60
         return -900
 
     def get_patient_mapping(self) -> dict:
@@ -51,25 +49,25 @@ class AppointmentsMapperWithVia:
 
         return {
             "epic": {
-                patient.patient_id: patient.via_rider_id
+                (patient.hospital_id, patient.patient_id): patient.via_rider_id
                 for patient in Patient.scan(
                     filter_condition=(
-                        (Patient.via_rider_id) and (Patient.provider == "epic")
+                        Patient.via_rider_id.exists() & (Patient.provider == "epic")
                     )
                 )
             },
             "veradigm": {
-                patient.patient_id: patient.via_rider_id
+                (patient.hospital_id, patient.patient_id): patient.via_rider_id
                 for patient in Patient.scan(
                     filter_condition=(
-                        (Patient.via_rider_id) and (Patient.provider == "veradigm")
+                        Patient.via_rider_id.exists() & (Patient.provider == "veradigm")
                     )
                 )
             },
             "all": {
-                patient.patient_id: patient.via_rider_id
+                (patient.hospital_id, patient.patient_id): patient.via_rider_id
                 for patient in Patient.scan(
-                    filter_condition=(None and (Patient.via_rider_id))
+                    filter_condition=(Patient.via_rider_id.exists())
                 )
             },
         }
@@ -95,20 +93,23 @@ class AppointmentsMapperWithVia:
         return participant["actor"]["display"]["@value"]
 
     def get_matching_ride(
-        self, address: str, trips: list, appointment_start_time: int
+        self, address: str, trips: list, appointment_start_time: int, hospital_id: str
     ) -> dict:
         """
         Returns the matching ride based on the address, trips, and appointment start time.
         Args:
             address (str): The address.
             trips (list): The list of trips.
-            appointment_start_time (int): The appointment start timestamp..
+            appointment_start_time (int): The appointment start timestamp.
+            hospital_id (str): The hospital tenant ID.
         Returns:
             The matching ride.
         """
         match_ride = {}
         prev_diff = 1e9
         prev_location_diff = 1e9
+        prior_period = self.get_prior_period(hospital_id)
+        subsequent_period = self.get_subsequent_period(hospital_id)
         for trip in trips:
             cur_diff = int(appointment_start_time - trip["dropoff_eta"])
             cur_location_diff = int(
@@ -120,10 +121,10 @@ class AppointmentsMapperWithVia:
                     ],
                 )
             )
-            print(f"subsequent_period: {self.subsequent_period}, cur_diff: {cur_diff}, prior_period: {self.prior_period}")
+            print(f"subsequent_period: {subsequent_period}, cur_diff: {cur_diff}, prior_period: {prior_period}")
             print(f"cur_diff: {cur_diff}, prev_diff: {prev_diff}, cur_location_diff: {cur_location_diff}, prev_location_diff: {prev_location_diff}")
             if (
-                self.subsequent_period <= cur_diff <= self.prior_period
+                subsequent_period <= cur_diff <= prior_period
                 and cur_diff < prev_diff
                 and cur_location_diff <= LOCATION_DIFF
                 and cur_location_diff <= prev_location_diff
@@ -164,7 +165,7 @@ class AppointmentsMapperWithVia:
     def epic_with_via(self, patient_mapping: dict):
         smart_client = SmartEpicClient(self._get_jwt())
         appointment_objs = []
-        for patient_key, rider_id in patient_mapping["epic"].items():
+        for (hospital_id, patient_key), rider_id in patient_mapping["epic"].items():
             # trips = Via().get_trips(rider_id).get("trips")
             if appointments := smart_client.get_appointments(patient_key):
                 for appointment in appointments["Bundle"]["entry"]:
@@ -183,10 +184,11 @@ class AppointmentsMapperWithVia:
                             "start_time": start_time,
                             "end_time": end_time,
                             "provider": "epic",
+                            "hospital_id": hospital_id,
                         } | self._map_participants_data(appointment, smart_client)
                         # result |= {
                         #     "ride": self.get_matching_ride(
-                        #         result["location"], trips, int(start_time.timestamp())
+                        #         result["location"], trips, int(start_time.timestamp()), hospital_id
                         #     )
                         #     or VIA_RIDE_MOCK
                         # }
@@ -234,12 +236,13 @@ class AppointmentsMapperWithVia:
         with Appointment.batch_write() as batch:
             for app in apps.appointments:
                 trips = patient_trips.get(app.patient_number, {})
+                rider_id = patient_mapping["veradigm"].get((hospital_id, app.patient_number))
                 if (
-                    patient_mapping.get(app.patient_number)
+                    rider_id
                     and not trips
                     and not patient_trips.get(app.patient_number)
                 ):
-                    trips = Via().get_trips(patient_mapping.get(app.patient_number))
+                    trips = Via().get_trips(rider_id)
                     patient_trips[app.patient_number] = trips
                 location = f"{app.location_name},{app.location_street1},{app.location_street2},{app.location_city},{app.location_state},{app.location_zip}".replace(
                     ",,", ","
@@ -259,6 +262,7 @@ class AppointmentsMapperWithVia:
                         location,
                         trips.get("trips", []),
                         int(appointment_datetime.timestamp()),
+                    hospital_id
                     )
                     or VIA_RIDE_MOCK,
                     hospital_id=hospital_id,
@@ -290,7 +294,8 @@ class AppointmentsMapperWithVia:
             filter_condition=(Appointment.end_time >= datetime.now(timezone.utc))
             & (Appointment.status == "Booked")
         ):
-            if rider_id := patient_mapping["all"].get(appointment.patient_id):
+            hospital_id = getattr(appointment, 'hospital_id', None)
+            if rider_id := patient_mapping["all"].get((hospital_id, appointment.patient_id)):
                 print("rider_id:",rider_id)
                 start_time = int(appointment.start_time.timestamp())
                 trips = patient_trips.get(appointment.patient_id)
@@ -300,7 +305,7 @@ class AppointmentsMapperWithVia:
                 existing_ride = getattr(appointment, "ride", {}) or {}
                 new_ride = (
                     self.get_matching_ride(
-                        appointment.location, trips.get("trips", []), start_time
+                        appointment.location, trips.get("trips", []), start_time, hospital_id
                     )
                     or VIA_RIDE_MOCK
                 )
@@ -347,7 +352,8 @@ class AppointmentsMapperWithViaMock(AppointmentsMapperWithVia):
             filter_condition=(Appointment.end_time >= datetime.now(timezone.utc))
             & (Appointment.status == "Booked")
         ):
-            if rider_id := patient_mapping["epic"].get(appointment.patient_id):
+            hospital_id = getattr(appointment, 'hospital_id', None)
+            if rider_id := patient_mapping["epic"].get((hospital_id, appointment.patient_id)):
                 start_time = int(appointment.start_time.timestamp())
                 trips = patient_trips.get(appointment.patient_id)
                 if trips is None:
@@ -356,7 +362,7 @@ class AppointmentsMapperWithViaMock(AppointmentsMapperWithVia):
                 existing_ride = getattr(appointment, "ride", {}) or {}
                 new_ride = (
                     self.get_matching_ride(
-                        appointment.location, trips.get("trips", []), start_time
+                        appointment.location, trips.get("trips", []), start_time, hospital_id
                     )
                     or VIA_RIDE_MOCK
                 )
