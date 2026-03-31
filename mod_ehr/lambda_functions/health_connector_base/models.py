@@ -13,21 +13,11 @@ from health_connector_base.custom_attributes import (
 )
 from pynamodb.attributes import JSONAttribute, NumberAttribute, UnicodeAttribute
 from pynamodb.expressions.condition import Condition
-from pynamodb.models import MetaModel, Model
+from pynamodb.models import Model
 from pynamodb.indexes import GlobalSecondaryIndex, AllProjection
 
 
-class CustomMeta(MetaModel):
-
-    def __new__(cls, name, bases, namespace, discriminator=None):
-        if "Meta" in namespace and hasattr(namespace["Meta"], "table_name"):
-            namespace["Meta"].table_name = (
-                f"{os.environ.get('ENVIRONMENT','development').lower()}_{namespace['Meta'].table_name}"
-            )
-        return super().__new__(cls, name, bases, namespace)
-
-
-class BaseModel(Model, metaclass=CustomMeta):
+class BaseModel(Model):
     created = UTCDateTimeAttribute(default_for_new=datetime.now(timezone.utc))
     modified = UTCDateTimeAttribute(default=datetime.now(timezone.utc))
 
@@ -76,7 +66,7 @@ class Appointment(BaseModel):
     patient_email = UnicodeAttribute(null=True, default="")
 
     class Meta:
-        table_name = "appointment_table"
+        table_name = os.environ.get("APPOINTMENT_TABLE_NAME")
 
 
 class Patient(BaseModel):
@@ -87,7 +77,7 @@ class Patient(BaseModel):
     provider = ChoiceUnicodeAttribute(choices=["epic", "veradigm"], default="epic")
 
     class Meta:
-        table_name = "patients_table"
+        table_name = os.environ.get("PATIENTS_TABLE_NAME")
 
 class Settings(BaseModel):
     hospital_id = UnicodeAttribute(hash_key=True)
@@ -95,7 +85,7 @@ class Settings(BaseModel):
     value = UnicodeAttribute()
 
     class Meta:
-        table_name = "settings_table"
+        table_name = os.environ.get("SETTINGS_TABLE_NAME")
 
 class FTPLogs(BaseModel):
     hospital_id = UnicodeAttribute(hash_key=True)
@@ -103,7 +93,7 @@ class FTPLogs(BaseModel):
     server_last_modified = NumberAttribute()
 
     class Meta:
-        table_name = "ftp_logs_table"
+        table_name = os.environ.get("FTPLOGS_TABLE_NAME")
 
 class Hospital(BaseModel):
     id = UnicodeAttribute(hash_key=True)
@@ -123,4 +113,4 @@ class Hospital(BaseModel):
 
 
     class Meta:
-        table_name = "hospitals_table"
+        table_name = os.environ.get("HOSPITALS_TABLE_NAME")

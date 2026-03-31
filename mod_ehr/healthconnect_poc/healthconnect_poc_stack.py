@@ -19,8 +19,10 @@ from constructs import Construct
 
 
 class HealthconnectPocStack(Stack):
-    def __init__(self, scope: Construct, construct_id: str, config, **kwargs):
+    def __init__(self, scope: Construct, construct_id: str, config, version_suffix: str, **kwargs):
         self.config = config
+        self.version_suffix = f"-{version_suffix}" if version_suffix else ""
+        self.version_suffix_us = f"_{version_suffix}" if version_suffix else ""
         super().__init__(scope, construct_id, **kwargs)
         # self.import_certificate()
         # IAM ROLES
@@ -35,14 +37,14 @@ class HealthconnectPocStack(Stack):
         self.create_bucket()
         # AWS LAMDBA
         self.create_lambda_layer()
+        self.create_data_populator_lambda()
+        self.create_provisioning_lambda()
         self.create_appointments_lambda()
         self.create_settings_lambda()
-        self.create_data_populator_lambda()
         self.create_dashboard_lambda()
         self.create_epic_lambda()
         self.create_patients_lambda()
         self.create_logs_lambda()
-        self.create_provisioning_lambda()
         self.create_hospitals_lambda()
         self.create_epic_data_populator_lambda()
         # Secret Manager
@@ -94,9 +96,8 @@ class HealthconnectPocStack(Stack):
         # )
         self.sftp_bucket = s3.Bucket(
             self,
-            f"HealthConnector{self.config.ENVIRONMENT.title()}SFTPBucket",
-            bucket_name=f"{self.config.ENVIRONMENT.lower()}-sftp-server-bucket-dev", #dev account
-            # bucket_name=f"{self.config.ENVIRONMENT.lower()}-sftp-server-bucket", #uat/prod account
+            f"EHRMultitenant{self.config.ENVIRONMENT.title()}SFTPBucket",
+            bucket_name=f"{self.config.ENVIRONMENT.lower()}-sftp-server-bucket{self.version_suffix}", #dev account
             removal_policy=RemovalPolicy.DESTROY,
             block_public_access=s3.BlockPublicAccess.BLOCK_ALL,
         )
@@ -151,8 +152,8 @@ class HealthconnectPocStack(Stack):
         # self.dashboard_table.grant_full_access(self.LambdaExecutionRole)
         self.appointment_table = dynamo_db.TableV2(
             self,
-            f"HealthConnector{self.config.ENVIRONMENT.title()}AppointmentTable",
-            table_name=f"{self.config.ENVIRONMENT.lower()}_appointment_table",
+            f"EHRMultiteant{self.config.ENVIRONMENT.title()}AppointmentTable",
+            table_name=f"{self.config.ENVIRONMENT.lower()}_appointment_table{self.version_suffix_us}",
             contributor_insights=True,
             point_in_time_recovery=True,
             partition_key=dynamo_db.Attribute(
@@ -185,8 +186,8 @@ class HealthconnectPocStack(Stack):
         self.appointment_table.grant_full_access(self.LambdaExecutionRole)
         self.patients_table = dynamo_db.TableV2(
             self,
-            f"HealthConnector{self.config.ENVIRONMENT.title()}PatientsTable",
-            table_name=f"{self.config.ENVIRONMENT.lower()}_patients_table",
+            f"EHRMultitenant{self.config.ENVIRONMENT.title()}PatientsTable",
+            table_name=f"{self.config.ENVIRONMENT.lower()}_patients_table{self.version_suffix_us}",
             contributor_insights=True,
             point_in_time_recovery=True,
             partition_key=dynamo_db.Attribute(
@@ -200,8 +201,8 @@ class HealthconnectPocStack(Stack):
         self.patients_table.grant_full_access(self.LambdaExecutionRole)
         self.settings_table = dynamo_db.TableV2(
             self,
-            f"HealthConnector{self.config.ENVIRONMENT.title()}SettingsTable",
-            table_name=f"{self.config.ENVIRONMENT.lower()}_settings_table",
+            f"EHRMultitenant{self.config.ENVIRONMENT.title()}SettingsTable",
+            table_name=f"{self.config.ENVIRONMENT.lower()}_settings_table{self.version_suffix_us}",
             contributor_insights=True,
             point_in_time_recovery=True,
             partition_key=dynamo_db.Attribute(
@@ -214,8 +215,8 @@ class HealthconnectPocStack(Stack):
         self.settings_table.grant_full_access(self.LambdaExecutionRole)
         self.sftp_logs_table = dynamo_db.TableV2(
             self,
-            f"HealthConnector{self.config.ENVIRONMENT.title()}SFTPLogsTable",
-            table_name=f"{self.config.ENVIRONMENT.lower()}_ftp_logs_table",
+            f"EHRMultitenant{self.config.ENVIRONMENT.title()}SFTPLogsTable",
+            table_name=f"{self.config.ENVIRONMENT.lower()}_ftp_logs_table{self.version_suffix_us}",
             contributor_insights=True,
             point_in_time_recovery=True,
             partition_key=dynamo_db.Attribute(
@@ -229,8 +230,8 @@ class HealthconnectPocStack(Stack):
         self.sftp_logs_table.grant_full_access(self.LambdaExecutionRole)
         self.hospitals_table = dynamo_db.TableV2(
             self,
-            f"HealthConnector{self.config.ENVIRONMENT.title()}HospitalTable",
-            table_name=f"{self.config.ENVIRONMENT.lower()}_hospitals_table",
+            f"EHRMultitenant{self.config.ENVIRONMENT.title()}HospitalTable",
+            table_name=f"{self.config.ENVIRONMENT.lower()}_hospitals_table{self.version_suffix_us}",
             contributor_insights=True,
             point_in_time_recovery=True,
             partition_key=dynamo_db.Attribute(
@@ -242,7 +243,7 @@ class HealthconnectPocStack(Stack):
     def create_vpc(self):
         self.vpc = ec2.Vpc(
             self,
-            f"HealthConnector{self.config.ENVIRONMENT.title()}VPC",
+            f"EHRMultitenant{self.config.ENVIRONMENT.title()}VPC",
             ip_addresses=ec2.IpAddresses.cidr(self.config.CIDR),
             max_azs=3,
             nat_gateways=1,
@@ -255,8 +256,8 @@ class HealthconnectPocStack(Stack):
     def create_bucket(self):
         self.bucket = s3.Bucket(
             self,
-            f"HealthConnector{self.config.ENVIRONMENT.title()}Bucket",
-            bucket_name=self.config.BUCKET_NAME,
+            f"EHRMultitenant{self.config.ENVIRONMENT.title()}Bucket",
+            bucket_name=f"{self.config.BUCKET_NAME}{self.version_suffix}",
             # block_public_access=s3.BlockPublicAccess(
             #     block_public_acls=True,
             #     block_public_policy=True,
@@ -275,7 +276,7 @@ class HealthconnectPocStack(Stack):
         )
         s3_deployment.BucketDeployment(
             self,
-            f"HealthConnector{self.config.ENVIRONMENT.title()}BucketDeployment",
+            f"EHRMultitenant{self.config.ENVIRONMENT.title()}BucketDeployment",
             sources=[s3_deployment.Source.asset("dashboard_website/dist")],
             destination_bucket=self.bucket,
             prune=False,
@@ -289,7 +290,7 @@ class HealthconnectPocStack(Stack):
 
     def create_cloudfront_dist(self):
         self.s3_oai = cloudfront.OriginAccessIdentity(
-            self, f"HealthConnector{self.config.ENVIRONMENT.title()}OAI"
+            self, f"EHRMultitenant{self.config.ENVIRONMENT.title()}OAI"
         )
         self._s3_origin = origins.S3Origin(
             origin_access_identity=self.s3_oai, bucket=self.bucket
@@ -319,7 +320,7 @@ class HealthconnectPocStack(Stack):
         # )
         self.cloudfront_distribution = cloudfront.Distribution(
             self,
-            f"HealthConnector{self.config.ENVIRONMENT.title()}CloudFrontDistribution",
+            f"EHRMultitenant{self.config.ENVIRONMENT.title()}CloudFrontDistribution",
             default_behavior=cloudfront.BehaviorOptions(
                 origin=self._s3_origin,
                 viewer_protocol_policy=cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
@@ -361,7 +362,7 @@ class HealthconnectPocStack(Stack):
     def import_certificate(self):
         self.certificate = acm.Certificate.from_certificate_arn(
             self,
-            id=f"HealthConnector{self.config.ENVIRONMENT.title()}Certificate",
+            id=f"EHRMultitenant{self.config.ENVIRONMENT.title()}Certificate",
             certificate_arn=self.config.CERTIFICATE_ARN,
         )
 
@@ -397,13 +398,13 @@ class HealthconnectPocStack(Stack):
                     iam.ManagedPolicy.from_aws_managed_policy_name(managed_policy)
                     for managed_policy in role_config["POLICIES"]
                 ],
-                role_name=f"{self.config.ENVIRONMENT}-{role}",
+                role_name=f"{self.config.ENVIRONMENT}-{role}{self.version_suffix}",
             )
             setattr(self, role, created_role)
 
     def create_secrets(self):
         for secret_name, secret_value in self.config.SECRETS.items():
-            secret_name = f"{self.config.ENVIRONMENT.lower()}-{secret_name}"
+            secret_name = f"{self.config.ENVIRONMENT.lower()}-{secret_name}{self.version_suffix}"
             secret = secretsmanager.Secret(
                 self,
                 secret_name,
@@ -415,14 +416,14 @@ class HealthconnectPocStack(Stack):
     def create_lambda_layer(self):
         self.requirements_layer = aws_lambda.LayerVersion(
             self,
-            f"HealthConnector{self.config.ENVIRONMENT.title()}Layer",
+            f"EHRMultitenant{self.config.ENVIRONMENT.title()}Layer",
             code=aws_lambda.Code.from_asset("requirements.zip"),
             layer_version_name="requirements_layer",
             compatible_architectures=[aws_lambda.Architecture.X86_64],
         )
         self.base_layer = aws_lambda.LayerVersion(
             self,
-            f"HealthConnector{self.config.ENVIRONMENT.title()}BaseLayer",
+            f"EHRMultitenant{self.config.ENVIRONMENT.title()}BaseLayer",
             code=aws_lambda.Code.from_asset("health_connector_base.zip"),
             layer_version_name="base_layer",
             compatible_architectures=[aws_lambda.Architecture.X86_64],
@@ -431,16 +432,19 @@ class HealthconnectPocStack(Stack):
     def create_dashboard_lambda(self):
         self.dashboard_lambda = aws_lambda.Function(
             self,
-            f"HealthConnector{self.config.ENVIRONMENT.title()}DashboardHandler",
-            function_name=f"HealthConnector{self.config.ENVIRONMENT.title()}DashboardHandler",
+            f"EHRMultitenant{self.config.ENVIRONMENT.title()}DashboardHandler",
+            function_name=f"EHRMultitenant{self.config.ENVIRONMENT.title()}DashboardHandler{self.version_suffix_us}",
             runtime=aws_lambda.Runtime.PYTHON_3_11,
             code=aws_lambda.Code.from_asset("lambda_functions/dashboard_lambda"),
             handler="health_connector.dashboard_handler",
             role=self.LambdaExecutionRole,
             environment={
-                "BUCKET_NAME": "health-connector-poc",
+                "BUCKET_NAME": self.bucket.bucket_name,
                 "PATH": "data/dashboard.json",
                 "ENVIRONMENT": self.config.ENVIRONMENT.upper(),
+                "APPOINTMENT_TABLE_NAME": self.appointment_table.table_name,
+                "PATIENTS_TABLE_NAME": self.patients_table.table_name,
+                "VERSION_SUFFIX": self.version_suffix,
             },
             vpc=self.vpc,
             layers=[self.requirements_layer, self.base_layer],
@@ -452,8 +456,8 @@ class HealthconnectPocStack(Stack):
     def create_appointments_lambda(self):
         self.appointments_lambda = aws_lambda.Function(
             self,
-            f"HealthConnector{self.config.ENVIRONMENT.title()}AppointmentsHandler",
-            function_name=f"HealthConnector{self.config.ENVIRONMENT.title()}AppointmentsHandler",
+            f"EHRMultitenant{self.config.ENVIRONMENT.title()}AppointmentsHandler",
+            function_name=f"EHRMultitenant{self.config.ENVIRONMENT.title()}AppointmentsHandler{self.version_suffix_us}",
             runtime=aws_lambda.Runtime.PYTHON_3_11,
             code=aws_lambda.Code.from_asset("lambda_functions/appointments_lambda"),
             handler="lambda_handler.appointments_handler",
@@ -465,14 +469,18 @@ class HealthconnectPocStack(Stack):
             environment={
                 "KMS_AVAILABLE": "True",
                 "ENVIRONMENT": self.config.ENVIRONMENT.upper(),
+                "DATA_POPULATOR_LAMBDA_NAME": self.data_populator_lambda.function_name,
+                "APPOINTMENT_TABLE_NAME": self.appointment_table.table_name,
+                "PATIENTS_TABLE_NAME": self.patients_table.table_name,
+                "VERSION_SUFFIX": self.version_suffix,
             },
         )
 
     def create_data_populator_lambda(self):
         self.data_populator_lambda = aws_lambda.Function(
             self,
-            f"HealthConnector{self.config.ENVIRONMENT.title()}DataPopulator",
-            function_name=f"HealthConnector{self.config.ENVIRONMENT.title()}DataPopulator",
+            f"EHRMultitenant{self.config.ENVIRONMENT.title()}DataPopulator",
+            function_name=f"EHRMultitenant{self.config.ENVIRONMENT.title()}DataPopulator{self.version_suffix_us}",
             runtime=aws_lambda.Runtime.PYTHON_3_11,
             code=aws_lambda.Code.from_asset("lambda_functions/datapopulator_lambda"),
             handler="lambda_handler.data_populator",
@@ -480,6 +488,12 @@ class HealthconnectPocStack(Stack):
             environment={
                 "KMS_AVAILABLE": "True",
                 "ENVIRONMENT": self.config.ENVIRONMENT.upper(),
+                "APPOINTMENT_TABLE_NAME": self.appointment_table.table_name,
+                "PATIENTS_TABLE_NAME": self.patients_table.table_name,
+                "SETTINGS_TABLE_NAME": self.settings_table.table_name,
+                "FTPLOGS_TABLE_NAME": self.sftp_logs_table.table_name,
+                "HOSPITALS_TABLE_NAME": self.hospitals_table.table_name,
+                "VERSION_SUFFIX": self.version_suffix,
             },
             layers=[self.requirements_layer, self.base_layer],
             vpc=self.vpc,
@@ -499,8 +513,8 @@ class HealthconnectPocStack(Stack):
     def create_epic_lambda(self):
         self.epic_lambda = aws_lambda.Function(
             self,
-            f"HealthConnector{self.config.ENVIRONMENT.title()}EpicLambda",
-            function_name=f"HealthConnector{self.config.ENVIRONMENT.title()}EpicLambda",
+            f"EHRMultitenant{self.config.ENVIRONMENT.title()}EpicLambda",
+            function_name=f"EHRMultitenant{self.config.ENVIRONMENT.title()}EpicLambda{self.version_suffix_us}",
             runtime=aws_lambda.Runtime.PYTHON_3_11,
             code=aws_lambda.Code.from_asset("lambda_functions/epic_appointments"),
             handler="lambda_handler.epic_handler",
@@ -508,6 +522,10 @@ class HealthconnectPocStack(Stack):
             environment={
                 "KMS_AVAILABLE": "True",
                 "ENVIRONMENT": self.config.ENVIRONMENT.upper(),
+                "APPOINTMENT_TABLE_NAME": self.appointment_table.table_name,
+                "PATIENTS_TABLE_NAME": self.patients_table.table_name,
+                "HOSPITALS_TABLE_NAME": self.hospitals_table.table_name,
+                "VERSION_SUFFIX": self.version_suffix,
             },
             layers=[self.requirements_layer, self.base_layer],
             vpc=self.vpc,
@@ -519,8 +537,8 @@ class HealthconnectPocStack(Stack):
     def create_patients_lambda(self):
         self.patients_lambda = aws_lambda.Function(
             self,
-            f"HealthConnector{self.config.ENVIRONMENT.title()}PatientLambda",
-            function_name=f"HealthConnector{self.config.ENVIRONMENT.title()}PatientLambda",
+            f"EHRMultitenant{self.config.ENVIRONMENT.title()}PatientLambda",
+            function_name=f"EHRMultitenant{self.config.ENVIRONMENT.title()}PatientLambda{self.version_suffix_us}",
             runtime=aws_lambda.Runtime.PYTHON_3_11,
             code=aws_lambda.Code.from_asset("lambda_functions/patients_lambda"),
             handler="lambda_handler.patients_handler",
@@ -533,14 +551,16 @@ class HealthconnectPocStack(Stack):
             environment={
                 "KMS_AVAILABLE": "True",
                 "ENVIRONMENT": self.config.ENVIRONMENT.upper(),
+                "PATIENTS_TABLE_NAME": self.patients_table.table_name,
+                "VERSION_SUFFIX": self.version_suffix,
             },
         )
 
     def create_settings_lambda(self):
         self.settings_lambda = aws_lambda.Function(
             self,
-            f"HealthConnector{self.config.ENVIRONMENT.title()}SettingsLambda",
-            function_name=f"HealthConnector{self.config.ENVIRONMENT.title()}SettingsLambda",
+            f"EHRMultitenant{self.config.ENVIRONMENT.title()}SettingsLambda",
+            function_name=f"EHRMultitenant{self.config.ENVIRONMENT.title()}SettingsLambda{self.version_suffix_us}",
             runtime=aws_lambda.Runtime.PYTHON_3_11,
             code=aws_lambda.Code.from_asset("lambda_functions/settings_lambda"),
             handler="lambda_handler.settings_handler",
@@ -552,14 +572,16 @@ class HealthconnectPocStack(Stack):
             environment={
                 "KMS_AVAILABLE": "True",
                 "ENVIRONMENT": self.config.ENVIRONMENT.upper(),
+                "SETTINGS_TABLE_NAME": self.settings_table.table_name,
+                "VERSION_SUFFIX": self.version_suffix,
             },
             # tracing=aws_lambda.Tracing.ACTIVE, 
         )
         self.settings_lambda_version = self.settings_lambda.current_version
         self.setting_lambda_alias = aws_lambda.Alias(
             self,
-            f"HealthConnector{self.config.ENVIRONMENT.title()}SettingsLambdaAlias",
-            alias_name=f"HealthConnector{self.config.ENVIRONMENT.title()}SettingsLambdaAlias",
+            f"EHRMultitenant{self.config.ENVIRONMENT.title()}SettingsLambdaAlias",
+            alias_name=f"EHRMultitenant{self.config.ENVIRONMENT.title()}SettingsLambdaAlias{self.version_suffix_us}",
             version=self.settings_lambda_version,
             # provisioned_concurrent_executions=1,
         )
@@ -568,8 +590,8 @@ class HealthconnectPocStack(Stack):
     def create_logs_lambda(self):
         self.logs_lambda = aws_lambda.Function(
             self,
-            f"HealthConnector{self.config.ENVIRONMENT.title()}LogsLambda",
-            function_name=f"HealthConnector{self.config.ENVIRONMENT.title()}LogsLambda",
+            f"EHRMultitenant{self.config.ENVIRONMENT.title()}LogsLambda",
+            function_name=f"EHRMultitenant{self.config.ENVIRONMENT.title()}LogsLambda{self.version_suffix_us}",
             runtime=aws_lambda.Runtime.PYTHON_3_11,
             code=aws_lambda.Code.from_asset("lambda_functions/logs_lambda"),
             handler="lambda_handler.lambda_handler",
@@ -582,14 +604,16 @@ class HealthconnectPocStack(Stack):
             environment={
                 "KMS_AVAILABLE": "True",
                 "ENVIRONMENT": self.config.ENVIRONMENT.upper(),
+                "FTPLOGS_TABLE_NAME": self.sftp_logs_table.table_name,
+                "VERSION_SUFFIX": self.version_suffix,
             },
         )
     
     def create_hospitals_lambda(self):
         self.hospitals_lambda = aws_lambda.Function(
             self,
-            f"HealthConnector{self.config.ENVIRONMENT.title()}HospitalsLambda",
-            function_name=f"HealthConnector{self.config.ENVIRONMENT.title()}HospitalsLambda",
+            f"EHRMultitenant{self.config.ENVIRONMENT.title()}HospitalsLambda",
+            function_name=f"EHRMultitenant{self.config.ENVIRONMENT.title()}HospitalsLambda{self.version_suffix_us}",
             runtime=aws_lambda.Runtime.PYTHON_3_11,
             code=aws_lambda.Code.from_asset("lambda_functions/hospitals_lambda"),
             handler="lambda_handler.hospitals_handler",
@@ -603,14 +627,16 @@ class HealthconnectPocStack(Stack):
                 "ENVIRONMENT": self.config.ENVIRONMENT.upper(),
                 "SFTP_S3_BUCKET": self.sftp_bucket.bucket_name,
                 "PROVISIONING_LAMBDA": self.provisioning_lambda.function_name,
+                "HOSPITALS_TABLE_NAME": self.hospitals_table.table_name,
+                "VERSION_SUFFIX": self.version_suffix,
             },
         )
     
     def create_provisioning_lambda(self):
         self.provisioning_lambda = aws_lambda.Function(
             self,
-            f"HealthConnector{self.config.ENVIRONMENT.title()}ProvisioningLambda",
-            function_name=f"HealthConnector{self.config.ENVIRONMENT.title()}ProvisioningLambda",
+            f"EHRMultitenant{self.config.ENVIRONMENT.title()}ProvisioningLambda",
+            function_name=f"EHRMultitenant{self.config.ENVIRONMENT.title()}ProvisioningLambda{self.version_suffix_us}",
             runtime=aws_lambda.Runtime.PYTHON_3_11,
             code=aws_lambda.Code.from_asset("lambda_functions/provisioning_lambda"),
             handler="lambda_handler.tenant_provisioning",
@@ -622,14 +648,16 @@ class HealthconnectPocStack(Stack):
             environment={
                 "SFTP_BUCKET": self.sftp_bucket.bucket_name,
                 "WEBSITE_BUCKET": self.bucket.bucket_name,
+                "HOSPITALS_TABLE_NAME": self.hospitals_table.table_name,
+                "VERSION_SUFFIX": self.version_suffix,
             }
         )
 
     def create_epic_data_populator_lambda(self):
         self.epic_data_populator_lambda = aws_lambda.Function(
             self,
-            f"HealthConnector{self.config.ENVIRONMENT.title()}EpicDataPopulator",
-            function_name=f"HealthConnector{self.config.ENVIRONMENT.title()}EpicDataPopulator",
+            f"EHRMultitenant{self.config.ENVIRONMENT.title()}EpicDataPopulator",
+            function_name=f"EHRMultitenant{self.config.ENVIRONMENT.title()}EpicDataPopulator{self.version_suffix_us}",
             runtime=aws_lambda.Runtime.PYTHON_3_11,
             code=aws_lambda.Code.from_asset("lambda_functions/epic_data_populator"),
             handler="lambda_handler.data_populator",
@@ -638,14 +666,20 @@ class HealthconnectPocStack(Stack):
             vpc=self.vpc,
             timeout=Duration.minutes(10),
             ephemeral_storage_size=Size.gibibytes(1),
-            memory_size=1024,   
+            memory_size=1024,
+            environment={
+                "APPOINTMENT_TABLE_NAME": self.appointment_table.table_name,
+                "PATIENTS_TABLE_NAME": self.patients_table.table_name,
+                "HOSPITALS_TABLE_NAME": self.hospitals_table.table_name,
+                "VERSION_SUFFIX": self.version_suffix,
+            },
         )
     
     def add_event_bridge_scheduler_epic(self):
         self.event_bridge_rule = event_bridge.Rule(
             self,
-            f"HealthConnector{self.config.ENVIRONMENT.title()}EpicEventBridgeRule",
-            rule_name=f"HealthConnector{self.config.ENVIRONMENT.title()}EpicEventBridgeRule",
+            f"EHRMultitenant{self.config.ENVIRONMENT.title()}EpicEventBridgeRule",
+            rule_name=f"EHRMultitenant{self.config.ENVIRONMENT.title()}EpicEventBridgeRule{self.version_suffix_us}",
             schedule=event_bridge.Schedule.rate(Duration.minutes(2)), # convert to 2 hours
             enabled=True,
             targets = [
@@ -658,8 +692,8 @@ class HealthconnectPocStack(Stack):
     def add_event_bridge_scheduler(self):
         self.event_bridge_rule = event_bridge.Rule(
             self,
-            f"HealthConnector{self.config.ENVIRONMENT.title()}EventBridgeRule",
-            rule_name=f"HealthConnector{self.config.ENVIRONMENT.title()}EventBridgeRule",
+            f"EHRMultitenant{self.config.ENVIRONMENT.title()}EventBridgeRule",
+            rule_name=f"EHRMultitenant{self.config.ENVIRONMENT.title()}EventBridgeRule{self.version_suffix_us}",
             schedule=event_bridge.Schedule.rate(Duration.minutes(2)),
             enabled=True,
             targets=[
@@ -675,8 +709,8 @@ class HealthconnectPocStack(Stack):
         )
         self.api = apigw.RestApi(
             self,
-            f"HealthConnector{self.config.ENVIRONMENT.title()}Api",
-            rest_api_name=f"health_connector_{self.config.ENVIRONMENT.lower()}",
+            f"EHRMultitenant{self.config.ENVIRONMENT.title()}Api",
+            rest_api_name=f"ehr_multitenant_{self.config.ENVIRONMENT.lower()}{self.version_suffix_us}",
             deploy=True,
             deploy_options=self.api_stage,
             default_cors_preflight_options=apigw.CorsOptions(
@@ -698,7 +732,7 @@ class HealthconnectPocStack(Stack):
         # )
         self.apigw_authorizer = apigw.CognitoUserPoolsAuthorizer(
             self,
-            f"HealthConnector{self.config.ENVIRONMENT.title()}Authorizer",
+            f"EHRMultitenant{self.config.ENVIRONMENT.title()}Authorizer",
             cognito_user_pools=[self.user_pool],
             identity_source=apigw.IdentitySource.header("Authorization"),
         )
@@ -844,8 +878,8 @@ class HealthconnectPocStack(Stack):
     def create_cognitouser_pool(self):
         self.user_pool = cognito.UserPool(
             self,
-            f"HealthConnector{self.config.ENVIRONMENT.title()}UserPool",
-            user_pool_name=f"health_connector_{self.config.ENVIRONMENT.lower()}_user_pool",
+            f"EHRMultitenant{self.config.ENVIRONMENT.title()}UserPool",
+            user_pool_name=f"ehr_multitenant_{self.config.ENVIRONMENT.lower()}_user_pool{self.version_suffix_us}",
             self_sign_up_enabled=False,
             sign_in_aliases=cognito.SignInAliases(
                 email=True,
@@ -869,7 +903,7 @@ class HealthconnectPocStack(Stack):
         for group in self.user_pools_groups:
             cognito.CfnUserPoolGroup(
                 self,
-                f"HealthConnector{self.config.ENVIRONMENT.title()}{group}Group",
+                f"EHRMultitenant{self.config.ENVIRONMENT.title()}{group}Group",
                 group_name=group,
                 user_pool_id=self.user_pool.user_pool_id,
             )
@@ -877,19 +911,19 @@ class HealthconnectPocStack(Stack):
     def create_user_pool_domain(self):
         self.userpool_domain = cognito.UserPoolDomain(
             self,
-            f"HealthConnector{self.config.ENVIRONMENT.title()}UserPoolDomain",
+            f"EHRMultitenant{self.config.ENVIRONMENT.title()}UserPoolDomain",
             user_pool=self.user_pool,
             cognito_domain=cognito.CognitoDomainOptions(
-                domain_prefix=self.config.DOMAIN_PREFIX
+                domain_prefix=f"{self.config.DOMAIN_PREFIX}{self.version_suffix}"
             ),
         )
 
     def create_web_user_pool_client(self):
         self.web_user_pool_client = cognito.UserPoolClient(
             self,
-            f"HealthConnector{self.config.ENVIRONMENT.title()}UserPoolWebClient",
+            f"EHRMultitenant{self.config.ENVIRONMENT.title()}UserPoolWebClient",
             user_pool=self.user_pool,
-            user_pool_client_name="health_connector_user_pool_web_client",
+            user_pool_client_name=f"health_connector_user_pool_web_client{self.version_suffix_us}",
             auth_flows=cognito.AuthFlow(user_password=True, user_srp=True),
             supported_identity_providers=[
                 cognito.UserPoolClientIdentityProvider.COGNITO
@@ -906,8 +940,8 @@ class HealthconnectPocStack(Stack):
     def create_identity_pool(self):
         self.identity_pool = cognito.CfnIdentityPool(
             self,
-            f"HealthConnector{self.config.ENVIRONMENT.title()}IdentityPool",
-            identity_pool_name=f"health_connector_{self.config.ENVIRONMENT.lower()}_identity_pool",
+            f"EHRMultitenant{self.config.ENVIRONMENT.title()}IdentityPool",
+            identity_pool_name=f"ehr_mutlitenant_{self.config.ENVIRONMENT.lower()}_identity_pool{self.version_suffix_us}",
             allow_unauthenticated_identities=False,
             cognito_identity_providers=[
                 cognito.CfnIdentityPool.CognitoIdentityProviderProperty(
@@ -918,7 +952,7 @@ class HealthconnectPocStack(Stack):
         )
         self.usermanagement_role = iam.Role(
             self,
-            f"HealthConnector{self.config.ENVIRONMENT.title()}UserManagementRole",
+            f"EHRMultitenant{self.config.ENVIRONMENT.title()}UserManagementRole",
             assumed_by=iam.FederatedPrincipal(
                 "cognito-identity.amazonaws.com",
                 {
@@ -931,7 +965,7 @@ class HealthconnectPocStack(Stack):
                 },
                 "sts:AssumeRoleWithWebIdentity",
             ),
-            role_name=f"HealthConnector{self.config.ENVIRONMENT.title()}UserManagementRole",
+            role_name=f"EHRMultitenant{self.config.ENVIRONMENT.title()}UserManagementRole{self.version_suffix_us}",
         )
         self.usermanagement_role.add_managed_policy(
             iam.ManagedPolicy.from_aws_managed_policy_name("AmazonS3FullAccess")
@@ -970,7 +1004,7 @@ class HealthconnectPocStack(Stack):
         )
         cognito.CfnIdentityPoolRoleAttachment(
             self,
-            f"HealthConnector{self.config.ENVIRONMENT.title()}IdentityPoolRoleAttach",
+            f"EHRMultitenant{self.config.ENVIRONMENT.title()}IdentityPoolRoleAttach",
             identity_pool_id=self.identity_pool.ref,
             roles={"authenticated": self.usermanagement_role.role_arn},
             # role_mappings={}
@@ -979,8 +1013,8 @@ class HealthconnectPocStack(Stack):
     def create_veradigm_provider_setup(self):
         self.sftp_policy = iam.ManagedPolicy(
             self,
-            f"HealthConnector{self.config.ENVIRONMENT.title()}SftpTransferPolicy",
-            managed_policy_name="HealthConnector-sftp-transfer-policy",
+            f"EHRMultitenant{self.config.ENVIRONMENT.title()}SftpTransferPolicy",
+            managed_policy_name=f"EHRMultitenant-sftp-transfer-policy{self.version_suffix}",
             statements=[
                 iam.PolicyStatement(
                     effect=iam.Effect.ALLOW,
@@ -1009,8 +1043,8 @@ class HealthconnectPocStack(Stack):
 
         self.transfer_role = iam.Role(
             self,
-            f"HealthConnector{self.config.ENVIRONMENT.title()}SftpUserRole",
-            role_name=f"HealthConnector{self.config.ENVIRONMENT.title()}-sftp-user-pass-role",
+            f"EHRMultitenant{self.config.ENVIRONMENT.title()}SftpUserRole",
+            role_name=f"EHRMultitenant{self.config.ENVIRONMENT.title()}-sftp-user-pass-role{self.version_suffix}",
             assumed_by=iam.CompositePrincipal(
                 iam.ServicePrincipal("transfer.amazonaws.com"),
                 iam.ServicePrincipal("s3.amazonaws.com"),
@@ -1021,7 +1055,7 @@ class HealthconnectPocStack(Stack):
 
         self.sftp_identity_lambda = aws_lambda.Function(
             self,
-            f"HealthConnector{self.config.ENVIRONMENT.title()}SftpIdentityProviderLambda",
+            f"EHRMultitenant{self.config.ENVIRONMENT.title()}SftpIdentityProviderLambda",
             runtime=aws_lambda.Runtime.PYTHON_3_11,
             timeout=Duration.seconds(30),
             code=aws_lambda.Code.from_asset("lambda_functions/sftp_identity_provider"),
@@ -1031,6 +1065,7 @@ class HealthconnectPocStack(Stack):
                 "ROLE_ARN": self.transfer_role.role_arn,
                 "BUCKET_NAME": self.sftp_bucket.bucket_name,
                 "ENV": self.config.ENVIRONMENT.lower(),
+                "VERSION_SUFFIX": self.version_suffix,
             }
         )
         self.hospitals_table.grant_read_data(self.sftp_identity_lambda)
@@ -1044,7 +1079,7 @@ class HealthconnectPocStack(Stack):
 
         self.sftp_server = transfer.CfnServer(
             self,
-            f"HealthConnector{self.config.ENVIRONMENT.title()}SftpServer",
+            f"EHRMultitenant{self.config.ENVIRONMENT.title()}SftpServer",
             identity_provider_type="AWS_LAMBDA",
             identity_provider_details=transfer.CfnServer.IdentityProviderDetailsProperty(
                 function=self.sftp_identity_lambda.function_arn

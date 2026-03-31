@@ -9,6 +9,7 @@ from health_connector_base.auth import require_tenant_isolation
 import time
 
 environment = os.environ.get("ENVIRONMENT", "LOCAL")
+data_populator_lambda_name = os.environ.get("DATA_POPULATOR_LAMBDA_NAME")
 
 
 class AppointmentAPIHandler(APIHandler):
@@ -164,11 +165,12 @@ class AppointmentAPIHandler(APIHandler):
         
         if event["httpMethod"].lower() != "get":
             lambda_client = boto3.client("lambda")
-            lambda_client.invoke(
-                FunctionName=f"HealthConnector{environment.title()}DataPopulator",
-                InvocationType="Event",
-                Payload=b"{}",
-            )
+            if data_populator_lambda_name:
+                lambda_client.invoke(
+                    FunctionName=data_populator_lambda_name,
+                    InvocationType="Event",
+                    Payload=b"{}",
+                )
         # if isinstance(response, dict) and "body" in response:
         #     try:
         #         # Parse the body JSON
