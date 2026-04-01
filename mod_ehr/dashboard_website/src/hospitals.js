@@ -15,6 +15,14 @@ import {
     CUSTOM_DOMAIN,
     getIdToken,
 } from "./common";
+
+function renderSensitiveField(value) {
+    if (!value) {
+        return 'N/A';
+    }
+    return '*****';
+}
+
 async function EditHospital(){
     $("#saveEditHospital").removeClass("d-none");
     $("#saveNewHospital").addClass("d-none");
@@ -395,7 +403,7 @@ $(document).ready(async function () {
             title: "SFTP Password",
             render: function (data, type, row) {
                 if (row.provider === "veradigm") {
-                    return row.sftp_password || "N/A";
+                    return renderSensitiveField(row.sftp_password);
                 }
                 return "N/A";
             }
@@ -415,8 +423,7 @@ $(document).ready(async function () {
             title: "EPIC PRIVATE KEY",
             render: function (data, type, row) {
                 if (row.provider === "epic") {
-                    const key = row.epic_private_key || "N/A";
-                    return `<div title="${key}" style="max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${key}</div>`;
+                    return renderSensitiveField(row.epic_private_key);
                 } else if (row.provider === "veradigm") {
                     return "N/A";
                 }
@@ -523,9 +530,9 @@ $(document).ready(async function () {
                 $(".deleteBtn").click(DeleteHospital);
                 tablePaginationNavigationHandler(table);
             });
-            postRender();
             $(".editBtn").click(EditHospital);
             $(".deleteBtn").click(deleteHospital);
+            postRender();
             $(".close").click(async function () {
                 $('label.error').remove();
                 $("#hospitalModal").css({

@@ -6,12 +6,13 @@ from botocore.exceptions import ClientError
 
 class KMSClient:
     environment = os.getenv("ENVIRONMENT", "development").lower()
+    version_suffix = os.getenv("VERSION_SUFFIX", "")
 
     def __init__(self):
         self.client = boto3.client("secretsmanager")
 
     def get_secret_value(self, secret_id):
-        secret_id = f"{self.environment}-{secret_id}"
+        secret_id = f"{self.environment}-{secret_id}{self.version_suffix}"
         try:
             response = self.client.get_secret_value(SecretId=secret_id)
             return response["SecretString"]

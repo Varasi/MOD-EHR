@@ -46,7 +46,7 @@ async function editPatient() {
                 $("#hospital_id_form").val(patient.hospital_id);
                 $('#hospital_select_block').addClass('d-none');
             }
-            $(".save").data("id", id);
+            $("#appointmentModal .save").data("id", id);
             
         }
     };
@@ -160,7 +160,7 @@ $(document).ready(async function () {
         } else {
             $('#hospital_select_block').addClass('d-none');
         }
-        $(".save").removeData("id");
+        $("#appointmentModal .save").removeData("id");
         $("#appointmentModal").css({
             display: "block",
         });
@@ -169,7 +169,7 @@ $(document).ready(async function () {
         $("#appointmentModal").css({
             display: "none",
         });
-        $(".save").removeData("id");
+        $("#appointmentModal .save").removeData("id");
     });    
     const xhr = new XMLHttpRequest();    
     xhr.open("GET", `${BASE_URL}/api/patients/?hospital_id=${hospital_id}`);
@@ -248,9 +248,9 @@ $(document).ready(async function () {
                     display: "none",
                 });
                 $("#appointmentForm").trigger("reset");
-                $(".save").removeData("id");
+                $("#appointmentModal .save").removeData("id");
             });
-            $(".save").click(async function () {
+            $("#appointmentModal .save").click(async function () {
                 toggleLoder("button-primary", "add");
                 const is_valid = $("#appointmentForm").valid();
                 if (is_valid) {
