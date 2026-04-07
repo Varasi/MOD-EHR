@@ -68,8 +68,8 @@ const handleSettingsClick = async () => {
           settingsDataStatus = true;
           toggleSkeletonLoader("settingsForm", "remove");
           if (settings_records.length === 0) {
-            console.log("No settings data found for the hospital.");
-              toggleAlertMessage("No settings data found. Please update the settings.");
+            console.log("Default settings data found for the hospital.");
+              toggleAlertMessage("Default settings data found. Please update the settings.");
               $("#subsequent_period").val(15);
               $("#subsequent_period_text").text(15);
               $("#prior_period").val(15);
