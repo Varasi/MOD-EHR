@@ -646,6 +646,7 @@ class HealthconnectPocStack(Stack):
             timeout=Duration.minutes(10),
             memory_size=512,
             environment={
+                "ENVIRONMENT": self.config.ENVIRONMENT.upper(),
                 "SFTP_BUCKET": self.sftp_bucket.bucket_name,
                 "WEBSITE_BUCKET": self.bucket.bucket_name,
                 "HOSPITALS_TABLE_NAME": self.hospitals_table.table_name,
@@ -672,6 +673,7 @@ class HealthconnectPocStack(Stack):
                 "PATIENTS_TABLE_NAME": self.patients_table.table_name,
                 "HOSPITALS_TABLE_NAME": self.hospitals_table.table_name,
                 "VERSION_SUFFIX": self.version_suffix,
+                "ENVIRONMENT": self.config.ENVIRONMENT.upper(),
             },
         )
     

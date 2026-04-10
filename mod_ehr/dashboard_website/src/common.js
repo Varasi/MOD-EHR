@@ -9,7 +9,7 @@ export const { CLIENT_ID } = process.env;
 export const { IDENTITY_POOL_ID } = process.env;
 export const PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/
 export const { GOOGLE_MAPS_KEY } = process.env
-export const CUSTOM_DOMAIN = ".hirtahealthconnector.com"
+export const CUSTOM_DOMAIN = ".dashboard.hirta.us"
 console.log("custom domain: ", CUSTOM_DOMAIN);
 Amplify.configure({
     Auth: {
