@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
+    <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Health Connector</title>
@@ -30,22 +30,21 @@
       src="https://kit.fontawesome.com/bcf925e6b3.js"
       crossorigin="anonymous" defer
     ></script>
-    <script src="appointments.js" defer></script>
-    <script src="common.js" defer></script>
+
+    <script src="hospitals.js" defer></script>
     <script src="settingspanel.js" defer></script>
     <script type="text/javascript" defer>
       function googleMapsAutoComplete() {
-        let input_field = document.getElementById("location");
+        let input_field = document.getElementById("hospitalLocationForm");
         let autocomplete = new google.maps.places.Autocomplete(input_field, {
           types: ["geocode"],
         });
       }
     </script>
   </head>
-
   <body>
     <div id="root" class="p-0 overflow-auto">
-      <nav class="top-navb-bar">
+        <nav class="top-navb-bar">
         <div class="d-flex flex-wrap flex-1 align-items-center">
           <div class="d-flex align-items-center gap-3">
             <img
@@ -116,12 +115,12 @@
                   <a class="nav-item" href="patients.html">Patients</a>
                 </li>
                 <li id="appointments-nav">
-                  <a class="nav-item active" href="appointments.html"
+                  <a class="nav-item" href="appointments.html"
                     >Appointments</a
                   >
                 </li>
                 <li id="hospitals-nav">
-                  <a class="nav-item" href="hospitals.html"
+                  <a class="nav-item active" href="hospitals.html"
                     >Hospitals</a
                   >
                 </li>
@@ -131,7 +130,7 @@
                   >
                 </li>
                 <li id="logs-nav">
-                    <a class="nav-item" href="logs.html">Logs</a>
+                    <a class="nav-item " href="logs.html">Logs</a>
                 </li>
               </ul>
             </div>
@@ -218,13 +217,13 @@
             class="d-flex flex-column flex-1 overflow-auto"
           >
             <div class="module-header">
-              <div class="module-header-text">Appointments</div>
+              <div class="module-header-text">Hospitals</div>
               <div class="d-flex gap-2">
                 <button
                   id="button-primary"
-                  class="add-appointment button-primary position-relative"
+                  class="add-hospital button-primary position-relative"
                   data-toggle="modal"
-                  data-target="#appointmentModal"
+                  data-target="#hospitalModal"
                   tabindex="0"
                 >
                   <svg
@@ -242,14 +241,14 @@
                       stroke-linejoin="round"
                     />
                   </svg>
-                  Add Appointment
+                  Add Hospital
                 </button>
                 <div
                   class="modal show"
-                  id="appointmentModal"
+                  id="hospitalModal"
                   tabindex="-1"
                   role="dialog"
-                  aria-labelledby="appointmentModalLabel"
+                  aria-labelledby="hospitalModalLabel"
                   aria-hidden="true"
                 >
                   <div
@@ -257,15 +256,16 @@
                     role="document"
                   >
                     <div
-                      class="modal-content border-0 shadow"
+                      class="modal-content border-0 shadow d-flex flex-column"
                       id="modal-content"
+                      style="max-height: 90vh;"
                     >
-                      <div class="modal-body p-0">
+                      <div class="modal-body p-0 d-flex flex-column overflow-hidden">
                         <div
                           class="module-header-text modal-header"
                           id="button-primary"
                         >
-                          <div>Add Appointment</div>
+                          <div>Add Hospital</div>
                           <button class="modal-close-icon close">
                             <svg
                               xmlns="http://www.w3.org/2000/svg"
@@ -284,80 +284,196 @@
                             </svg>
                           </button>
                         </div>
-                        <div id="formContainer" class="flex-1 overflow-auto">
+                        <div id="formContainer" class="flex-1 overflow-auto p-4">
                           <form
-                            id="appointmentForm"
+                            id="hospitalForm"
                             class="d-flex flex-column gap-4 col-12"
                           >
                             <div>
-                              <label for="patientName" class="form-label"
-                                >Patient Name
-                                <span class="text-danger">*</span></label
-                              >
-                              <select
-                                class="form-select skeleton-text"
-                                id="patientName"
-                                name="patient_name"
-                                aria-label="Select an option"
-                              ></select>
-                            </div>
-                            <div class="d-md-flex gap-2">
-                              <div class="col-6">
-                                <label for="startTime" class="form-label"
-                                  >Start Time
+                                <label for="hospitalNameForm" class="form-label"
+                                  >Hospital Name
                                   <span class="text-danger">*</span></label
                                 >
                                 <input
-                                  type="datetime-local"
+                                  type="text"
                                   class="form-control skeleton-text"
-                                  id="startTime"
-                                  name="start_time"
-                                  required="required"
-                                  tabindex="0"
-                                />
-                              </div>
-                              <div class="col-6">
-                                <label for="endTime" class="form-label"
-                                  >End Time
-                                  <span class="text-danger">*</span></label
-                                >
-                                <input
-                                  type="datetime-local"
-                                  class="form-control skeleton-text"
-                                  id="endTime"
-                                  name="end_time"
+                                  id="hospitalNameForm"
+                                  name="hospitalNameForm"
                                   required="required"
                                 />
-                              </div>
                             </div>
                             <div>
-                              <label for="location" class="form-label"
+                                <label for="hospitalIdForm" class="form-label"
+                                  >Hospital ID
+                                  <span class="text-danger">*</span></label
+                                >
+                                <input
+                                  type="text"
+                                  class="form-control skeleton-text"
+                                  id="hospitalIdForm"
+                                  name="hospitalIdForm"
+                                  required="required"
+                                />
+                            </div>
+                            <div>
+                                <label for="hospitalSubdomainForm" class="form-label"
+                                  >Hospital Subdomain
+                                  <span class="text-danger">*</span></label
+                                >
+                                <input
+                                  type="text"
+                                  class="form-control skeleton-text"
+                                  id="hospitalSubdomainForm"
+                                  name="hospitalSubdomainForm"
+                                  required="required"
+                                />
+                            </div>
+                            <div>
+                                <label for="hospitalLogoForm" class="form-label"
+                                  >Hospital Logo
+                                  </label
+                                >
+                                <input
+                                  type="file"
+                                  class="form-control skeleton-text"
+                                  id="hospitalLogoForm"
+                                  name="hospitalLogoForm"
+                                  accept="image/png"
+                                />
+                            </div>
+                            <div>
+                              <label for="hospitalLocationForm" class="form-label"
                                 >Location
                                 <span class="text-danger">*</span></label
                               >
                               <input
                                 type="text"
                                 class="form-control skeleton-text"
-                                id="location"
-                                name="location"
+                                id="hospitalLocationForm"
+                                name="hospitalLocationForm"
                                 required="required"
                               />
                             </div>
-                            <div>
-                              <label for="status" class="form-label"
+                            <div class="d-md-flex gap-2">
+                                <div class="col-6">
+                                    <label for="hospitalProviderForm" class="form-label"
+                                >Provider
+                                <span class="text-danger">*</span></label
+                              >
+                              <select
+                                class="form-select skeleton-text"
+                                id="hospitalProviderForm"
+                                name="hospitalProviderForm"
+                                aria-label="Select an option"
+                              >
+                                <option value="epic">Epic</option>
+                                <option value="veradigm">Veradigm</option>
+                              </select>
+                                </div>
+                                <div class="col-6">
+                                    <label for="hospitalStatusForm" class="form-label"
                                 >Status
                                 <span class="text-danger">*</span></label
                               >
                               <select
                                 class="form-select skeleton-text"
-                                id="status"
-                                name="status"
+                                id="hospitalStatusForm"
+                                name="hospitalStatusForm"
                                 aria-label="Select an option"
                               >
-                                <option value="Booked">Booked</option>
-                                <option value="Pending">Pending</option>
-                                <option value="Cancelled">Cancelled</option>
+                                <option value="Active">Active</option>
+                                <option value="Inactive">Inactive</option>
                               </select>
+                                </div>
+                            </div>
+                            <div id="veradigmInputBlock" class="d-none d-flex flex-column gap-4">
+                              <div>
+                              <label for="hospitalVeradigmProviderForm" class="form-label"
+                                >S3 Subfolder Name
+                                <span class="text-danger">*</span></label
+                              >
+                              <input
+                                type="text"
+                                class="form-control skeleton-text"
+                                id="hospitalVeradigmProviderForm"
+                                name="hospitalVeradigmProviderForm"
+                                required="required"
+                              />
+                              </div>
+                              <div>
+                              <label for="hospitalSFTPUsernameForm" class="form-label"
+                                >SFTP Username
+                                <span class="text-danger">*</span></label
+                              >
+                              <input
+                                type="text"
+                                class="form-control skeleton-text"
+                                id="hospitalSFTPUsernameForm"
+                                name="hospitalSFTPUsernameForm"
+                              />
+                              </div>
+                              <div>
+                              <label for="hospitalSFTPPasswordForm" class="form-label"
+                                >SFTP Password
+                                <span class="text-danger">*</span></label
+                              >
+                              <input
+                                type="text"
+                                class="form-control skeleton-text"
+                                id="hospitalSFTPPasswordForm"
+                                name="hospitalSFTPPasswordForm"
+                              />
+                              </div>
+                            </div>
+                            <div id="epicInputBlock" class="d-none d-flex flex-column gap-4">
+                              <div>
+                              <label for="hospitalEPICClientIdForm" class="form-label"
+                                >EPIC Client ID
+                                <span class="text-danger">*</span></label
+                              >
+                              <input
+                                type="text"
+                                class="form-control skeleton-text"
+                                id="hospitalEPICClientIdForm"
+                                name="hospitalEPICClientIdForm"
+                              />
+                              </div>
+                              <div>
+                              <label for="hospitalEPICPrivateKeyForm" class="form-label"
+                                >EPIC Private Key
+                                <span class="text-danger">*</span></label
+                              >
+                              <textarea
+                                class="form-control skeleton-text"
+                                id="hospitalEPICPrivateKeyForm"
+                                name="hospitalEPICPrivateKeyForm"
+                                rows="3"
+                              ></textarea>
+                              </div>
+                              <div>
+                              <label for="hospitalEPICJwksUrlForm" class="form-label"
+                                >EPIC JWKS URL
+                                <span class="text-danger">*</span></label
+                              >
+                              <input
+                                type="text"
+                                class="form-control skeleton-text"
+                                id="hospitalEPICJwksUrlForm"
+                                name="hospitalEPICJwksUrlForm"
+                              />
+                              </div>
+                              <div>
+                              <label for="hospitalEPICJwksKidForm" class="form-label"
+                                >EPIC JWKS KID
+                                <span class="text-danger">*</span></label
+                              >
+                              <input
+                                type="text"
+                                class="form-control skeleton-text"
+                                id="hospitalEPICJwksKidForm"
+                                name="hospitalEPICJwksKidForm"
+                              />
+                              </div>
                             </div>
                           </form>
                         </div>
@@ -371,9 +487,16 @@
                           Close
                         </button>
                         <button
-                          id="saveAppointment"
+                          id="saveEditHospital"
                           type="submit"
-                          class="save button-primary m-0"
+                          class="save button-primary m-0 d-none"
+                        >
+                          Save <div class="loader-small d-none" />
+                        </button>
+                        <button
+                          id="saveNewHospital"
+                          type="submit"
+                          class="save button-primary m-0 d-none"
                         >
                           Save <div class="loader-small d-none" />
                         </button>
@@ -383,6 +506,7 @@
                 </div>
               </div>
             </div>
+
             <div id="table-filter"></div>
             <div
               id="tableContainer"
@@ -396,11 +520,7 @@
                 class="d-flex justify-content-center align-items-center flex-1"
                 id="StateChange"
               >
-                <div
-                  id="spinner"
-                  class="loader placement-center"
-                  role="status"
-                ></div>
+                <div class="loader" id="Loader"></div>
               </div>
             </div>
           </div>

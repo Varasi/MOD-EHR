@@ -13,21 +13,11 @@ from health_connector_base.custom_attributes import (
 )
 from pynamodb.attributes import JSONAttribute, NumberAttribute, UnicodeAttribute
 from pynamodb.expressions.condition import Condition
-from pynamodb.models import MetaModel, Model
+from pynamodb.models import Model
 from pynamodb.indexes import GlobalSecondaryIndex, AllProjection
 
 
-class CustomMeta(MetaModel):
-
-    def __new__(cls, name, bases, namespace, discriminator=None):
-        if "Meta" in namespace and hasattr(namespace["Meta"], "table_name"):
-            namespace["Meta"].table_name = (
-                f"{os.environ.get('ENVIRONMENT','development').lower()}_{namespace['Meta'].table_name}"
-            )
-        return super().__new__(cls, name, bases, namespace)
-
-
-class BaseModel(Model, metaclass=CustomMeta):
+class BaseModel(Model):
     created = UTCDateTimeAttribute(default_for_new=datetime.now(timezone.utc))
     modified = UTCDateTimeAttribute(default=datetime.now(timezone.utc))
 
@@ -49,8 +39,17 @@ class PatientIdIndex(GlobalSecondaryIndex):
 
     patient_id = UnicodeAttribute(hash_key=True)
 
+class AppointmentsByHospitalsIndex(GlobalSecondaryIndex):
+    class Meta:
+        index_name = "hospital_id-end_time-index"
+        projection = AllProjection()
+
+    hospital_id = UnicodeAttribute(hash_key=True)
+    end_time = UTCDateTimeAttribute(range_key=True)
+
 class Appointment(BaseModel):
-    id = UnicodeAttribute(hash_key=True, default_for_new=lambda: str(uuid.uuid4()))
+    hospital_id = UnicodeAttribute(hash_key=True)
+    id = UnicodeAttribute(range_key=True, default_for_new=lambda: str(uuid.uuid4()))
     patient_id = UnicodeAttribute()
     patient_name = UnicodeAttribute()
     location = AddressAttribute()
@@ -60,32 +59,58 @@ class Appointment(BaseModel):
     provider = ChoiceUnicodeAttribute(choices=["epic", "veradigm"], default="epic")
     ride = JSONAttribute(default=lambda: VIA_RIDE_MOCK)
     patient_id_index = PatientIdIndex()
+    appointments_by_hospitals = AppointmentsByHospitalsIndex()
+    patient_first_name = UnicodeAttribute(null=True, default="")
+    patient_last_name = UnicodeAttribute(null=True, default="")
+    patient_phone_no = UnicodeAttribute(null=True, default="")
+    patient_email = UnicodeAttribute(null=True, default="")
 
     class Meta:
-        table_name = "appointment_table"
+        table_name = os.environ.get("APPOINTMENT_TABLE_NAME")
 
 
 class Patient(BaseModel):
-    patient_id = UnicodeAttribute(hash_key=True)
+    hospital_id = UnicodeAttribute(hash_key=True)
+    patient_id = UnicodeAttribute(range_key=True)
     name = UnicodeAttribute()
     via_rider_id = UnicodeAttribute(null=True, default="")
     provider = ChoiceUnicodeAttribute(choices=["epic", "veradigm"], default="epic")
 
     class Meta:
-        table_name = "patients_table"
-
+        table_name = os.environ.get("PATIENTS_TABLE_NAME")
 
 class Settings(BaseModel):
-    name = UnicodeAttribute(hash_key=True)
+    hospital_id = UnicodeAttribute(hash_key=True)
+    name = UnicodeAttribute(range_key=True)
     value = UnicodeAttribute()
 
     class Meta:
-        table_name = "settings_table"
-
+        table_name = os.environ.get("SETTINGS_TABLE_NAME")
 
 class FTPLogs(BaseModel):
-    name = UnicodeAttribute(hash_key=True)
+    hospital_id = UnicodeAttribute(hash_key=True)
+    name = UnicodeAttribute(range_key=True)
     server_last_modified = NumberAttribute()
 
     class Meta:
-        table_name = "ftp_logs_table"
+        table_name = os.environ.get("FTPLOGS_TABLE_NAME")
+
+class Hospital(BaseModel):
+    id = UnicodeAttribute(hash_key=True)
+    name = UnicodeAttribute()
+    subdomain = UnicodeAttribute()
+    status = UnicodeAttribute()
+    timezone = UnicodeAttribute(default="CT")
+    location = AddressAttribute()
+    provider = ChoiceUnicodeAttribute(choices=["epic", "veradigm"], default="epic")
+    # epic_client_id = UnicodeAttribute(null=True, default=None)
+    # epic_private_key = UnicodeAttribute(null=True, default=None)
+    # epic_jwks_url = UnicodeAttribute(null=True, default=None)
+    # epic_jwks_kid = UnicodeAttribute(null=True, default=None)
+    s3_subfolder_name = UnicodeAttribute(null=True, default=None)
+    sftp_username = UnicodeAttribute(null=True, default=None)
+    # sftp_password = UnicodeAttribute(null=True, default=None)
+
+
+    class Meta:
+        table_name = os.environ.get("HOSPITALS_TABLE_NAME")

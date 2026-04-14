@@ -6,11 +6,55 @@ import {
     preRender,
     postRender,
     BASE_URL,
-    toggleSideNavBar
-
+    toggleSideNavBar,
+    getAccesstokenAndCustomAttribute,
+    loadTenantBranding,
+    CUSTOM_DOMAIN,
+    getIdToken
 } from "./common";
+ function renderHospitalColumn(accessToken, idToken) {
+    return new Promise((resolve) => {
+        let hospitals_map = {};
+        const xhr = new XMLHttpRequest();
+        xhr.open("GET", `${BASE_URL}/api/hospitals/`);
+        xhr.setRequestHeader("Authorization", accessToken);
+        xhr.setRequestHeader("X-Id-Token", idToken);
+        xhr.onreadystatechange = function () {
+            if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
+                const hospitals = JSON.parse(xhr.responseText);
+                for (let hospital of hospitals) {
+                    hospitals_map[hospital.id] = hospital.name;
+                }
+                resolve(hospitals_map);
+            } else if (xhr.status !== 200) {
+                $("#Loader").remove();
+                if ($("#StateChange .emptyState").length === 0) {
+                    $("#StateChange").append(
+                        `<div class="emptyState">
+            <img src="./assets/ERROR.svg" alt="" />
+            <h3 class="no-data">ERROR </h3>
+            <p>An error occurred while retrieving data</p>
+        </div>`
+                    );
+                }
+            }
+        }
+        xhr.send();
+    })
+}
 
 $(document).ready(async function () {
+    const [accessToken, hospital_id] = await getAccesstokenAndCustomAttribute("custom:hospital_id");
+    const idToken = await getIdToken();
+    const hostname = window.location.hostname;
+    const dns_tenant = hostname.split('.')[0];
+    console.log(dns_tenant);
+    const config = await loadTenantBranding(hospital_id);
+    if (config.subdomain !== dns_tenant){
+        alert("You are not authorized for this hospital.");
+        await logoutUser();
+        window.location.replace(`https://${config.subdomain}${CUSTOM_DOMAIN}/dashboard.html`);
+    }
     preRender();
     toggleSideNavBar();
     const userRole = await getUserGroup();
@@ -24,11 +68,24 @@ $(document).ready(async function () {
         $("#user-management-nav").removeClass("invisible")
         $("#user-management-nav").addClass("visible")
     }
+    if(hospital_id === "admin"){
+        $("#hospitals-nav").removeClass("invisible")
+        $("#hospitals-nav").addClass("visible")
+
+    }else{
+        $("#hospitals-nav").removeClass("visible")
+        $("#hospitals-nav").addClass("invisible")
+    }
     $("#logout").click(logoutUser);
-    const accessToken = await getAccessToken();
+    let hospital_map = {};
+    if (hospital_id === "admin"){
+        hospital_map = await renderHospitalColumn(accessToken, idToken);
+        console.log("Hospital Map: ", hospital_map);
+    }
     const xhr = new XMLHttpRequest();
-    xhr.open("GET", `${BASE_URL}/api/dashboard/`);
+    xhr.open("GET", `${BASE_URL}/api/dashboard/?hospital_id=${hospital_id}`);
     xhr.setRequestHeader("Authorization", accessToken);
+    xhr.setRequestHeader("X-Id-Token", idToken);
     xhr.onreadystatechange = async function () {
         if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
             $("#Loader").remove();
@@ -43,6 +100,9 @@ $(document).ready(async function () {
                 { data: "drop_off_time", title: "Drop Off Time" },
                 { data: "driver_vehicle_info", title: "Driver/Vehicle" },
             ];
+            if (hospital_id === "admin") {
+                columns_data.push({data: "hospital_id", title: "Hospital", render: function(data, type, row) { return hospital_map[data] || data; } });
+            }
             if (userRole === "HIRTAOperationsStaff" || userRole === "AppointmentsAdmin" || userRole === "UserManagementAdmin") {
                 columns_data.push(
                     { data: "pick_up_note", title: "Pick Up Note" },
@@ -113,6 +173,7 @@ $(document).ready(async function () {
                                 timeZone: "America/Chicago",
                             }),
                     driver_vehicle_info: driver_vehicle_info,
+                    hospital_id: appointmentRecord["hospital_id"],
                 };
 
                 if (userRole === "HIRTAOperationsStaff" || userRole === "AppointmentsAdmin" || userRole === "UserManagementAdmin") {
