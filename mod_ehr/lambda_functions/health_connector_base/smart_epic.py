@@ -8,11 +8,12 @@ from health_connector_base import SecretsManager
 
 
 class JWTHelper(object):
-    def __init__(self):
+    def __init__(self, client_id=None, private_key=None, jwks_url=None, jwks_kid=None):
         secrets_manager = SecretsManager()
-        self.client_id = secrets_manager.get_secret_value("epic_client_id")
-        self.jwt_private_key = secrets_manager.get_secret_value("epic_private_key")
-        self.jwt_public_key = secrets_manager.get_secret_value("epic_public_key")
+        self.client_id = client_id
+        self.jwt_private_key = private_key
+        self.JWKS_URL = jwks_url
+        self.JWKS_kid = jwks_kid
         self.token_url = "https://fhir.epic.com/interconnect-fhir-oauth/oauth2/token"
         self.auth_headers = {"Content-Type": "application/x-www-form-urlencoded"}
         self.token_expiry_offset = 180  # in seconds
@@ -40,7 +41,7 @@ class JWTHelper(object):
 
     @property
     def jwt_headers(self) -> dict:
-        return {"alg": "RS256", "typ": "JWT", "x5c": [self.jwt_public_key]}
+        return {"alg": "RS256", "typ": "JWT", "kid": self.JWKS_kid, "jku": self.JWKS_URL}
 
     def generate_jwt(self) -> str:
         return jwt.encode(
@@ -64,6 +65,7 @@ class SmartEpicClient:
             data=self.request_body(),
             headers={"Content-Type": "application/x-www-form-urlencoded"},
         )
+        print("response for set access token:",r)
         if r.ok:
             self.token = r.json()["access_token"]
 
@@ -79,9 +81,12 @@ class SmartEpicClient:
         }
 
     def get_appointments(self, patient_id: str) -> str:
+        print("get_appointments called")
         if not self.token:
             self.set_access_token()
+            print("self.token:",self.token)
         if self.token and patient_id:
+            print("calling the request")
             r = requests.get(
                 f"{self.base_url}/Appointment",
                 headers=self.add_auth_header({}),
@@ -92,6 +97,7 @@ class SmartEpicClient:
                 },
             )
             if r.ok:
+                print("r.text:",r)
                 return xmltodict.parse(r.text)
         return ""
 
@@ -109,6 +115,19 @@ class SmartEpicClient:
                     _["@value"]
                     for _ in xmltodict.parse(r.text)["Location"]["address"].values()
                 )
-                self.cache_manager.set_value(location_id, address)
                 return address
+        return ""
+
+    def get_patient_info(self, patient_id: str) -> str:
+        if not self.token:
+            self.set_access_token()
+        if self.token and patient_id:
+            r = requests.get(
+                f"{self.base_url}/Patient/{patient_id}",
+                headers=self.add_auth_header({})
+            )
+            # print("r.text:",xmltodict.parse(r.text))
+            if r.ok:
+                return xmltodict.parse(r.text)
+            
         return ""
