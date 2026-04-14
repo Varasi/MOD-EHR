@@ -1,5 +1,5 @@
 from typing import Any, Callable
-
+from datetime import datetime
 from health_connector_base.constants import STRINGS
 from health_connector_base.exceptions import ValidationError
 from health_connector_base.location_manager import LocationManager
@@ -30,7 +30,14 @@ class ChoiceUnicodeAttribute(UnicodeAttribute):
 class CustomUTCDateTimeAttribute(UTCDateTimeAttribute):
     def serialize(self, value):
         if isinstance(value, str):
-            value = self._fast_parse_utc_date_string(value)
+            print("Parsing date string:", value)
+            try:
+                value = datetime.fromisoformat(
+                    value.replace("Z", "+00:00")
+                )
+            except ValueError:
+                raise ValueError(f"Invalid UTC datetime: {value}")
+            # value = self._fast_parse_utc_date_string(value)
         return super(CustomUTCDateTimeAttribute, self).serialize(value)
 
 

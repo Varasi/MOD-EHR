@@ -1,5 +1,6 @@
 import { fetchAuthSession, signOut } from "aws-amplify/auth";
 import { Amplify } from "aws-amplify";
+import { CookieStorage } from "aws-amplify/utils";
 // export const BASE_URL = process.env.BASE_URL || window.location.origin;
 export const { BASE_URL } = process.env;
 export const { REGION } = process.env;
@@ -8,10 +9,19 @@ export const { CLIENT_ID } = process.env;
 export const { IDENTITY_POOL_ID } = process.env;
 export const PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/
 export const { GOOGLE_MAPS_KEY } = process.env
+export const CUSTOM_DOMAIN = ".dashboard.hirta.us"
+console.log("custom domain: ", CUSTOM_DOMAIN);
 Amplify.configure({
     Auth: {
         mandatorySignIn: true,
         authenticationFlowType: "USER_PASSWORD_AUTH",
+        storage: new CookieStorage({
+            domain: CUSTOM_DOMAIN,
+            path: "/",
+            expires: 7,
+            secure: true,
+            sameSite: "lax"
+        }),
         Cognito: {
             region: REGION,
             userPoolId: POOL_ID,
@@ -24,12 +34,45 @@ Amplify.configure({
 export const COGNITO_PARAMS = {
     UserPoolId: POOL_ID,
 };
+export async function loadTenantBranding(tenantId) {
+    const response = await fetch(
+        `/assets/tenants/${tenantId}/configs/config.json`
+    );
+
+    if (!response.ok) {
+        console.error(`Configuration for tenant '${tenantId}' not found. Signing out and redirecting to login.`);
+        try {
+            await signOut({ global: true });
+        } catch (e) {
+            // Ignore sign out errors, we still want to redirect.
+            console.error("Error during sign out:", e);
+        }
+        window.location.href = 'index.html';
+        // Return a promise that never resolves to prevent callers from continuing.
+        return new Promise(() => {});
+    }
+    
+    const config = await response.json();
+
+    $("#hospital-name").text(config.hospitalName);
+    $(".top-nav-header-text").text(config.appName);
+    $("#tenant-brand-logo").attr("src", `/assets/tenants/${tenantId}/branding/logo.png`);
+    return config;
+}
 export async function getUserSession(redirect = true) {
     const session = await fetchAuthSession({ forceRefresh: false });
     if (!session.tokens && redirect) {
         window.location.href = "index.html";
     }
     return session;
+};
+export async function getAccesstokenAndCustomAttribute(attributeName) {
+    const session = await getUserSession();
+    return [session.tokens.accessToken.toString(), session.tokens.idToken.payload[attributeName]];
+}
+export async function getUserIdAndCustomAttribute(attributeName) {
+    const session = await getUserSession();
+    return [session.tokens.idToken.payload["sub"], session.tokens.idToken.payload[attributeName]];
 }
 export async function getAccessToken() {
     const session = await getUserSession();
@@ -97,21 +140,45 @@ export function toggleSkeletonLoader(elementId, action) {
         });
     }
 };
-export function getUserGroupNameForUser(cognitoIdentityServiceProvider, username) {
-    return new Promise((resolve, reject) => {
-        cognitoIdentityServiceProvider.adminListGroupsForUser(
-            { ...COGNITO_PARAMS, Username: username, Limit: 1 },
+export function getCustomAttributeForUser(cognitoIdentityServiceProvider, username, attributeName) {
+  return new Promise((resolve, reject) => {
+        cognitoIdentityServiceProvider.adminGetUser(
+            { ...COGNITO_PARAMS, Username: username },
             (err, data) => {
                 if (err) {
+                    console.log(err);
                     resolve("N/A");
-                } else if (data.Groups && data.Groups.length > 0) {
-                    resolve(data.Groups[0].GroupName);
                 } else {
-                    resolve("N/A");
+                    const customAttributes = data.UserAttributes;
+                    const hospitalIdAttribute = customAttributes.find(
+                        (attr) => attr.Name === attributeName
+                    );
+                    if (!hospitalIdAttribute) {
+                        resolve("N/A");
+                    } else {
+                        resolve(hospitalIdAttribute.Value);
+                    }
+                    
                 }
             }
         );
     });
+}
+export function getUserGroupNameForUser(cognitoIdentityServiceProvider, username) {
+  return new Promise((resolve, reject) => {
+      cognitoIdentityServiceProvider.adminListGroupsForUser(
+          { ...COGNITO_PARAMS, Username: username, Limit: 1 },
+          (err, data) => {
+              if (err) {
+                  resolve("N/A");
+              } else if (data.Groups && data.Groups.length > 0) {
+                  resolve(data.Groups[0].GroupName);
+              } else {
+                  resolve("N/A");
+              }
+          }
+      );
+  });
 }
 export function toggleLoder(elementId, action) {
   const loader = document.querySelector(`#${elementId} .loader-small`);

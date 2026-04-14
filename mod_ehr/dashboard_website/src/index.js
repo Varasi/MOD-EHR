@@ -1,9 +1,20 @@
 
-import { getUserSession, togglePasswordVisibility } from "./common";
+import { getUserSession, togglePasswordVisibility, getAccesstokenAndCustomAttribute, CUSTOM_DOMAIN, loadTenantBranding } from "./common";
 import { signIn } from "aws-amplify/auth";
 
-
 $(document).ready(async function () {
+    const hostname = window.location.hostname;
+    const tenantId = hostname.split('.')[0];
+    const session = await getUserSession(false);
+    if(session && session.tokens){
+        const hospital_id = session.tokens.idToken.payload["custom:hospital_id"];
+        if (hospital_id !== tenantId){
+            window.location.replace(`https://${hospital_id}${CUSTOM_DOMAIN}/dashboard.html`);
+        }else{
+            window.location.href = "dashboard.html";
+        }
+    }
+    
     $("#login").click(async function () {
         const username = $("#email").val();
         const password = $("#password").val();
@@ -15,7 +26,9 @@ $(document).ready(async function () {
         );
         try {
             const user = await signIn({ username, password });
+
             window.location.href = "dashboard.html";
+            // window.location.replace(`https://hospital1001.hirtahealthconnector.com/dashboard.html`);
         } catch (error) {
             $(this).text("Log in");
             console.log(error);
@@ -33,8 +46,8 @@ $(document).ready(async function () {
     $("#password-toggler").click(function () {
        togglePasswordVisibility("password", "password-toggler");
     });
-    let auth = await getUserSession(false);
-    if (auth.tokens) {
-        window.location.href = "dashboard.html";
-    }
+    // let auth = await getUserSession(false);
+    // if (auth.tokens) {
+    //     window.location.href = "dashboard.html";
+    // }
 });

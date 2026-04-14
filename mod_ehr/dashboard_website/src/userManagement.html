@@ -31,14 +31,19 @@
     <nav class="top-navb-bar">
         <div class="d-flex flex-wrap flex-1 align-items-center">
           <div class="d-flex align-items-center gap-3">
-            <div class="d-flex">
-              <img
-                src="./assets/Health-Connector-Logo.png"
+            <img
+                id ="tenant-brand-logo"
+                src="/assets/tenants/admin/branding/logo.png"
                 class="brand-logo"
                 alt="brand-logo"
               />
+            <div class="d-flex flex-column">
+              <div id="hospital-name" class="hospital-name-text">
+                Health Connector
+              </div>
+              <div class="top-nav-header-text"></div>
             </div>
-            <div class="top-nav-header-text">Health Connector</div>
+            
           </div>
           <div class="d-flex d-lg-none flex-1 justify-content-end">
             <button class="button-tertiary navbar_toggler">
@@ -96,6 +101,11 @@
                 <li id="appointments-nav">
                   <a class="nav-item" href="appointments.html"
                     >Appointments</a
+                  >
+                </li>
+                <li id="hospitals-nav">
+                  <a class="nav-item" href="hospitals.html"
+                    >Hospitals</a
                   >
                 </li>
                 <li id="user-management-nav">
@@ -214,7 +224,7 @@
     </section>
     <section>
       <div class="modal show" id="addUserModal" tabindex="-1" role="dialog" aria-labelledby="addUserModalLabel"
-        aria-hidden="true">
+        >
         <div class="modal-dialog-wrapper placement-center m-0 position-absolute" role="document">
           <div class="modal-content border-0" id="borderRounded">
             <div class="modal-body p-0">
@@ -230,7 +240,7 @@
               <div id="formContainer" class="flex-1 overflow-auto p-4">
                 <form id="appointmentForm" class="d-flex flex-column gap-3 col-12">
                   <div>
-                    <label for="user_name" class="form-label">User Name <span class="text-danger">*</span></label>
+                    <label for="user_name" class="form-label">Email <span class="text-danger">*</span></label>
                     <input type="text" class="form-control" id="userName" name="user_name" required
                       placeholder="Enter User Name" />
                   </div>
@@ -241,6 +251,11 @@
                         placeholder="Enter Password" />
                       <span id="password-toggler" class="eye-off-icon"></span>
                     </div>
+                  </div>
+                  <div>
+                      <label for="hospital" class="form-label">Hospital <span class="text-danger">*</span></label>
+                      <select class="form-select" id="hospital" name="hospital" aria-label="Select Hospital" aria-placeholder="Select Hospital" required>
+                      </select>
                   </div>
                   <div>
                     <label for="role" class="form-label">
@@ -257,6 +272,9 @@
                       </option>
                       <option value="HIRTAOperationsStaff">
                         HIRTA Operations Staff
+                      </option>
+                      <option value="UserManagementAdmin" id="userMgmtAdminOption" class="d-none">
+                        UserManagementAdmin
                       </option>
                     </select>
                   </div>
@@ -325,7 +343,7 @@
         </div>
       </div>
       <div class="modal show" id="changeUserModal" tabindex="-1" role="dialog" aria-labelledby="changeUserModalLabel"
-        aria-hidden="true">
+        >
         <div class="modal-dialog-wrapper placement-center m-0 position-absolute" role="document">
           <div class="modal-content border-0" id="borderRounded">
             <div class="modal-body p-0">
@@ -346,6 +364,16 @@
                       placeholder="Enter User Name" />
                   </div>
                   <div>
+                    <label for="changeEmail" class="form-label">Email <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" id="changeEmail" name="changeEmail" readonly
+                      placeholder="Enter Email Address" />
+                  </div>
+                  <div>
+                    <label for="changeHospital" class="form-label">Hospital <span class="text-danger">*</span></label>
+                    <select class="form-select" id="changeHospital" name="changeHospital" aria-label="Select Hospital" aria-placeholder="Select Hospital" required>
+                    </select>
+                  </div>
+                  <div>
                     <label for="changeRole" class="form-label">
                       Role <span class="text-danger">*</span></label>
                     <select class="form-select" id="changeRole" name="changeRole" aria-label="Select an option"
@@ -362,6 +390,8 @@
                       <option value="HIRTAOperationsStaff">
                         HIRTA Operations Staff
                       </option>
+                      <option value="UserManagementAdmin" id="changeUserMgmtAdminOption" class="d-none">
+                        UserManagementAdmin
                     </select>
                   </div>
                 </form>
