@@ -18,3 +18,125 @@
 .lozenge-danger {
   background-color: var(--surface-danger-primary-light);
 }
+
+/* ── Ride-leg direction indicator ─────────────────────────────────────────── */
+.direction-cell {
+  display: flex;
+  align-items: center;
+  padding-left: var(--spacing-8);
+  border-left: 3px solid transparent;
+}
+
+.direction-cell .direction-label {
+  font-size: var(--font-extra-small);
+  font-weight: var(--font-weight-semiBold);
+  line-height: var(--line-height-20);
+}
+
+.direction-cell.to-appt {
+  border-left-color: var(--brand-primary-color);
+}
+
+.direction-cell.to-appt .direction-label {
+  color: var(--brand-primary-color);
+}
+
+.direction-cell.from-appt {
+  border-left-color: var(--primary-bg-color);
+}
+
+.direction-cell.from-appt .direction-label {
+  color: var(--primary-bg-color);
+}
+
+/* ── Book Ride button (in trip-status cell for unmatched return legs) ─────── */
+.book-ride-btn {
+  padding: var(--spacing-2) var(--spacing-10);
+  font-size: var(--font-extra-small);
+  line-height: var(--line-height-20);
+}
+
+/* ── Coordinator Notes inline textarea ───────────────────────────────────── */
+.coordinator-notes-input {
+  width: 100%;
+  min-width: 160px;
+  font-size: var(--font-extra-small);
+  resize: vertical;
+  border: 1px solid var(--base-gray-hex_300);
+  border-radius: var(--radius-4);
+  padding: var(--spacing-4) var(--spacing-8);
+  background-color: transparent;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.coordinator-notes-input:focus {
+  outline: none;
+  border-color: var(--brand-primary-color);
+  box-shadow: 0 0 0 2px var(--brand-primary-active-color);
+}
+
+.coordinator-notes-input:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Saving spinner — subtle pulse on the border */
+.coordinator-notes-input.notes-saving {
+  border-color: var(--brand-primary-color);
+  animation: notes-pulse 0.8s ease-in-out infinite alternate;
+}
+
+/* Success flash — brief green border */
+.coordinator-notes-input.notes-saved {
+  border-color: var(--surface-success-primary-light);
+  box-shadow: 0 0 0 2px rgba(45, 159, 93, 0.25);
+}
+
+/* Error flash — red border */
+.coordinator-notes-input.notes-error {
+  border-color: var(--surface-danger-primary-light);
+  box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.25);
+}
+
+@keyframes notes-pulse {
+  from { border-color: var(--brand-primary-color); }
+  to   { border-color: var(--brand-primary-active-color); }
+}
+
+/* ── Alt-transport filter icon in column header ───────────────────────────── */
+.alt-transport-filter-icon {
+  cursor: pointer;
+  vertical-align: middle;
+  margin-left: 4px;
+  opacity: 0.45;
+  transition: opacity 0.15s ease, stroke 0.15s ease;
+}
+
+.alt-transport-filter-icon:hover {
+  opacity: 0.8;
+}
+
+.alt-transport-filter-icon.active {
+  stroke: var(--brand-primary-color);
+  opacity: 1;
+}
+
+/* ── Alternative Transportation Confirmed checkbox ───────────────────────── */
+.alt-transport-cell {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+}
+
+.alt-transport-checkbox {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--brand-primary-color);
+  cursor: pointer;
+}
+
+.alt-transport-checkbox:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

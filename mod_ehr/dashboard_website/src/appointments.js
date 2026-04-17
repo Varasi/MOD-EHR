@@ -75,6 +75,10 @@ async function EditAppointment() {
         $("#status").val(appointmentData.status); // Normalize status
         
         $("#saveAppointment").data("id", id);
+        // Store the appointment's real hospital_id so saveAppointment can use it
+        // in the PUT body. For admin users their token returns "admin", not the
+        // actual hospital that owns this appointment.
+        $("#saveAppointment").data("hospital-id", appointmentData.hospital_id);
 
     }catch (error) {
         console.error("Error loading appointment:", error);
@@ -138,6 +142,9 @@ async function EditAppointment() {
 async function saveAppointment() {
     toggleLoder("button-primary", "add");
     const id = $(this).data("id");
+    // For PUT (edit), this holds the appointment's real hospital_id, which differs
+    // from the admin token's "admin" value and is needed as the DynamoDB hash key.
+    const appointmentHospitalId = $(this).data("hospital-id");
     let url = `${BASE_URL}/api/appointments/`;
     let type = "POST";
     const is_valid = $("#appointmentForm").valid();
@@ -169,7 +176,9 @@ async function saveAppointment() {
             url += id;
             type = "PUT";
             formData["id"] = id;
-            formData["hospital_id"] = hospital_id;
+            // Use the appointment's actual hospital_id, not the Cognito token value.
+            // Admin tokens carry "admin" which is not the DynamoDB hash key.
+            formData["hospital_id"] = appointmentHospitalId || hospital_id;
             console.log(id);
         }
         const accessToken = await getAccessToken();

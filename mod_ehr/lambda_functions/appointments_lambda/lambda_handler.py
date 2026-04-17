@@ -103,19 +103,30 @@ class AppointmentAPIHandler(APIHandler):
         is_admin = event.get("is_admin", False)
 
         hospital_id = user_hospital_id
-        if is_admin and "hospital_id" in query_params:
-            hospital_id = query_params["hospital_id"]
+        if is_admin:
+            if "hospital_id" in query_params:
+                hospital_id = query_params["hospital_id"]
+            else:
+                # Admin tokens carry "admin" as their hospital_id, not the real
+                # hospital that owns the appointment. Read it from the request body
+                # instead, where the frontend sends the appointment's actual value.
+                try:
+                    body_hospital_id = json.loads(event["body"]).get("hospital_id")
+                    if body_hospital_id and body_hospital_id != "admin":
+                        hospital_id = body_hospital_id
+                except Exception:
+                    pass
 
-        if not hospital_id:
+        if not hospital_id or hospital_id == "admin":
             return Response(body={"error": "hospital_id is required"}, status=Status.HTTP_400_BAD_REQUEST)
 
         try:
             appointment = self.model.get(hospital_id, appointment_id)
-            
+
             body = json.loads(event["body"])
-            
+
             if "hospital_id" in body and body["hospital_id"] != hospital_id:
-                 return Response(body={"error": "Cannot change hospital_id"}, status=Status.HTTP_400_BAD_REQUEST)
+                return Response(body={"error": "Cannot change hospital_id"}, status=Status.HTTP_400_BAD_REQUEST)
             if "id" in body and body["id"] != appointment_id:
                 return Response(body={"error": "Cannot change id"}, status=Status.HTTP_400_BAD_REQUEST)
 
