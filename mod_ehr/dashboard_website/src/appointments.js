@@ -226,10 +226,11 @@ async function DeleteAppointment() {
     const [accessToken, hospital_id] = await getAccesstokenAndCustomAttribute("custom:hospital_id");
     $("#spinner").show();
     const id = $(this).data("id");
+    const appointmentHospitalId = $(this).data("hospital-id") || hospital_id;
     const xhr = new XMLHttpRequest();
     xhr.open(
         "DELETE",
-        `${BASE_URL}/api/appointments/${id}?hospital_id=${hospital_id}`
+        `${BASE_URL}/api/appointments/${id}?hospital_id=${appointmentHospitalId}`
     );
     xhr.setRequestHeader("Authorization", accessToken);
     xhr.setRequestHeader("X-Id-Token", await getIdToken());
@@ -430,6 +431,8 @@ $(document).ready(async function () {
         </svg></button>` +
                             `<button title="delete" class="deleteBtn btn flex-1" data-id="` +
                             row.id +
+                            `" data-hospital-id="` +
+                            row.hospital_id +
                             `"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20" fill="none">
         <path d="M13.3333 4.99984V4.33317C13.3333 3.39975 13.3333 2.93304 13.1517 2.57652C12.9919 2.26292 12.7369 2.00795 12.4233 1.84816C12.0668 1.6665 11.6001 1.6665 10.6667 1.6665H9.33333C8.39991 1.6665 7.9332 1.6665 7.57668 1.84816C7.26308 2.00795 7.00811 2.26292 6.84832 2.57652C6.66667 2.93304 6.66667 3.39975 6.66667 4.33317V4.99984M8.33333 9.58317V13.7498M11.6667 9.58317V13.7498M2.5 4.99984H17.5M15.8333 4.99984V14.3332C15.8333 15.7333 15.8333 16.4334 15.5608 16.9681C15.3212 17.4386 14.9387 17.821 14.4683 18.0607C13.9335 18.3332 13.2335 18.3332 11.8333 18.3332H8.16667C6.76654 18.3332 6.06647 18.3332 5.53169 18.0607C5.06129 17.821 4.67883 17.4386 4.43915 16.9681C4.16667 16.4334 4.16667 15.7333 4.16667 14.3332V4.99984" stroke="#111827" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
         </svg></i></button><div>`

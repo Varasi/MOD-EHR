@@ -135,9 +135,10 @@ $(document).ready(async function () {
                 // Appointment-level columns: both leg rows share the same value,
                 // so sorting by these is safe — pairs stay adjacent.
                 { data: "customer",             title: "Customer",             className: APPT_SPAN_CLASS },
-                { data: "appointment_time",     title: "Appointment Time",     className: APPT_SPAN_CLASS },
-                { data: "appointment_location", title: "Appointment Location", className: APPT_SPAN_CLASS },
-                { data: "appointment_status",   title: "Appointment Status",   className: APPT_SPAN_CLASS },
+                { data: "appointment",          title: "Appointment",          className: APPT_SPAN_CLASS },
+                // { data: "appointment_time",     title: "Appointment Time",     className: APPT_SPAN_CLASS },
+                // { data: "appointment_location", title: "Appointment Location", className: APPT_SPAN_CLASS },
+                // { data: "appointment_status",   title: "Appointment Status",   className: APPT_SPAN_CLASS },
                 // Leg-specific / interactive columns: values differ between legs,
                 // so sorting would break the TO/FROM pair adjacency — disabled.
                 { data: "coordinator_notes",         title: "Coordinator Notes",    className: APPT_SPAN_CLASS, orderable: false },
@@ -201,6 +202,13 @@ $(document).ready(async function () {
                                           data-patient-id="${appointmentRecord.patient_id}">Book Ride</button>
                            </div>`
                         : `<span class="lozenge-success">${ride.trip_status}</span>`;
+                    
+                    const appointment_time = appointmentRecord.start_time === "TBD"
+                            ? "TBD"
+                            : new Date(appointmentRecord.start_time).toLocaleString("en-US", { timeZone: "America/Chicago" })
+                    const appointment_location = appointmentRecord.location
+                    const appointment_status = appointmentStatusHtml(appointmentRecord.status)
+
 
                     const row_data = {
                         // Internal fields — not mapped to a column, used in callbacks.
@@ -217,11 +225,17 @@ $(document).ready(async function () {
 
                         // Appointment-level columns (rowspanned across both legs).
                         customer:             appointmentRecord.patient_name,
-                        appointment_time:     appointmentRecord.start_time === "TBD"
-                            ? "TBD"
-                            : new Date(appointmentRecord.start_time).toLocaleString("en-US", { timeZone: "America/Chicago" }),
-                        appointment_location: appointmentRecord.location,
-                        appointment_status:   appointmentStatusHtml(appointmentRecord.status),
+                        // appointment_time:     appointmentRecord.start_time === "TBD"
+                        //     ? "TBD"
+                        //     : new Date(appointmentRecord.start_time).toLocaleString("en-US", { timeZone: "America/Chicago" }),
+                        // appointment_location: appointmentRecord.location,
+                        // appointment_status:   appointmentStatusHtml(appointmentRecord.status),
+                        appointment: `<div class="appt-cell">
+                                         <span class="appt-time">${appointment_time}</span>
+                                         <span class="appt-location">${escapeHtml(String(appointment_location ?? ""))}</span>
+                                         ${appointment_status}
+                                     </div>`,
+
                         // Rendered as an editable textarea only on the first-leg row.
                         // The second-leg cell is hidden by drawCallback (rowspan), so its
                         // value is irrelevant — we leave it empty to avoid a duplicate textarea.

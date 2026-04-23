@@ -19,6 +19,19 @@
   background-color: var(--surface-danger-primary-light);
 }
 
+/* ── Combined appointment cell (time + location + status) ────────────────── */
+.appt-cell {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2);
+  align-items: flex-start;
+}
+
+.appt-location {
+  font-size: var(--font-extra-small);
+  color: var(--base-gray-hex_500, #6b7280);
+}
+
 /* ── Ride-leg direction indicator ─────────────────────────────────────────── */
 .direction-cell {
   display: flex;
