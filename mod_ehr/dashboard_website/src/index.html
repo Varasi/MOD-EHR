@@ -36,6 +36,11 @@
             <div
               class="dashboard-login__header gap-2 d-flex flex-column pe-5 pt-0"
             >
+              <img
+                id="tenant-login-logo"
+                alt="Logo"
+                style="display: none; max-height: 60px; object-fit: contain"
+              />
               <header class="dashboard-login__title">Health Connector</header>
               <header class="dashboard-login__subtitle">
                 Login into your Account
@@ -44,14 +49,14 @@
             <div class="dashboard-login__form d-flex flex-column gap-3">
               <div class="d-flex flex-column">
                 <label class="dashboard-login__input-label" for="username"
-                  >Username</label
+                  >Email</label
                 >
                 <input
                   class="dashboard-login__input"
                   type="Email"
                   id="email"
                   name="email"
-                  placeholder="Username"
+                  placeholder="Email"
                   tabindex="0"
                   aria-label="Username"
                   required

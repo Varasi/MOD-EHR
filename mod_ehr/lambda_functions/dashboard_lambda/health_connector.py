@@ -2,36 +2,53 @@ from datetime import datetime, timezone
 
 from health_connector_base.handlers import Response
 from health_connector_base.models import Appointment,Patient
+from health_connector_base.auth import require_tenant_isolation
 
-
+@require_tenant_isolation
 def dashboard_handler(event, context):
     group_name = event["requestContext"]["authorizer"]["claims"]["cognito:groups"]
     ride_deletables = ["pickup", "dropoff"]
     res = []
+    query_params = event.get("queryStringParameters", {})
+    if query_params and "hospital_id" in query_params:
+        hospital_id = query_params["hospital_id"]
     
-    time1 = datetime.now()
     # valid_patients = {
     #     patient.patient_id for patient in Patient.scan() if patient.via_rider_id and patient.via_rider_id.strip()
     # }
     # time1_1 = datetime.now()
     # print("Time taken to filter valid patients-method-1:", time1_1 - time1)
-    valid_patients = {
-            patient.patient_id for patient in Patient.scan(
+    
+    if hospital_id == "admin":
+        valid_patients = {
+            (patient.hospital_id, patient.patient_id) for patient in Patient.scan(
                 filter_condition = Patient.via_rider_id.exists() & (Patient.via_rider_id != "")
             )
         }
-    time2 = datetime.now()
-    print("Time taken to fetch valid patients-method-2:", time2 - time1)
-    for mapping in Appointment.scan(Appointment.end_time >= datetime.now(timezone.utc)):
-        if mapping.patient_id in valid_patients: 
-            if group_name in [
-                "DallasCountyHealthDepartmentHealthNavigators",
-                "HealthcareFacilityStaff",
-            ]:
-                for deletable in ride_deletables:
-                    mapping.ride[deletable] = {}
-            res.append(mapping)
-    time3 = datetime.now()
-    print("Time taken to fetch appointments:", time3 - time2)
+        for mapping in Appointment.scan(Appointment.end_time >= datetime.now(timezone.utc)):
+            if (getattr(mapping, 'hospital_id', None), mapping.patient_id) in valid_patients: 
+                if group_name in [
+                    "DallasCountyHealthDepartmentHealthNavigators",
+                    "HealthcareFacilityStaff",
+                ]:
+                    for deletable in ride_deletables:
+                        mapping.ride[deletable] = {}
+                res.append(mapping)
+    else:
+        valid_patients = {
+            patient.patient_id for patient in Patient.query(
+                hospital_id,
+                filter_condition = Patient.via_rider_id.exists() & (Patient.via_rider_id != "")
+            )
+        }
+        for mapping in Appointment.query(hospital_id, filter_condition=(Appointment.end_time >= datetime.now(timezone.utc))):
+            if mapping.patient_id in valid_patients: 
+                if group_name in [
+                    "DallasCountyHealthDepartmentHealthNavigators",
+                    "HealthcareFacilityStaff",
+                ]:
+                    for deletable in ride_deletables:
+                        mapping.ride[deletable] = {}
+                res.append(mapping)
 
     return Response(res)

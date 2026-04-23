@@ -8,13 +8,20 @@ import {
   postRender,
   getUserGroup,
   tablePaginationNavigationHandler,
+  getAccesstokenAndCustomAttribute,
+  getAccessToken,
+  BASE_URL,
   getUserGroupNameForUser,
+  getCustomAttributeForUser,
+  getUserIdAndCustomAttribute,
   COGNITO_PARAMS,
   PASSWORD_REGEX,
   toggleLoder,
   togglePasswordVisibility,
   toggleSideNavBar,
   toggleAlertMessage,
+  loadTenantBranding,
+  CUSTOM_DOMAIN,
 } from "./common";
 import AWS from 'aws-sdk';
 const iss = getIss()
@@ -45,14 +52,45 @@ async function removeUserFromGroup(username, group) {
     })
 }
 async function deleteUser(username) {
-    return new Promise((resolve, reject) => {
+    try{
         const user_params = {
             UserPoolId: COGNITO_PARAMS.UserPoolId,
             Username: username
         }
-        cognitoIdentityServiceProvider.adminDeleteUser(user_params, (err, data) => {
+        await cognitoIdentityServiceProvider.adminUserGlobalSignOut({
+            UserPoolId: COGNITO_PARAMS.UserPoolId,
+            Username: username
+        }).promise();
+        await cognitoIdentityServiceProvider
+            .adminDeleteUser(user_params)
+            .promise();
+        return true;
+    } catch(err){
+        console.log(err)
+        $("#root").append(
+            `<div id="customAlert" class="custom-alert-danger"><div class="flex-1">${err.message}</div></div>`
+        );
+        setTimeout(function () {
+            $("#customAlert").remove();
+        }, 1000);
+        return false;
+    }
+}
+async function addCustomAttributeToUser(username, attributeName, attributeValue) {
+    return new Promise((resolve, reject) => {
+        const attribute_params = {
+            UserPoolId: COGNITO_PARAMS.UserPoolId,
+            Username: username,
+            UserAttributes: [
+                {
+                    Name: attributeName,
+                    Value: attributeValue
+                }
+            ]
+        }
+        cognitoIdentityServiceProvider.adminUpdateUserAttributes(attribute_params, (err, data) => {
             if (err) {
-                console.log(err)
+                console.log(err.message)
                 $("#root").append(
                     `<div id="customAlert" class="custom-alert-danger"><div class="flex-1">${err.message}</div></div>`
                 );
@@ -123,12 +161,23 @@ async function addUserToCognito() {
                     console.log(change_pass_status)
                     if (!change_pass_status) {
                         await deleteUser(username);
+                        toggleLoder("saveUser", "remove");
                         resolve(false)
+                        return;
                     }
                     let add_to_group_status = await addUserToGroup(username, $("#role").val())
                     if (!add_to_group_status) {
                         await deleteUser(username);
+                        toggleLoder("saveUser", "remove");
                         resolve(false)
+                        return;
+                    }
+                    let add_hospital_attribute_status = await addCustomAttributeToUser(username, "custom:hospital_id", $("#hospital").val())
+                    if (!add_hospital_attribute_status) {
+                        await deleteUser(username);
+                        toggleLoder("saveUser", "remove");
+                        resolve(false)
+                        return;
                     }
                     $("#addUserModal").hide()
                     $("#root").append(
@@ -145,6 +194,8 @@ async function addUserToCognito() {
             }
             )
         });
+    } else {
+        toggleLoder("saveUser", "remove");
     }
 };
 
@@ -155,16 +206,19 @@ async function deleteUserButtonAction() {
             .append(`<div id="customAlert" class="custom-alert-success">
       <div class="flex-1">User Deleted successfully</div>
     </div>`);
+        setTimeout(function () {
+            $("#customAlert").remove();
+            window.location.reload();
+        }, 1000);
     }
     else {
         $("#root").append(
             `<div id="customAlert" class="custom-alert-danger"><div class="flex-1">Error Deleting User</div></div>`
         );
+        setTimeout(function () {
+            $("#customAlert").remove();
+        }, 1000);
     }
-    setTimeout(function () {
-        $("#customAlert").remove();
-        window.location.reload();
-    }, 1000);
 }
 async function updatePassword() {
     toggleLoder("updatePassword", "add");
@@ -188,29 +242,41 @@ async function changePasswordButtonAction() {
     $("#changePassModal").show()
 }
 async function addUserButtonAction() {
-    $("#addUserModal").show()
+    const [user_id, user_tenant_id] = await getUserIdAndCustomAttribute("custom:hospital_id");
+    
+    if(user_tenant_id === "admin"){
+        $("#userMgmtAdminOption").removeClass("d-none");
+    } else {
+        $("#userMgmtAdminOption").addClass("d-none");
+        $("#hospital").val(user_tenant_id).prop("disabled", true);
+    }
+    $("#addUserModal").show();
+    
 }
 async function closeUserModal() {
     $("#addUserModal").hide()
     $('label.error').remove();
     $("#appointmentForm").trigger("reset");
-
+    toggleLoder("saveUser", "remove");
 }
 async function closeUserEditModal() {
     $("#changeUserModal").hide()
     $('label.error').remove();
     $("#changeUserForm").trigger("reset");
+    $("#changeUsername").prop("readonly", false);
+    $("#changeEmail").prop("readonly", false);
 
 }
 async function editUser() {
     toggleLoder("saveChangeUser", "add");
     const username = $("#changeUsername").val()
     const group = await getUserGroupNameForUser(cognitoIdentityServiceProvider, username);
+    const hospital = $("#changeHospital").val()
     await removeUserFromGroup(username, group)
     console.log(group)
     const new_group = $("#changeRole").val()
     console.log(new_group)
-    if (await addUserToGroup(username, new_group)) {
+    if (await addUserToGroup(username, new_group) && await addCustomAttributeToUser(username, "custom:hospital_id", hospital)) {
         $("#root")
             .append(`<div id="customAlert" class="custom-alert-success">
       <div class="flex-1">User Role Changed successfully</div>
@@ -229,20 +295,41 @@ async function editUser() {
 }
 async function closeChangePassModal() {
     $('label.error').remove();
-    $("#changePassModal").hide()
+    $("#changePassModal").hide();
     $("#changePassForm").trigger("reset");
 
 }
-async function editUserButtonAction() {
+async function editUserButtonAction(hospitalList) {
     const username = $(this).data("username");
+    const email = $(this).data("email");
     const group = await getUserGroupNameForUser(cognitoIdentityServiceProvider, username);
-    $("#changeUsername").val(username)
+    const hospital = await getCustomAttributeForUser(cognitoIdentityServiceProvider, username, "custom:hospital_id");
+    const [user_id, user_tenant_id] = await getUserIdAndCustomAttribute("custom:hospital_id");
+    $("#changeUsername").val(username).prop("readonly", true);
+    $("#changeEmail").val(email).prop("readonly", true);
     $("#changeRole").val(group)
+    if(user_tenant_id == "admin"){
+        $("#changeHospital").val(hospital)
+        $("#changeUserMgmtAdminOption").removeClass("d-none");
+    }else{
+        $("#changeHospital").val(hospital).prop("readonly", true);
+        $("#changeUserMgmtAdminOption").addClass("d-none");
+    }
     $("#changeUserModal").show()
 
 
 }
 $(document).ready(async function () {
+    // await initAWS();
+    const hostname = window.location.hostname;
+    const dns_tenant = hostname.split('.')[0];
+    const [accessToken, hospital_id] = await getAccesstokenAndCustomAttribute("custom:hospital_id");
+    const config = await loadTenantBranding(hospital_id);
+    if (config.subdomain !== dns_tenant){
+        alert("You are not authorized for this hospital.");
+        await logoutUser();
+        window.location.replace(`https://${config.subdomain}${CUSTOM_DOMAIN}/userManagement.html`);
+    }
     preRender();
     toggleSideNavBar();
     $("#logout").click(logoutUser);
@@ -254,11 +341,67 @@ $(document).ready(async function () {
     });$("#password2-toggler").click(function () {
       togglePasswordVisibility("password2", "password2-toggler");
     });
-    
+    let hospitalMap = {};
+    let hospitalList = [];
     const userRole = await getUserGroup();
     if (userRole !== "UserManagementAdmin") {
         window.location.href = "dashboard.html";
     }
+    if(hospital_id === "admin"){
+        $("#hospitals-nav").removeClass("invisible")
+        $("#hospitals-nav").addClass("visible")
+
+    }else{
+        $("#hospitals-nav").removeClass("visible")
+        $("#hospitals-nav").addClass("invisible")
+    }
+    const xhr = new XMLHttpRequest();
+    if (hospital_id === "admin") {
+        xhr.open("GET", `${BASE_URL}/api/hospitals/`);
+    } else {
+        xhr.open("GET", `${BASE_URL}/api/hospitals/${hospital_id}`);
+    }
+    xhr.setRequestHeader("Authorization", accessToken);
+    xhr.setRequestHeader("X-Id-Token", await getIdToken());
+    xhr.onreadystatechange = async function () {
+        if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
+            const hospitals = JSON.parse(xhr.responseText);
+            if (hospital_id === "admin"){
+                hospitalList = hospitals;
+            }else{
+                hospitalList = [hospitals]
+            }
+            const hospitalSelect = document.getElementById("hospital");
+            const hospitalSelect2 = document.getElementById("changeHospital");
+            //set hospital options in add user modal
+            for (let hospital of hospitalList) {
+                hospitalMap[hospital.id] = hospital.name;
+                const option = document.createElement("option");
+                const option2 = document.createElement("option");
+
+                option.value = hospital.id;
+                option.textContent = hospital.name;
+
+                option2.value = hospital.id;
+                option2.textContent = hospital.name;
+
+                hospitalSelect.appendChild(option);
+                hospitalSelect2.appendChild(option2);
+            }
+        } else if (xhr.status !== 200) {
+             $("#Loader").remove();
+            if ($("#StateChange .emptyState").length === 0) {
+                $("#StateChange").append(
+                    `<div class="emptyState">
+        <img src="./assets/ERROR.svg" alt="" />
+        <h3 class="no-data">ERROR </h3>
+        <p>An error occurred while retrieving data</p>
+      </div>`
+                );
+            }
+        }
+    };
+    xhr.send();
     $(".closeChangePass").click(closeChangePassModal)
     $(".closeAdduser").click(closeUserModal)
     $("#add-user").click(addUserButtonAction);
@@ -275,6 +418,9 @@ $(document).ready(async function () {
                 minlength: 8,
                 pattern: PASSWORD_REGEX
 
+            },
+            hospital: {
+                required: true,
             },
             role: {
                 required: true,
@@ -366,7 +512,9 @@ $(document).ready(async function () {
 
         } else {
             let columns_data = [
-                { data: "Username", title: "Username" },
+                // { data: "Username", title: "Username" },
+                { data: "Email", title: "Email" },
+                { data: "Hospital", title: "Hospital", render: function (data, type, row) { return hospitalMap[data] || data; }},
                 {
                     data: "Group",
                     title: "Group",
@@ -380,6 +528,7 @@ $(document).ready(async function () {
                 {
                     data: null,
                     render: function (data, type, row) {
+                        if (row.Hospital !== "admin"){
                         return (
                             `<div class="d-flex" id="tableButtons">
                 <div class="d-flex gap-2">
@@ -417,6 +566,7 @@ $(document).ready(async function () {
                     title="edit"
                     class="button-tertiary editUser"
                     data-username=${row.Username}
+                    data-email=${row.Email}
                   >
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
@@ -458,12 +608,76 @@ $(document).ready(async function () {
                 </div>
               </div>`
                         );
+                        }else {
+                            return `<div class="d-flex" id="tableButtons">
+                <div class="d-flex gap-2">
+                  <button class="button-secondary changePassword" data-username=${row.Username} >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="17"
+                      height="16"
+                      viewBox="0 0 17 16"
+                      fill="none"
+                    >
+                      <g clip-path="url(#clip0_395_3454)">
+                        <path
+                          d="M12.3334 6.66622L9.66668 3.99955M2 14.3329L4.25625 14.0822C4.53191 14.0516 4.66974 14.0362 4.79856 13.9945C4.91286 13.9575 5.02163 13.9053 5.12192 13.8391C5.23497 13.7646 5.33303 13.6665 5.52915 13.4704L14.3333 4.66622C15.0697 3.92984 15.0697 2.73593 14.3333 1.99955C13.597 1.26317 12.4031 1.26317 11.6667 1.99955L2.86249 10.8037C2.66636 10.9999 2.5683 11.0979 2.49376 11.211C2.42762 11.3113 2.37534 11.42 2.33834 11.5343C2.29664 11.6631 2.28132 11.801 2.25069 12.0766L2 14.3329Z"
+                          stroke="#2464E4"
+                          stroke-width="2"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                        />
+                      </g>
+                      <defs>
+                        <clipPath id="clip0_395_3454">
+                          <rect
+                            width="16"
+                            height="16"
+                            fill="white"
+                            transform="translate(0.333252)"
+                          />
+                        </clipPath>
+                      </defs>
+                    </svg>
+                    Change Password
+                  </button>
+                </div>
+              </div>`;
+                        }
                     },
                 },
             ];
+            let users_list = [];
             for (let user of data.Users) {
+                for(let attribute of user.Attributes){
+                    if(attribute.Name === "custom:hospital_id"){
+                        user["Hospital"] = attribute.Value;
+                    }
+                    if(attribute.Name === "email"){
+                        user["Email"] = attribute.Value;
+                    }
+                }
                 user["Group"] = await getUserGroupNameForUser(cognitoIdentityServiceProvider, user["Username"]);
+                // user["Hospital"] = await getCustomAttributeForUser(cognitoIdentityServiceProvider, user["Username"], "custom:hospital_id");
+                if (user["Hospital"] && user["Email"] && user["Group"]) {
+                    if((user["Hospital"] == hospital_id) || (hospital_id == "admin")){
+                        users_list.push(user);
+                    }
+                }else{
+                    console.log(`Skipping user ${user.Username} due to missing attributes`);
+                    $("#Loader").remove();
+                    if ($("#StateChange .emptyState").length === 0) {
+                        $("#StateChange").append(
+                            `<div class="emptyState">
+                            <img src="./assets/ERROR.svg" alt="" />
+                            <h3 class="no-data">ERROR </h3>
+                            <p>An error occurred while retrieving data</p>
+                            </div>`
+                        );
+                    }
+                }
             }
+            console.log(data)
             const SearchIcon = $(
                 '<span id="searchIconSvg">' +
                 '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20" fill="none">' +
@@ -472,7 +686,7 @@ $(document).ready(async function () {
                 "</span>"
             );
             let table = $("#mod_ehr").DataTable({
-                data: data.Users,
+                data: users_list,
                 columns: columns_data,
                 language: {
                     lengthMenu: "_MENU_",
@@ -497,11 +711,15 @@ $(document).ready(async function () {
                 tablePaginationNavigationHandler(table);
                 $(".changePassword").click(changePasswordButtonAction)
                 $(".deleteUser").click(deleteUserButtonAction)
-                $(".editUser").click(editUserButtonAction)
+                $(".editUser").click(function(){
+                    editUserButtonAction.call(this, hospitalList)
+                })
             });
             $(".changePassword").click(changePasswordButtonAction)
             $(".deleteUser").click(deleteUserButtonAction)
-            $(".editUser").click(editUserButtonAction)
+            $(".editUser").click(function(){
+                    editUserButtonAction.call(this, hospitalList)
+                })
             postRender();
 
         }

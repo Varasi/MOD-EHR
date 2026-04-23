@@ -33,6 +33,7 @@
     - Replace the placeholder values in the script with your actual AWS credentials
 15. Navigate to the Ubuntu terminal and run the command:
     - `chmod +x deploy_website.sh`
+    - `dos2unix deploy_website.sh`
     - `bash deploy_website.sh`
 16. Deploy the stack again using the command:
     - `cdk deploy`

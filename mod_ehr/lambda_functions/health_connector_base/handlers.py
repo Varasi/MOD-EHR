@@ -122,6 +122,7 @@ class APIHandler:
             Response: The response containing the updated object.
         """
         obj = self.get_object(hash_key)
+        print(f"Updating object with hash key {hash_key} with data {event['body']}")
         for key, value in json.loads(event["body"]).items():
             setattr(obj, key, value)
         obj.save()
@@ -153,8 +154,10 @@ class APIHandler:
         """
         cls = cls(event)
         http_method = event["httpMethod"].lower()
+        print(f"Processing {http_method} request for {cls.model.__name__}")
         handler = getattr(cls, http_method, cls.http_method_not_allowed)
         hash_key = (event.get("pathParameters") or {}).get(cls.model._hash_keyname)
+        print(f"Hash key: {hash_key}")
         try:
             return handler(event, hash_key)
         except HandlerBaseException as e:

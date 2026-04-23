@@ -504,8 +504,9 @@ tbody>tr>td:last-child {
 }
 
 .top-nav-header-text {
-    font-size: var(--font-24);
+    font-size: var(--font-small);
     font-weight: var(--font-weight-semiBold);
+    color: #6b7280;
 }
 
 .top-nav-items {
@@ -669,4 +670,10 @@ tbody>tr>td:last-child {
 }
 .select2-dropdown {
   z-index: 9999 !important;
+}
+
+.hospital-name-text {
+  font-weight: 600;
+  font-size: 18px;
+  color: #1f2937;
 }

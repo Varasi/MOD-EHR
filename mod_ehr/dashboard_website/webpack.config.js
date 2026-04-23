@@ -12,7 +12,8 @@ module.exports = (env) => {
             common: "./src/common.js",
             usermanagement: "./src/usermanagement.js",
             settingspanel: "./src/settingspanel.js",
-            logs: "./src/logs.js"
+            logs: "./src/logs.js",
+            hospitals: "./src/hospitals.js",
         },
         output: {
             filename: "[name].js",
