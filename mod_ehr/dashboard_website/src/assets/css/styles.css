@@ -432,6 +432,11 @@ tbody>tr>td:last-child {
     background-color: var(--bg-success-primary-light);
 }
 
+.appt-last-row > td,
+td.appt-last-row {
+    border-bottom: 3px solid var(--base-gray-hex_300) !important;
+}
+
 #borderRounded {
     border-radius: 16px;
 }
@@ -543,7 +548,18 @@ tbody>tr>td:last-child {
 .module-header {
     padding: var(--spacing-12) var(--spacing_24);
 }
-
+.assistance-text {
+    border: solid !important;
+    border-width: 2px !important;
+    border-radius: 10px;
+    background-color: #ecf3ff;
+    padding: inherit;
+    border-color: #bfd4ff !important;
+    font-size: 15px;
+    margin-top: -10px;
+    color: #3567ff;
+    font-weight: 500;
+}
 .current:active {
     background-color: var(--primary-button-background-color);
 }

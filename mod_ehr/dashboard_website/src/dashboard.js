@@ -6,6 +6,7 @@ import {
     preRender,
     postRender,
     BASE_URL,
+    HIRTA_CONTACT,
     toggleSideNavBar,
     getAccesstokenAndCustomAttribute,
     loadTenantBranding,
@@ -88,8 +89,8 @@ $(document).ready(async function () {
     const idToken = await getIdToken();
     const hostname = window.location.hostname;
     const dns_tenant = hostname.split('.')[0];
-    console.log(dns_tenant);
     const config = await loadTenantBranding(hospital_id);
+    
     if (config.subdomain !== dns_tenant) {
         alert("You are not authorized for this hospital.");
         await logoutUser();
@@ -117,7 +118,7 @@ $(document).ready(async function () {
         hospital_map = await renderHospitalColumn(accessToken, idToken);
         console.log("Hospital Map: ", hospital_map);
     }
-
+    $("#assistance-text-dashboard").append(HIRTA_CONTACT);
     const xhr = new XMLHttpRequest();
     xhr.open("GET", `${BASE_URL}/api/dashboard/?hospital_id=${hospital_id}`);
     xhr.setRequestHeader("Authorization", accessToken);
@@ -219,6 +220,7 @@ $(document).ready(async function () {
                         // hide-confirmed filter can evaluate either row independently.
                         _alt_confirmed_to:   appointmentRecord.alt_transport_confirmed_to   || false,
                         _alt_confirmed_from: appointmentRecord.alt_transport_confirmed_from || false,
+                        _appointment_location: appointment_location,
                         // 0 = TO APPT, 1 = FROM APPT — used as a hidden secondary sort key
                         // to keep both leg rows of the same appointment adjacent after any sort.
                         _leg_order:          direction === "TO APPT" ? 0 : 1,
@@ -300,13 +302,27 @@ $(document).ready(async function () {
 
             // Tracks whether the "Hide Confirmed" filter is active.
             let hideConfirmedPatients = false;
-
+            let filterApptLocation = "";
+            let filterDropoffSpot = "";
             // Custom search: hide appointments where both legs are fully confirmed.
+            // Custom search: handles hide confirmed, appointment location, and drop off spot filtering.
             // The settings.nTable guard prevents this from leaking into other tables.
             $.fn.dataTable.ext.search.push(function (settings, _data, _idx, rowData) {
                 if (settings.nTable !== document.getElementById("mod_ehr")) return true;
-                if (!hideConfirmedPatients) return true;
-                return !(rowData._alt_confirmed_to && rowData._alt_confirmed_from);
+                
+                if (hideConfirmedPatients && (rowData._alt_confirmed_to && rowData._alt_confirmed_from)) {
+                    return false;
+                }
+
+                if (filterApptLocation && !(String(rowData._appointment_location || "").toLowerCase().includes(filterApptLocation.toLowerCase()))) {
+                    return false;
+                }
+
+                if (filterDropoffSpot && !(String(rowData.drop_off_spot || "").toLowerCase().includes(filterDropoffSpot.toLowerCase()))) {
+                    return false;
+                }
+
+                return true;
             });
 
             const SearchIcon = $(
@@ -338,6 +354,18 @@ $(document).ready(async function () {
                     const api = this.api();
                     let prevApptId   = null;
                     let prevFirstRow = null;
+                    let prevLastRow  = null;
+
+                    // Marks the end of the current appointment group with the separator border.
+                    // Non-spanning cells: class on the last row. Spanning cells: class directly
+                    // on the td elements of the first-leg row (where rowspan=2 places them visually).
+                    function markApptEnd() {
+                        if (!prevLastRow) return;
+                        prevLastRow.addClass("appt-last-row");
+                        if (prevFirstRow && prevFirstRow[0] !== prevLastRow[0]) {
+                            prevFirstRow.children(`td.${APPT_SPAN_CLASS}`).addClass("appt-last-row");
+                        }
+                    }
 
                     api.rows({ page: "current" }).every(function () {
                         const rowData  = this.data();
@@ -345,19 +373,27 @@ $(document).ready(async function () {
                         // Select only the appointment-level cells via the CSS class added in columns_data.
                         const $apptCells = $row.children(`td.${APPT_SPAN_CLASS}`);
 
+                        $row.removeClass("appt-last-row");
+                        $apptCells.removeClass("appt-last-row");
+
                         if (rowData._appointment_id === prevApptId && !rowData._is_first_leg) {
                             // Second leg: hide its appointment-level cells and extend the first leg's rowspan.
                             $apptCells.hide();
                             prevFirstRow
                                 .children(`td.${APPT_SPAN_CLASS}`)
                                 .attr("rowspan", 2);
+                            prevLastRow = $row;
                         } else {
                             // First leg (or standalone legacy record): reset any prior span state.
+                            markApptEnd();
                             $apptCells.show().removeAttr("rowspan");
                             prevApptId   = rowData._appointment_id;
                             prevFirstRow = $row;
+                            prevLastRow  = $row;
                         }
                     });
+                    // Mark the final appointment's last row.
+                    markApptEnd();
 
                     // Seed each visible textarea with its initial value so the blur
                     // handler can skip saves when nothing has actually changed.
@@ -381,12 +417,65 @@ $(document).ready(async function () {
                     $(".dt-buttons").appendTo("#table-filter");
                     $(".bottom").appendTo("#custom-pagination");
                     $('#mod_ehr_filter input[type="search"]').before(SearchIcon);
+                    $("#table-filter").append(`<div class="position-relative">
+                        <button id="custom_datatable_filter" class="btn"><i class="fa fa-filter"></i></button>
+                        <div id="filter_options_container" class="d-none position-absolute bg-white border rounded p-3 shadow-sm mt-1" style="z-index: 1050; right: 0; min-width: 200px;">
+                            <div class="mb-2">
+                                <label class="form-label text-sm fw-bold">Trip Status</label>
+                                <select id="filter_trip_status" class="form-select form-select-sm">
+                                    <option value="">All</option>
+                                    <option value="Not Requested">Not Requested</option>
+                                    <option value="Scheduled">Scheduled</option>
+                                    <option value="Completed">Completed</option>
+                                    <option value="Cancelled">Cancelled</option>
+                                </select>
+                            </div>
+                            <div class="mb-2">
+                                <label class="form-label text-sm fw-bold">Appointment Location</label>
+                                <input type="text" id="filter_appt_location" class="form-control form-control-sm" placeholder="Search location..." />
+                            </div>
+                            <div class="mb-2">
+                                <label class="form-label text-sm fw-bold">Drop Off Spot</label>
+                                <input type="text" id="filter_dropoff_spot" class="form-control form-control-sm" placeholder="Search spot..." />
+                            </div>
+                        </div>
+                    </div>`);
                 },
             });
 
             tablePaginationNavigationHandler(table);
             table.on("draw.dt", function () {
                 tablePaginationNavigationHandler(table);
+            });
+            
+            $("#custom_datatable_filter").on("click", function(e) {
+                e.stopPropagation();
+                $("#filter_options_container").toggleClass("d-none");
+            });
+
+            // Hide the filter dropdown if clicking outside
+            $(document).on("click", function(e) {
+                if (!$(e.target).closest('#filter_options_container, #custom_datatable_filter').length) {
+                    $("#filter_options_container").addClass("d-none");
+                }
+            });
+
+            // Perform DataTables filtering on the "Trip Status" column (index 5)
+            $("#filter_trip_status").on("change", function() {
+                const val = $.fn.dataTable.util.escapeRegex($(this).val());
+                table.column(5).search(val, true, false).draw();
+            });
+
+            // Perform Custom search redraws for Appointment Location
+            $("#filter_appt_location").on("keyup change", function() {
+                filterApptLocation = $(this).val();
+                table.draw();
+            });
+
+            // Perform Custom search redraws for Drop Off Spot
+            $("#filter_dropoff_spot").on("keyup change", function() {
+                filterDropoffSpot = $(this).val();
+                table.draw();
             });
 
             // Toggle the hide-confirmed filter via the funnel icon in the column header.
