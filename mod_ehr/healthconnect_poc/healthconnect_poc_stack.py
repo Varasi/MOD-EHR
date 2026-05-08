@@ -47,6 +47,7 @@ class HealthconnectPocStack(Stack):
         self.create_logs_lambda()
         self.create_hospitals_lambda()
         self.create_epic_data_populator_lambda()
+        self.create_ride_booking_lambda()
         # Secret Manager
         self.create_secrets()
         # Cognito
@@ -676,7 +677,25 @@ class HealthconnectPocStack(Stack):
                 "ENVIRONMENT": self.config.ENVIRONMENT.upper(),
             },
         )
-    
+    def create_ride_booking_lambda(self):
+        self.ride_booking_lambda = aws_lambda.Function(
+            self,
+            f"EHRMultitenant{self.config.ENVIRONMENT.title()}RideBookingLambda{self.version_suffix_us}",
+            function_name=f"EHRMultitenant{self.config.ENVIRONMENT.title()}RideBookingLambda{self.version_suffix_us}",
+            runtime=aws_lambda.Runtime.PYTHON_3_11,
+            code=aws_lambda.Code.from_asset("lambda_functions/ride_booking_lambda"),
+            handler="lambda_handler.lambda_handler",
+            role=self.LambdaExecutionRole,
+            layers=[self.requirements_layer, self.base_layer],
+            vpc=self.vpc,
+            timeout=Duration.minutes(10),
+            memory_size=512,
+            environment={
+                "ENVIRONMENT": self.config.ENVIRONMENT.upper(),
+                "VERSION_SUFFIX": self.version_suffix,
+            }
+        )
+
     def add_event_bridge_scheduler_epic(self):
         self.event_bridge_rule = event_bridge.Rule(
             self,
@@ -873,6 +892,20 @@ class HealthconnectPocStack(Stack):
         self.logs_resource.add_method(
             "GET",
             apigw.LambdaIntegration(self.logs_lambda, proxy=True),
+            authorizer=self.apigw_authorizer,
+            authorization_scopes=["aws.cognito.signin.user.admin"],
+        )
+        self.validate_patient_resource = self.api.root.add_resource("validate_patient")
+        self.validate_patient_resource.add_method(
+            "POST",
+            apigw.LambdaIntegration(self.ride_booking_lambda, proxy=True),
+            authorizer=self.apigw_authorizer,
+            authorization_scopes=["aws.cognito.signin.user.admin"],
+        )
+        self.trip_booking_resource = self.api.root.add_resource("trip_booking")
+        self.trip_booking_resource.add_method(
+            "POST",
+            apigw.LambdaIntegration(self.ride_booking_lambda, proxy=True),
             authorizer=self.apigw_authorizer,
             authorization_scopes=["aws.cognito.signin.user.admin"],
         )

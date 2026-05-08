@@ -101,32 +101,56 @@ class AppointmentsMapperWithVia:
         LOCATION_DIFF km of the appointment address.
         """
         match_ride = {}
-        prev_diff = 1e9
-        prev_location_diff = 1e9
+        best_diff = 1e9
         prior_period = self.get_prior_period(hospital_id)
         subsequent_period = self.get_subsequent_period(hospital_id)
         for trip in trips:
-            cur_diff = int(appointment_start_time - trip["dropoff_eta"])
+            
+
+            dropoff_eta = trip.get("dropoff_eta")
+            if dropoff_eta is None:
+                continue
+
+            cur_diff = int(appointment_start_time - dropoff_eta)
+
+            dropoff = trip.get("dropoff", {})
+            lat = dropoff.get("lat")
+            lng = dropoff.get("lng")
+            if lat is None or lng is None:
+                continue
+
+            pickup = trip.get("pickup", {})
+            pickup_lat = pickup.get("lat")
+            pickup_lng = pickup.get("lng")
+            if pickup_lat is None or pickup_lng is None:
+                continue
+
             cur_location_diff = int(
                 LocationManager().get_distance_from_address_coords(
                     address,
-                    [
-                        trip.get("dropoff", {}).get("lat", 0),
-                        trip.get("dropoff", {}).get("lng", 0),
-                    ],
+                    [lat, lng],
                 )
             )
+            pickup_location_diff = int(
+                LocationManager().get_distance_from_address_coords(
+                    address,
+                    [pickup_lat, pickup_lng],
+                )
+            )
+
+            # Ensure the ride is actually heading towards the hospital
+            if pickup_location_diff <= cur_location_diff:
+                continue
+
             print(f"subsequent_period: {subsequent_period}, cur_diff: {cur_diff}, prior_period: {prior_period}")
-            print(f"cur_diff: {cur_diff}, prev_diff: {prev_diff}, cur_location_diff: {cur_location_diff}, prev_location_diff: {prev_location_diff}")
+            print(f"cur_diff: {cur_diff}, cur_location_diff: {cur_location_diff}")
             if (
                 subsequent_period <= cur_diff <= prior_period
-                and cur_diff < prev_diff
                 and cur_location_diff <= LOCATION_DIFF
-                and cur_location_diff <= prev_location_diff
             ):
-                prev_diff = cur_diff
-                match_ride = trip
-                prev_location_diff = cur_location_diff
+                if abs(cur_diff) < best_diff:
+                    best_diff = abs(cur_diff)
+                    match_ride = trip
         print("Matched to-appointment ride:", match_ride)
         return match_ride
 
@@ -139,33 +163,57 @@ class AppointmentsMapperWithVia:
         LOCATION_DIFF km of the appointment address.
         """
         match_ride = {}
-        prev_diff = 1e9
-        prev_location_diff = 1e9
+        best_diff = 1e9
         prior_period = self.get_prior_period(hospital_id)
         subsequent_period = self.get_subsequent_period(hospital_id)
         for trip in trips:
+            
+
+            pickup_eta = trip.get("pickup_eta")
+            if pickup_eta is None:
+                continue
+
             # Positive diff means pickup is after end_time (patient leaves after appt ends)
-            cur_diff = int(trip["pickup_eta"] - appointment_end_time)
+            cur_diff = int(pickup_eta - appointment_end_time)
+
+            pickup = trip.get("pickup", {})
+            lat = pickup.get("lat")
+            lng = pickup.get("lng")
+            if lat is None or lng is None:
+                continue
+
+            dropoff = trip.get("dropoff", {})
+            dropoff_lat = dropoff.get("lat")
+            dropoff_lng = dropoff.get("lng")
+            if dropoff_lat is None or dropoff_lng is None:
+                continue
+
             cur_location_diff = int(
                 LocationManager().get_distance_from_address_coords(
                     address,
-                    [
-                        trip.get("pickup", {}).get("lat", 0),
-                        trip.get("pickup", {}).get("lng", 0),
-                    ],
+                    [lat, lng],
                 )
             )
+            dropoff_location_diff = int(
+                LocationManager().get_distance_from_address_coords(
+                    address,
+                    [dropoff_lat, dropoff_lng],
+                )
+            )
+
+            # Ensure the ride is actually heading away from the hospital
+            if dropoff_location_diff <= cur_location_diff:
+                continue
+
             print(f"[return] subsequent_period: {subsequent_period}, cur_diff: {cur_diff}, prior_period: {prior_period}")
-            print(f"[return] cur_diff: {cur_diff}, prev_diff: {prev_diff}, cur_location_diff: {cur_location_diff}, prev_location_diff: {prev_location_diff}")
+            print(f"[return] cur_diff: {cur_diff}, cur_location_diff: {cur_location_diff}")
             if (
                 subsequent_period <= cur_diff <= prior_period
-                and cur_diff < prev_diff
                 and cur_location_diff <= LOCATION_DIFF
-                and cur_location_diff <= prev_location_diff
             ):
-                prev_diff = cur_diff
-                match_ride = trip
-                prev_location_diff = cur_location_diff
+                if abs(cur_diff) < best_diff:
+                    best_diff = abs(cur_diff)
+                    match_ride = trip
         print("Matched from-appointment ride:", match_ride)
         return match_ride
 
@@ -368,8 +416,8 @@ class AppointmentsMapperWithVia:
 
                 # Preserve driver/vehicle info when the matched trip hasn't changed.
                 # Handle both the new structured format and legacy flat-ride records.
-                existing_to = existing_ride.get("to_appointment", existing_ride)
-                existing_from = existing_ride.get("from_appointment", {})
+                existing_to = existing_ride.get("to_appointment") or existing_ride or {}
+                existing_from = existing_ride.get("from_appointment") or {}
 
                 if (
                     existing_to.get("trip_id")
@@ -449,8 +497,8 @@ class AppointmentsMapperWithViaMock(AppointmentsMapperWithVia):
                     or VIA_RIDE_MOCK["from_appointment"]
                 )
 
-                existing_to = existing_ride.get("to_appointment", existing_ride)
-                existing_from = existing_ride.get("from_appointment", {})
+                existing_to = existing_ride.get("to_appointment") or existing_ride or {}
+                existing_from = existing_ride.get("from_appointment") or {}
 
                 if (
                     existing_to.get("trip_id")

@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
@@ -7,7 +7,23 @@
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.datatables.net/buttons/2.2.3/js/dataTables.buttons.min.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <link
+      href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css"
+    />
     <link rel="stylesheet" href="./assets/css/styles.css" />
     <link rel="stylesheet" href="./assets/css/responsive.css" />
     <link rel="stylesheet" href="./assets/css/status.css" />
@@ -27,26 +43,43 @@
 
     <script src="bookTrip.js" defer></script>
     <script src="settingspanel.js" defer></script>
+    <script type="text/javascript" defer>
+      function googleMapsAutoComplete() {
+        let pickup_input = document.getElementById("tripPickupAddress");
+        let dropoff_input = document.getElementById("tripDestinationAddress");
+        let pickup_autocomplete = new google.maps.places.Autocomplete(
+          pickup_input,
+          {
+            types: ["geocode"],
+          },
+        );
+        let dropoff_autocomplete = new google.maps.places.Autocomplete(
+          dropoff_input,
+          {
+            types: ["geocode"],
+          },
+        );
+      }
+    </script>
   </head>
 
   <body>
     <div id="root" class="p-0 overflow-auto">
-     <nav class="top-navb-bar">
+      <nav class="top-navb-bar">
         <div class="d-flex flex-wrap flex-1 align-items-center">
           <div class="d-flex align-items-center gap-3">
             <img
-                id ="tenant-brand-logo"
-                src="/assets/tenants/admin/branding/logo.png"
-                class="brand-logo"
-                alt="brand-logo"
-              />
+              id="tenant-brand-logo"
+              src="/assets/tenants/admin/branding/logo.png"
+              class="brand-logo"
+              alt="brand-logo"
+            />
             <div class="d-flex flex-column">
               <div id="hospital-name" class="hospital-name-text">
                 Health Connector
               </div>
               <div class="top-nav-header-text"></div>
             </div>
-            
           </div>
           <div class="d-flex d-lg-none flex-1 justify-content-end">
             <button class="button-tertiary navbar_toggler">
@@ -102,14 +135,10 @@
                   <a class="nav-item" href="patients.html">Patients</a>
                 </li>
                 <li id="appointments-nav">
-                  <a class="nav-item" href="appointments.html"
-                    >Appointments</a
-                  >
+                  <a class="nav-item" href="appointments.html">Appointments</a>
                 </li>
                 <li id="hospitals-nav">
-                  <a class="nav-item" href="hospitals.html"
-                    >Hospitals</a
-                  >
+                  <a class="nav-item" href="hospitals.html">Hospitals</a>
                 </li>
                 <li id="user-management-nav">
                   <a class="nav-item" href="userManagement.html"
@@ -117,12 +146,10 @@
                   >
                 </li>
                 <li id="logs-nav">
-                    <a class="nav-item " href="logs.html">Logs</a>
+                  <a class="nav-item" href="logs.html">Logs</a>
                 </li>
                 <li id="book-trip-nav">
-                  <a class="nav-item active" href="bookTrip.html"
-                    >Book Trip</a
-                  >
+                  <a class="nav-item active" href="bookTrip.html">Book Trip</a>
                 </li>
               </ul>
             </div>
@@ -200,41 +227,411 @@
           </div>
         </div>
       </nav>
-      <section class="dashBoard-body d-flex flex-column flex-1 gap-2">
-        <div
-          class="flex-1 table-container d-flex flex-column gap-3 overflow-auto"
-        >
-          <div
-            id="custom-table"
-            class="d-flex flex-column flex-1 overflow-auto"
-          >
-            <div class="module-header">
-              <div class="module-header-text">Book Trip</div>
-            </div>
-            <div class="module-header">
+      <section
+        id="booking-form"
+        class="dashBoard-body d-flex flex-column flex-1 gap-2"
+      >
+        <div class="flex-1 table-container overflow-auto py-3">
+          <div class="col-xl-8 col-lg-10 mx-auto d-flex flex-column gap-3 px-3">
+            <div class="book-tab d-flex flex-column">
+              <div class="module-header">
+                <div class="module-header-text">Book a Trip</div>
+              </div>
+              <div class="module-header">
                 <div class="assistance-text" id="assistance-text-dashboard">
-                  <i class="fa fa-phone" style="font-size:15px; padding-right: 5px; color: black!important;"></i>
+                  <i
+                    class="fa fa-phone"
+                    style="
+                      font-size: 15px;
+                      padding-right: 5px;
+                      color: black !important;
+                    "
+                  ></i>
                   For assistance with rides, contact HIRTA Dispatch:
                 </div>
+              </div>
             </div>
-            <div id="table-filter"></div>
-            <div
-              id="tableContainer"
-              class="flex-1 overflow-auto d-flex flex-column"
-            >
-              <table id="mod_ehr" class="display">
-                <thead></thead>
-                <tbody></tbody>
-              </table>
-              <div
-                class="d-flex justify-content-center align-items-center flex-1"
-                id="StateChange"
-              >
-                <div class="loader" id="Loader"></div>
+            <div id="patient-form" class="book-tab d-flex flex-column">
+              <div class="module-header mt-3">
+                <div class="module-header-text">
+                  <i class="bi bi-person-fill"></i>
+                  Patient Information
+                </div>
+              </div>
+              <div class="m-3 p-2">
+                <label for="patientSearch" class="form-label"
+                  >Search Existing Patient <span id="timeLoader" class="">
+    <span class="spinner-border spinner-border-sm text-primary"></span>
+  </span></label
+                >
+                <select
+                  class="form-select"
+                  id="patientSearch"
+                  aria-label="Search for patient"
+                >
+                  <option value="" selected>-- Enter New Patient --</option>
+                </select>
+              </div>
+              <div class="d-flex align-items-center px-4">
+                <hr class="flex-grow-1" />
+                <span class="mx-2 text-muted">or enter patient details</span>
+                <hr class="flex-grow-1" />
+              </div>
+              <div class="row m-3">
+                <div class="col-md-6 mb-3">
+                  <label for="patientFirstName" class="form-label"
+                    >First Name <span class="text-danger">*</span></label
+                  >
+                  <input
+                    type="text"
+                    class="patient-input form-control"
+                    id="patientFirstName"
+                    placeholder="First Name"
+                    required
+                  />
+                </div>
+                <div class="col-md-6 mb-3">
+                  <label for="patientLastName" class="form-label"
+                    >Last Name <span class="text-danger">*</span></label
+                  >
+                  <input
+                    type="text"
+                    class="patient-input form-control"
+                    id="patientLastName"
+                    placeholder="Last Name"
+                    required
+                  />
+                </div>
+                <div class="col-md-6 mb-3">
+                  <label for="patientphone" class="form-label"
+                    >Phone Number <span class="text-danger">*</span></label
+                  >
+                  <div class="phone-wrapper">
+                    <span class="prefix">+1</span>
+                    <input
+                      type="tel"
+                      class="patient-input form-control"
+                      id="patientphone"
+                      placeholder="Phone Number"
+                      required
+                    />
+                  </div>
+                </div>
+                <div class="col-md-6 mb-3">
+                  <label for="patientEmail" class="form-label"
+                    >Email <span class="text-danger">*</span></label
+                  >
+                  <input
+                    type="email"
+                    class="patient-input form-control mb-2"
+                    id="patientEmail"
+                    placeholder="Email"
+                    required
+                  />
+                  <div class="form-check">
+                    <input
+                      class="patient-input form-check-input"
+                      type="checkbox"
+                      id="patientEmailCheck"
+                    />
+                    <label class="form-check-label" for="patientEmailCheck">
+                      Patient does not have an email address
+                    </label>
+                  </div>
+                </div>
+                <div class="col-md-6 mb-3">
+                  <label for="viaRiderId" class="form-label"
+                    >Via Rider ID
+                  </label>
+                  <input
+                    type="text"
+                    class="patient-input form-control"
+                    id="viaRiderId"
+                    placeholder="ID"
+                    required
+                  />
+                </div>
+                <input type="hidden" id="viaRiderId" />
+              </div>
+              <div class="d-flex align-items-center px-3">
+                <hr class="flex-grow-1" />
+              </div>
+              <div class="row mx-3 mb-3">
+                <div class="col-md-auto">
+                  <button
+                    type="button"
+                    id="validatePatientBtn"
+                    class="button-primary"
+                  >
+                    Validate Patient
+                  </button>
+                </div>
+                <!-- Loader -->
+                <div
+                  class="col-md-auto d-flex align-items-center d-none"
+                  id="patientLoading"
+                >
+                  <span class="text-primary fw-bold">
+                    <span class="spinner-border spinner-border-sm me-2"></span>
+                    Validating...
+                  </span>
+                </div>
+                <!-- Success -->
+                <div
+                  class="col-md-auto d-flex align-items-center d-none"
+                  id="patientValidatedMsg"
+                >
+                  <span class="text-success fw-bold"
+                    ><i class="bi bi-check-circle-fill"></i> Patient
+                    Validated</span
+                  >
+                </div>
+              </div>
+            </div>
+            <div id="trip-form" class="book-tab d-flex flex-column">
+              <div class="module-header mt-3">
+                <div class="module-header-text">
+                  <i class="bi bi-car-front-fill"></i>
+                  Trip Details
+                </div>
+              </div>
+              <div class="row m-3">
+                <div class="col-md-3 mb-3">
+                  <label class="form-label" for="tripDirection"
+                    >Trip Direction</label
+                  >
+                  <select class="form-select" id="tripDirection">
+                    <option>To Appointment</option>
+                    <option>From Appointment</option>
+                  </select>
+                </div>
+              </div>
+              <div class="mx-4">
+                <div
+                  id="tripDirectionDisplay"
+                  class="direction-cell to-appt d-inline-block"
+                >
+                  <span
+                    class="direction-label fs-5"
+                    style="font-size: 18px !important"
+                    >To Appointment</span
+                  >
+                </div>
+              </div>
+              <div class="row m-3">
+                <div class="col-md-12 mb-3" id="tripPickupContainer">
+                  <label class="form-label" for="tripPickupAddress" id="tripPickupAddLabel"
+                    >Pickup Address <span class="text-danger">*</span></label
+                  >
+                  <input
+                    type="text"
+                    class="form-control"
+                    id="tripPickupAddress"
+                    placeholder="Pickup Address"
+                  />
+                </div>
+                <div class="col-md-6 mb-3">
+                  <label class="form-label" for="tripDropoffTime"
+                    >Requested Dropoff Time
+                    <span class="text-danger">*</span></label
+                  >
+                  <input
+                    type="time"
+                    class="form-control"
+                    id="tripDropoffTime"
+                    placeholder="Dropoff Time"
+                  />
+                  <div class="form-text">Time patient needs to arrive by</div>
+                </div>
+                <div class="col-md-6 mb-3" id="tripDestContainer">
+                  <label class="form-label" for="tripDestinationAddress" id="tripDestinationAddLabel"
+                    >Destination Address
+                    <span class="text-danger">*</span></label
+                  >
+                  <input
+                    type="text"
+                    class="form-control"
+                    id="tripDestinationAddress"
+                    placeholder="Destination Address"
+                  />
+                  
+                </div>
+              </div>
+            </div>
+            <div id="special-needs-form" class="book-tab d-flex flex-column">
+              <div class="module-header mt-3">
+                <div class="module-header-text">
+                  <i class="bi bi-person-wheelchair"></i>
+                  Special Needs & Mobility
+                </div>
+              </div>
+              <div class="row m-3">
+                <div class="col-md-6 mb-3">
+                  <label class="form-label" for="mobilityEquipment"
+                    >Mobility Equipment</label
+                  >
+                  <select class="form-select" id="mobilityEquipment">
+                    <option value="None">None</option>
+                    <option value="Wheelchair">Wheelchair</option>
+                    <option value="Walker">Walker</option>
+                    <option value="Scooter">Scooter</option>
+                  </select>
+                </div>
+                <div class="col-md-12 mb-3">
+                  <label class="form-label" for="additionalNotes"
+                    >Additional Notes for Driver</label
+                  >
+                  <textarea
+                    class="form-control"
+                    id="additionalNotes"
+                    rows="3"
+                    placeholder="Any special instructions for the driver..."
+                  ></textarea>
+                </div>
+              </div>
+            </div>
+            <div id="submit-form" class="non-book-tab d-flex flex-column">
+              <div class="row m-3 justify-content-end align-items-end">
+                <div class="col-md-auto">
+                  <button
+                    type="button"
+                    class="button-secondary"
+                    id="clearFormBtn"
+                  >
+                    Clear Form
+                  </button>
+                </div>
+                <div class="col-md-auto">
+                  <button
+                    type="button"
+                    class="button-primary"
+                    id="submitTripBtn"
+                  >
+                    Submit Trip Request &rarr;
+                  </button>
+                </div>
               </div>
             </div>
           </div>
-          <div id="custom-pagination"></div>
+        </div>
+      </section>
+      <section
+        id="booking-response"
+        class="dashBoard-body d-flex flex-column flex-1 gap-2 d-none"
+      >
+        <div class="flex-1 table-container overflow-auto py-3">
+          <div class="col-xl-8 col-lg-10 mx-auto d-flex flex-column gap-3 px-3">
+            <!-- Success Banner -->
+            <div class="non-book-tab d-flex align-items-center">
+              <i class="bi bi-check-square-fill my-3 me-3" style="font-size: 30px; color: #3cb23c"></i>
+              <div>
+                <span class="module-header-text" style="font-size:25px">Trip Booked Successfully!</span><br>
+                <span class="" style="font-size:15px">The trip request has been sent to HIRTA. They will confirm
+                  the exact pickup time shortly.</span>
+              </div>
+            </div>
+            <!-- Patient Information -->
+            <div class="book-tab d-flex flex-column">
+              <div class="module-header mt-3">
+                <div class="module-header-text">
+                  <i class="bi bi-person-fill"></i>
+                  Patient Information
+                </div>
+              </div>
+              <div class="row m-3">
+                <div class="col-md-6 mb-3">
+                  <small class="text-muted">NAME</small>
+                  <div id="result-name"></div>
+                </div>
+                <div class="col-md-6 mb-3">
+                  <small class="text-muted">PHONE</small>
+                  <div id="result-phone"></div>
+                </div>
+                <div class="col-md-6 mb-3">
+                  <small class="text-muted">EMAIL</small>
+                  <div id="result-email"></div>
+                </div>
+              </div>
+            </div>
+            <!-- Trip Details -->
+            <div class="book-tab d-flex flex-column">
+              <div class="module-header mt-3">
+                <div class="module-header-text">
+                  <i class="bi bi-car-front-fill"></i>
+                  Trip Details
+                </div>
+              </div>
+              <div class="row m-3">
+                <small class="text-muted">DIRECTION</small>
+                <div id="result-direction" class="direction-cell to-appt d-inline-block mt-2">
+                  <span class="direction-label fs-5" style="font-size: 16px !important">To Appointment</span>
+                </div>
+              </div>
+              <div class="row m-3">
+                <div class="col-md-6 mb-3">
+                  <small class="text-muted">PICKUP ADDRESS</small>
+                  <div id="result-pickup-address"></div>
+                </div>
+                <div class="col-md-6 mb-3">
+                  <small class="text-muted">PICKUP WINDOW</small>
+                  <div id="result-pickup-window"></div>
+                </div>
+              </div>
+              <div class="row m-3">
+                <div class="col-md-6 mb-3">
+                  <small class="text-muted">DESTINATION ADDRESS</small>
+                  <div id="result-destination-address"></div>
+                </div>
+                <div class="col-md-6 mb-3">
+                  <small class="text-muted">DROPOFF TIME</small>
+                  <div id="result-dropoff-time"></div>
+                </div>
+              </div>
+            </div>
+            <!-- Special Needs -->
+            <div class="book-tab d-flex flex-column">
+              <div class="module-header mt-3">
+                <div class="module-header-text">
+                  <i class="bi bi-person-wheelchair"></i>
+                  Special Needs &amp; Mobility
+                </div>
+              </div>
+              <div class="row m-3">
+                <div class="col-md-6 mb-3">
+                  <small class="text-muted">MOBILITY EQUIPMENT</small>
+                  <div id="result-mobility-equipment"></div>
+                </div>
+                <div class="col-md-6 mb-3">
+                  <small class="text-muted">DRIVER NOTES</small>
+                  <div id="result-driver-notes"></div>
+                </div>
+              </div>
+            </div>
+            <!-- Footer Note -->
+            <div class="book-tab d-flex flex-row align-items-center p-3" style="background-color: #fff9e1;">
+              <i class="bi bi-telephone-fill me-2"></i>
+              <div>
+                For changes or cancellations, contact HIRTA Dispatch:
+                <strong id="result-hirta-contact"></strong>
+              </div>
+            </div>
+
+            <!---home button-->
+            <div id="result-submit-form" class="non-book-tab d-flex flex-column">
+              <div class="row justify-content-end align-items-end">
+                <div class="col-md-auto">
+                  <button type="button" class="button-secondary mt-2" id="back-to-dashboard" fdprocessedid="6j615e">
+                    &larr; Back to Dashboard
+                  </button>
+                </div>
+                <div class="col-md-auto">
+                  <button type="button" class="button-primary mt-2" id="book-another-trip" fdprocessedid="yut398">
+                    + Book Another Trip
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
       <section>
@@ -253,13 +650,16 @@
                   <tr>
                     <td>
                       <div class="d-flex flex-column">
-                        <span class="skeleton-text form-label m-0 ">
+                        <span class="skeleton-text form-label m-0">
                           Prior period to start time
                         </span>
-                        <span class="form-label-help-text text-nowrap skeleton-text">
+                        <span
+                          class="form-label-help-text text-nowrap skeleton-text"
+                        >
                           The ride that ends closest to the appointment start
-                          time, or within <span id="prior_period_text">15</span> minutes
-                          prior, will be matched.
+                          time, or within
+                          <span id="prior_period_text">15</span> minutes prior,
+                          will be matched.
                         </span>
                       </div>
                     </td>
@@ -285,7 +685,9 @@
                         <span class="form-label m-0 skeleton-text">
                           Subsequent period after the start time
                         </span>
-                        <span class="form-label-help-text text-nowrap skeleton-text">
+                        <span
+                          class="form-label-help-text text-nowrap skeleton-text"
+                        >
                           The ride that ends closest to the appointment start
                           time, or within
                           <span id="subsequent_period_text">15</span> minutes
@@ -323,7 +725,14 @@
             >
               Close
             </button>
-            <button type="button" id="settings-form-submit-btn" class="save button-primary m-0" disabled>Save</button>
+            <button
+              type="button"
+              id="settings-form-submit-btn"
+              class="save button-primary m-0"
+              disabled
+            >
+              Save
+            </button>
           </div>
         </div>
       </section>

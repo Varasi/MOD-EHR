@@ -195,12 +195,18 @@ $(document).ready(async function () {
                         ? "TBD"
                         : driver_name + "/" + vehicle_number;
 
+                    const apptTimeRaw = direction === "TO APPT"
+                        ? (appointmentRecord.start_time || "")
+                        : (appointmentRecord.end_time   || "");
                     const tripStatusHtml = isNotRequested
                         ? `<div class="d-flex flex-column gap-1 align-items-start">
                              <span class="lozenge-danger">Not Requested</span>
                              <button class="book-ride-btn button-primary mt-1"
                                           data-appt-id="${appointmentRecord.id}"
-                                          data-patient-id="${appointmentRecord.patient_id}">Book Ride</button>
+                                          data-patient-id="${escapeAttr(appointmentRecord.patient_id)}"
+                                          data-direction="${direction}"
+                                          data-appt-location="${escapeAttr(appointmentRecord.location || '')}"
+                                          data-appt-time="${escapeAttr(apptTimeRaw)}">Book Ride</button>
                            </div>`
                         : `<span class="lozenge-success">${ride.trip_status}</span>`;
                     
@@ -221,6 +227,8 @@ $(document).ready(async function () {
                         _alt_confirmed_to:   appointmentRecord.alt_transport_confirmed_to   || false,
                         _alt_confirmed_from: appointmentRecord.alt_transport_confirmed_from || false,
                         _appointment_location: appointment_location,
+                        _appointment_time: direction === "TO APPT" ? appointmentRecord.start_time : appointmentRecord.end_time,
+                        _patient_id: appointmentRecord.patient_id,
                         // 0 = TO APPT, 1 = FROM APPT — used as a hidden secondary sort key
                         // to keep both leg rows of the same appointment adjacent after any sort.
                         _leg_order:          direction === "TO APPT" ? 0 : 1,
@@ -421,16 +429,6 @@ $(document).ready(async function () {
                         <button id="custom_datatable_filter" class="btn"><i class="fa fa-filter"></i></button>
                         <div id="filter_options_container" class="d-none position-absolute bg-white border rounded p-3 shadow-sm mt-1" style="z-index: 1050; right: 0; min-width: 200px;">
                             <div class="mb-2">
-                                <label class="form-label text-sm fw-bold">Trip Status</label>
-                                <select id="filter_trip_status" class="form-select form-select-sm">
-                                    <option value="">All</option>
-                                    <option value="Not Requested">Not Requested</option>
-                                    <option value="Scheduled">Scheduled</option>
-                                    <option value="Completed">Completed</option>
-                                    <option value="Cancelled">Cancelled</option>
-                                </select>
-                            </div>
-                            <div class="mb-2">
                                 <label class="form-label text-sm fw-bold">Appointment Location</label>
                                 <input type="text" id="filter_appt_location" class="form-control form-control-sm" placeholder="Search location..." />
                             </div>
@@ -440,6 +438,23 @@ $(document).ready(async function () {
                             </div>
                         </div>
                     </div>`);
+
+                    // Restore any filters saved before the user navigated away.
+                    const savedApptLocation = sessionStorage.getItem("dashboard_filter_appt_location") || "";
+                    const savedDropoffSpot  = sessionStorage.getItem("dashboard_filter_dropoff_spot")  || "";
+                    if (savedApptLocation) {
+                        filterApptLocation = savedApptLocation;
+                        $("#filter_appt_location").val(savedApptLocation);
+                    }
+                    if (savedDropoffSpot) {
+                        filterDropoffSpot = savedDropoffSpot;
+                        $("#filter_dropoff_spot").val(savedDropoffSpot);
+                    }
+                    if (savedApptLocation || savedDropoffSpot) {
+                        // Open the filter panel so the user can see the active filters.
+                        $("#filter_options_container").removeClass("d-none");
+                        this.api().draw();
+                    }
                 },
             });
 
@@ -460,21 +475,17 @@ $(document).ready(async function () {
                 }
             });
 
-            // Perform DataTables filtering on the "Trip Status" column (index 5)
-            $("#filter_trip_status").on("change", function() {
-                const val = $.fn.dataTable.util.escapeRegex($(this).val());
-                table.column(5).search(val, true, false).draw();
-            });
-
             // Perform Custom search redraws for Appointment Location
             $("#filter_appt_location").on("keyup change", function() {
                 filterApptLocation = $(this).val();
+                sessionStorage.setItem("dashboard_filter_appt_location", filterApptLocation);
                 table.draw();
             });
 
             // Perform Custom search redraws for Drop Off Spot
             $("#filter_dropoff_spot").on("keyup change", function() {
                 filterDropoffSpot = $(this).val();
+                sessionStorage.setItem("dashboard_filter_dropoff_spot", filterDropoffSpot);
                 table.draw();
             });
 
@@ -491,6 +502,19 @@ $(document).ready(async function () {
             // the notes textarea or the alt-transport checkbox.
             $("#mod_ehr").on("click mousedown", ".coordinator-notes-input, .alt-transport-checkbox", function (e) {
                 e.stopPropagation();
+            });
+
+            // Navigate to bookTrip.html, pre-filling form data via sessionStorage.
+            $("#mod_ehr").on("click", ".book-ride-btn", function (e) {
+                e.stopPropagation();
+                const $btn = $(this);
+                sessionStorage.setItem("bookTrip_prefill", JSON.stringify({
+                    patient_id:    $btn.data("patient-id"),
+                    direction:     $btn.data("direction"),     // "TO APPT" | "FROM APPT"
+                    appt_location: $btn.data("appt-location"),
+                    appt_time:     $btn.data("appt-time"),     // ISO string or "TBD"
+                }));
+                window.location.href = "bookTrip.html";
             });
 
             // Save alt-transport confirmation immediately on toggle.
