@@ -334,16 +334,15 @@ $(document).ready(async function () {
         window.location.href = "dashboard.html";
     }
     if (userRole === "UserManagementAdmin") {
-        $("#user-management-nav").removeClass("invisible")
-        $("#user-management-nav").addClass("visible")
+        $("#user-management-nav").removeClass("d-none").addClass("visible");
+    }else{
+        $("#user-management-nav").removeClass("visible").addClass("d-none");
     }
     if(hospital_id === "admin"){
-        $("#hospitals-nav").removeClass("invisible")
-        $("#hospitals-nav").addClass("visible")
+        $("#hospitals-nav").removeClass("d-none").addClass("visible");
 
     }else{
-        $("#hospitals-nav").removeClass("visible")
-        $("#hospitals-nav").addClass("invisible")
+        $("#hospitals-nav").removeClass("visible").addClass("d-none");
     }
     $("#appointmentForm").validate({
         rules: {

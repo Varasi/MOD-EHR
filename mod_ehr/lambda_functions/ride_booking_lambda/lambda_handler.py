@@ -90,12 +90,14 @@ def set_trip_request_body(body):
     destination = {
         "lat": dest_lat,
         "lng": dest_lng,
-        "address": body.get("destination_address", "")
+        "address": body.get("destination_address", ""),
+        "notes": body.get("additional_notes_dropoff", "")
     }
     origin = {
         "lat": pickup_lat,
         "lng": pickup_lng,
-        "address": body.get("pickup_address", "")
+        "address": body.get("pickup_address", ""),
+        "notes": body.get("additional_notes_pickup", "")
     }
     request_body["destination"] = destination
     request_body["origin"] = origin
@@ -120,7 +122,6 @@ def set_trip_request_body(body):
 def ride_booking_handler(event, context):
     body = json.loads(event.get("body",""))
     try:
-        #validate the patient
 
         #reuqest trip
         request_trip_resp = Via().request_new_trip(set_trip_request_body(body))
@@ -131,14 +132,12 @@ def ride_booking_handler(event, context):
         
             #Book trip
             Booking_resp = Via().book_trip(request_trip_id)
-            print("Booking_resp:", Booking_resp)
             if Booking_resp.get("trip_status") == "CONFIRMED":
                 return Response(body={"message": "Trip booked successfully", "data": Booking_resp}, status=Status.HTTP_200_OK)
             
 
         else:
             error_msg = request_trip_resp.get("message", "Failed to book trip") + request_trip_resp.get("info", "")
-            print("error_msg:", error_msg)
             return Response(body={"message": error_msg}, status=Status.HTTP_500_INTERNAL_SERVER_ERROR)
         
         

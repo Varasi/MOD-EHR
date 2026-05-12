@@ -104,12 +104,14 @@ $(document).ready(async function () {
         $("#patients-nav").removeClass("invisible").addClass("visible");
     }
     if (userRole === "UserManagementAdmin") {
-        $("#user-management-nav").removeClass("invisible").addClass("visible");
+        $("#user-management-nav").removeClass("d-none").addClass("visible");
+    }else{
+        $("#user-management-nav").removeClass("visible").addClass("d-none");
     }
     if (hospital_id === "admin") {
-        $("#hospitals-nav").removeClass("invisible").addClass("visible");
+       $("#hospitals-nav").removeClass("d-none").addClass("visible");
     } else {
-        $("#hospitals-nav").removeClass("visible").addClass("invisible");
+       $("#hospitals-nav").removeClass("visible").addClass("d-none");
     }
     $("#logout").click(logoutUser);
 
@@ -143,7 +145,7 @@ $(document).ready(async function () {
                 // Leg-specific / interactive columns: values differ between legs,
                 // so sorting would break the TO/FROM pair adjacency — disabled.
                 { data: "coordinator_notes",         title: "Coordinator Notes",    className: APPT_SPAN_CLASS, orderable: false },
-                { data: "alt_transport_confirmed_to", orderable: false, title: `Alternative Transportation Confirmed <svg class="alt-transport-filter-icon" xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" title="Toggle: hide confirmed"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>` },
+                { data: "alt_transport_confirmed_to", className: "alt-transport-col", orderable: false, title: `Alternative Transportation Confirmed <svg class="alt-transport-filter-icon" xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" title="Toggle: hide confirmed"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>` },
                 { data: "direction",            title: "Direction",            orderable: false },
                 { data: "trip_status",          title: "Trip Status",          orderable: false },
                 { data: "pickup_time",          title: "Pickup Time",          orderable: false },
@@ -351,11 +353,20 @@ $(document).ready(async function () {
                 orderFixed: { post: [[apptIdColIdx, "asc"], [legOrderColIdx, "asc"]] },
 
                 createdRow: function (row, rowData) {
-                    if (rowData._trip_not_requested) {
-                        $(row).addClass("bg-danger-light");
-                    } else {
-                        $(row).addClass("bg-success-light");
-                    }
+                    // Choose background colors for "TO APPT" and "FROM APPT" legs.
+                    const legBgColor = rowData._is_first_leg ? "#f1f5ff" : "#fffbf3"; // Light Blue vs Light Orange
+                    const nonRideBgColor = "#ffffff"; // Specific color for non-ride columns
+
+                    // Apply the background color only to the leg-specific columns
+                    // (i.e. columns that do not have the 'appt-span-col' class)
+                    const $rideCols = $(row).children('td:not(.appt-span-col):not(.alt-transport-col)');
+                    const $nonRideCols = $(row).children('.appt-span-col, .alt-transport-col');
+                    
+                    $rideCols.css('background-color', legBgColor);
+                    $nonRideCols.css('background-color', nonRideBgColor);
+                    
+                    // Add a darker left border to visually separate the sections
+                    $rideCols.first().css('border-left', '2px solid #d1d5db');
                 },
 
                 drawCallback: function () {
@@ -421,6 +432,66 @@ $(document).ready(async function () {
                 },
 
                 initComplete: function () {
+                    const api = this.api();
+                    const $thead = $(api.table().header());
+                    
+                    let directionVisIdx = -1;
+                    api.columns().every(function() {
+                        if (this.dataSrc() === 'direction') {
+                            directionVisIdx = this.index('visible');
+                        }
+                    });
+                    
+                    if (directionVisIdx !== null && directionVisIdx !== -1 && $thead.find('tr.group-header').length === 0) {
+                        const visibleColsCount = api.columns(':visible').count();
+                        const rideDetailsColspan = visibleColsCount - directionVisIdx;
+                        
+                        // Define header background and text colors for the grouped section
+                        const headerBgColor = "#eff3fe";
+                        const subHeaderBgColor = "#fafafa";
+                        const headerTextColor = "#111827"; // Darker text
+                        const nonRideBgColor = "#ffffff"; // Specific color for non-ride headers
+                        const dividerBorder = "2px solid #d1d5db"; // Darker border
+
+                        const groupRow = $('<tr class="group-header"></tr>');
+                        
+                        // Move previous column headers to the group row and span them vertically across 2 rows
+                        $thead.find('tr:not(.group-header) th').each(function(index) {
+                            if (index < directionVisIdx) {
+                                $(this).attr('rowspan', '2');
+                                $(this).css({
+                                    'vertical-align': 'middle',
+                                    'background-color': nonRideBgColor,
+                                    'border-bottom': dividerBorder
+                                });
+                                groupRow.append(this); // This moves the header element so it retains its sorting functionality
+                            }
+                        });
+
+                        groupRow.append(`<th colspan="${rideDetailsColspan}" class="text-center" style="border-bottom: none; border-left: ${dividerBorder}; padding-bottom: 8px; background-color: ${headerBgColor}; color: ${headerTextColor}; font-weight: bold; box-shadow: 0 1px 0 0 ${headerBgColor};">HIRTA Ride details</th>`);
+                        
+                        $thead.prepend(groupRow);
+
+                        // Apply color specifically to the sub-headers under "Ride details"
+                        // Since we moved the first columns up, the bottom row ONLY has the Ride details sub-headers left!
+                        $thead.find('tr:not(.group-header) th').css({
+                            'background-color': subHeaderBgColor,
+                            'color': headerTextColor,
+                            'border-bottom': dividerBorder,
+                            'border-top': 'none'
+                        });
+                        $thead.find('tr:not(.group-header) th').first().css('border-left', dividerBorder);
+
+                        // Fix sticky header gap by syncing the second row's `top` to the first row's height
+                        setTimeout(() => {
+                            const topRowHeight = groupRow.find('th').last().outerHeight();
+                            if (topRowHeight) {
+                                // Subtract 1 pixel to ensure an overlap, hiding any transparent lines between rows
+                                $thead.find('tr:not(.group-header) th').css('top', (topRowHeight - 1) + 'px');
+                            }
+                        }, 50);
+                    }
+
                     $("#mod_ehr_filter").appendTo("#table-filter");
                     $(".dt-buttons").appendTo("#table-filter");
                     $(".bottom").appendTo("#custom-pagination");

@@ -36,16 +36,19 @@ $(document).ready(async function () {
     toggleSideNavBar();
     const userRole = await getUserGroup();
     if (userRole === "AppointmentsAdmin" || userRole === "UserManagementAdmin") {
-        $("#appointments-nav").removeClass("invisible").addClass("visible");
-        $("#patients-nav").removeClass("invisible").addClass("visible");
+        $("#appointments-nav").removeClass("d-none").addClass("visible");
+        $("#patients-nav").removeClass("d-none").addClass("visible");
     }
     if (userRole === "UserManagementAdmin") {
-        $("#user-management-nav").removeClass("invisible").addClass("visible");
+        $("#user-management-nav").removeClass("d-none").addClass("visible");
+    }else{
+        $("#user-management-nav").removeClass("visible").addClass("d-none");
     }
     if (hospital_id === "admin") {
-        $("#hospitals-nav").removeClass("invisible").addClass("visible");
+        $("#hospitals-nav").removeClass("d-none").addClass("visible");
     } else {
-        $("#hospitals-nav").removeClass("visible").addClass("invisible");
+        $("#hospitals-nav").removeClass("visible").addClass("d-none");
+        
     }
     $("#logout").click(logoutUser);
 
@@ -311,7 +314,8 @@ $(document).ready(async function () {
             appt_time: epoch,
             destination_address: $('#tripDestinationAddress').val(),
             mobility_equipment: $('#mobilityEquipment').val(),
-            additional_notes: $('#additionalNotes').val()
+            additional_notes_pickup: $('#additionalNotespickup').val(),
+            additional_notes_dropoff: $('#additionalNotesdropoff').val()
         };
 
         // 4. Send request to backend
@@ -336,7 +340,7 @@ $(document).ready(async function () {
                 throw new Error(data.message || "Failed to book trip");
             }
             
-            toggleAlertMessage("Trip requested successfully!", "success");
+            toggleAlertMessage("Trip booked successfully!", "success");
             $('#booking-form').addClass('d-none');
             $('#booking-response').removeClass('d-none');
 
@@ -361,12 +365,13 @@ $(document).ready(async function () {
                 $('#result-direction').removeClass('to-appt').addClass('from-appt');
                 $('#result-direction').find('.direction-label').text('From Appointment');
             }
-            $('#result-pickup-address').text(resData.pickup?.description   || tripRequestData.pickup_address);
-            $('#result-destination-address').text(resData.dropoff?.description || tripRequestData.destination_address);
-            $('#result-pickup-window').text(formatEta(resData.pickup_eta));
-            $('#result-dropoff-time').text(formatEta(resData.dropoff_eta));
+            $('#result-pickup-address').text(resData.pickup?.description   || "-");
+            $('#result-destination-address').text(resData.dropoff?.description || "-");
+            $('#result-pickup-window').text(formatEta(resData.pickup_eta || "-"));
+            $('#result-dropoff-time').text(formatEta(resData.dropoff_eta || "-"));
             $('#result-mobility-equipment').text(tripRequestData.mobility_equipment);
-            $('#result-driver-notes').text(tripRequestData.additional_notes);
+            $('#result-driver-pickup-notes').text(resData.pickup?.notes || "-");
+            $('#result-driver-dropoff-notes').text(resData.dropoff?.notes || "-");
 
             $('#clearFormBtn').click();
         } catch (error) {

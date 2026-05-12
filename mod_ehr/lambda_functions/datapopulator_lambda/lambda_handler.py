@@ -100,12 +100,13 @@ class AppointmentsMapperWithVia:
         closest to appointment_start_time and whose dropoff location is within
         LOCATION_DIFF km of the appointment address.
         """
+        print(f"Finding to-appointment ride for appointment at {address} with start time {appointment_start_time}")
         match_ride = {}
         best_diff = 1e9
         prior_period = self.get_prior_period(hospital_id)
         subsequent_period = self.get_subsequent_period(hospital_id)
         for trip in trips:
-            
+            print(f"Processing trip {trip['trip_id']}")
 
             dropoff_eta = trip.get("dropoff_eta")
             if dropoff_eta is None:
@@ -125,22 +126,21 @@ class AppointmentsMapperWithVia:
             if pickup_lat is None or pickup_lng is None:
                 continue
 
-            cur_location_diff = int(
-                LocationManager().get_distance_from_address_coords(
-                    address,
-                    [lat, lng],
-                )
+            cur_location_diff_float = LocationManager().get_distance_from_address_coords(
+                address,
+                [lat, lng],
             )
-            pickup_location_diff = int(
-                LocationManager().get_distance_from_address_coords(
-                    address,
-                    [pickup_lat, pickup_lng],
-                )
+            pickup_location_diff_float = LocationManager().get_distance_from_address_coords(
+                address,
+                [pickup_lat, pickup_lng],
             )
 
             # Ensure the ride is actually heading towards the hospital
-            if pickup_location_diff <= cur_location_diff:
+            if pickup_location_diff_float <= cur_location_diff_float:
+                print(f"Skipping trip {trip['trip_id']} as it is heading away from the hospital")
                 continue
+
+            cur_location_diff = int(cur_location_diff_float)
 
             print(f"subsequent_period: {subsequent_period}, cur_diff: {cur_diff}, prior_period: {prior_period}")
             print(f"cur_diff: {cur_diff}, cur_location_diff: {cur_location_diff}")
@@ -162,12 +162,13 @@ class AppointmentsMapperWithVia:
         closest to appointment_end_time and whose pickup location is within
         LOCATION_DIFF km of the appointment address.
         """
+        print(f"Finding from-appointment ride for address: {address}, appointment_end_time: {appointment_end_time}, hospital_id: {hospital_id}")
         match_ride = {}
         best_diff = 1e9
         prior_period = self.get_prior_period(hospital_id)
         subsequent_period = self.get_subsequent_period(hospital_id)
         for trip in trips:
-            
+            print(f"Processing trip {trip['trip_id']}")
 
             pickup_eta = trip.get("pickup_eta")
             if pickup_eta is None:
@@ -188,22 +189,21 @@ class AppointmentsMapperWithVia:
             if dropoff_lat is None or dropoff_lng is None:
                 continue
 
-            cur_location_diff = int(
-                LocationManager().get_distance_from_address_coords(
-                    address,
-                    [lat, lng],
-                )
+            cur_location_diff_float = LocationManager().get_distance_from_address_coords(
+                address,
+                [lat, lng],
             )
-            dropoff_location_diff = int(
-                LocationManager().get_distance_from_address_coords(
-                    address,
-                    [dropoff_lat, dropoff_lng],
-                )
+            dropoff_location_diff_float = LocationManager().get_distance_from_address_coords(
+                address,
+                [dropoff_lat, dropoff_lng],
             )
 
             # Ensure the ride is actually heading away from the hospital
-            if dropoff_location_diff <= cur_location_diff:
+            if dropoff_location_diff_float <= cur_location_diff_float:
+                print(f"Skipping trip {trip['trip_id']} as it is heading towards the hospital")
                 continue
+
+            cur_location_diff = int(cur_location_diff_float)
 
             print(f"[return] subsequent_period: {subsequent_period}, cur_diff: {cur_diff}, prior_period: {prior_period}")
             print(f"[return] cur_diff: {cur_diff}, cur_location_diff: {cur_location_diff}")

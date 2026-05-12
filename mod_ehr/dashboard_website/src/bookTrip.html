@@ -65,18 +65,18 @@
 
   <body>
     <div id="root" class="p-0 overflow-auto">
-      <nav class="top-navb-bar">
+      <nav class="top-navb-bar" style="position: relative; z-index: 1060;">
         <div class="d-flex flex-wrap flex-1 align-items-center">
           <div class="d-flex align-items-center gap-3">
             <img
               id="tenant-brand-logo"
-              src="/assets/tenants/admin/branding/logo.png"
+              src=""
               class="brand-logo"
               alt="brand-logo"
             />
             <div class="d-flex flex-column">
               <div id="hospital-name" class="hospital-name-text">
-                Health Connector
+                
               </div>
               <div class="top-nav-header-text"></div>
             </div>
@@ -104,6 +104,7 @@
           <div
             class="d-flex justify-content-lg-between flex-1 d-none d-lg-flex"
             id="navitems_list"
+            style="z-index: 1060;"
           >
             <div class="d-flex d-lg-none col-12 side-navbar-collapse">
               <button class="button-tertiary navbar_toggler">
@@ -137,13 +138,11 @@
                 <li id="appointments-nav">
                   <a class="nav-item" href="appointments.html">Appointments</a>
                 </li>
-                <li id="hospitals-nav">
+            <li id="hospitals-nav" class="d-none">
                   <a class="nav-item" href="hospitals.html">Hospitals</a>
                 </li>
-                <li id="user-management-nav">
-                  <a class="nav-item" href="userManagement.html"
-                    >User Management</a
-                  >
+                <li id="user-management-nav" class="d-none">
+                    <a class="nav-item" href="userManagement.html">User Management</a>
                 </li>
                 <li id="logs-nav">
                   <a class="nav-item" href="logs.html">Logs</a>
@@ -258,7 +257,7 @@
                   Patient Information
                 </div>
               </div>
-              <div class="m-3 p-2">
+              <div class="m-3 p-2" style="z-index: 1;">
                 <label for="patientSearch" class="form-label"
                   >Search Existing Patient <span id="timeLoader" class="">
     <span class="spinner-border spinner-border-sm text-primary"></span>
@@ -339,7 +338,7 @@
                     </label>
                   </div>
                 </div>
-                <div class="col-md-6 mb-3">
+                <div class="col-md-6 mb-3 d-none">
                   <label for="viaRiderId" class="form-label"
                     >Via Rider ID
                   </label>
@@ -478,14 +477,24 @@
                   </select>
                 </div>
                 <div class="col-md-12 mb-3">
-                  <label class="form-label" for="additionalNotes"
-                    >Additional Notes for Driver</label
+                  <label class="form-label" for="additionalNotespickup"
+                    >Additional Pickup Notes for Driver</label
                   >
                   <textarea
                     class="form-control"
+                    id="additionalNotespickup"
                     id="additionalNotes"
+                    placeholder="Any special instructions for the driver at pickup location..."
+                    placeholder="Any special instructions for the driver..." ></textarea>
+                </div>
+                <div class="col-md-12 mb-3">
+                  <label class="form-label" for="additionalNotesdropoff"
+                    >Additional Dropoff Notes for Driver</label>
+                  <textarea
+                    class="form-control"
+                    id="additionalNotesdropoff"
                     rows="3"
-                    placeholder="Any special instructions for the driver..."
+                    placeholder="Any special instructions for the driver at dropoff location..."
                   ></textarea>
                 </div>
               </div>
@@ -602,8 +611,12 @@
                   <div id="result-mobility-equipment"></div>
                 </div>
                 <div class="col-md-6 mb-3">
-                  <small class="text-muted">DRIVER NOTES</small>
-                  <div id="result-driver-notes"></div>
+                  <small class="text-muted">DRIVER PICKUP NOTES</small>
+                  <div id="result-driver-pickup-notes"></div>
+                </div>
+                <div class="col-md-6 mb-3">
+                  <small class="text-muted">DRIVER DROPOFF NOTES</small>
+                  <div id="result-driver-dropoff-notes"></div>
                 </div>
               </div>
             </div>

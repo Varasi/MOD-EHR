@@ -56,6 +56,9 @@ $(document).ready(async function () {
         await logoutUser();
         window.location.replace(`https://${config.subdomain}${CUSTOM_DOMAIN}/logs.html`);
     }
+    preRender();
+    toggleSideNavBar();
+    $("#logout").click(logoutUser);
     const userRole = await getUserGroup();
     let hospital_map = {};
     if (hospital_id === "admin"){
@@ -63,12 +66,15 @@ $(document).ready(async function () {
         console.log("Hospital Map: ", hospital_map);
     }
     if(hospital_id === "admin"){
-        $("#hospitals-nav").removeClass("invisible")
-        $("#hospitals-nav").addClass("visible")
+        $("#hospitals-nav").removeClass("d-none").addClass("visible");
 
     }else{
-        $("#hospitals-nav").removeClass("visible")
-        $("#hospitals-nav").addClass("invisible")
+        $("#hospitals-nav").removeClass("visible").addClass("d-none");
+    }
+    if (userRole === "UserManagementAdmin") {
+        $("#user-management-nav").removeClass("d-none").addClass("visible");
+    }else{
+        $("#user-management-nav").removeClass("visible").addClass("d-none");
     }
     
     const xhr = new XMLHttpRequest();

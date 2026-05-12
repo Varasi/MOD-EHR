@@ -142,5 +142,22 @@ class Via(object):
                 "status": r.status_code
             }))
         
+    def get_trip_details(self, trip_id):
+        if not self.token:
+            self.set_token()
+        r = requests.get(
+            f"https://{self.via_api_url}/trips/details",
+            params={"trip_id": trip_id},
+            headers=self.auth_header,
+        )
+        print("r", r.json())
+        if r.status_code == 200:
+            return r.json() 
+        else:
+            raise ValueError(json.dumps({
+                "message": r.json(),
+                "status": r.status_code
+            }))
+        
         
         
