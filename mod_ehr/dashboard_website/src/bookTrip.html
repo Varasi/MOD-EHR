@@ -469,12 +469,20 @@
                   <label class="form-label" for="mobilityEquipment"
                     >Mobility Equipment</label
                   >
-                  <select class="form-select" id="mobilityEquipment">
-                    <option value="None">None</option>
-                    <option value="Wheelchair">Wheelchair</option>
-                    <option value="Walker">Walker</option>
-                    <option value="Scooter">Scooter</option>
-                  </select>
+                  <div class="row">
+                      <div class="col-md-6 mb-3">
+                          <div class="form-check">
+                              <input class="form-check-input" type="checkbox" id="wav_input_value">
+                              <label class="form-check-label" for="wav_input_value">WAV</label>
+                          </div>
+                      </div>
+                      <div class="col-md-6 mb-3">
+                          <div class="form-check">
+                              <input class="form-check-input" type="checkbox" id="luggage_input_value">
+                              <label class="form-check-label" for="luggage_input_value">Luggage</label>
+                          </div>
+                      </div>
+                  </div>
                 </div>
                 <div class="col-md-12 mb-3">
                   <label class="form-label" for="additionalNotespickup"
@@ -655,6 +663,7 @@
           role="dialog"
           aria-labelledby="settingsModalLabel"
           aria-hidden="true"
+          style="z-index: 1070;"
         >
           <div class="modal-body border-danger px-3 py-4">
             <form id="settingsForm">

@@ -172,7 +172,8 @@ $(document).ready(async function () {
         $('#patientSearch').val(null).trigger('change');
         $('#patientEmailCheck').prop('checked', false).trigger('change');
         $('#tripDirection').val('To Appointment').trigger('change');
-        $('#mobilityEquipment').val('None');
+        $('#wav_input_value').prop('checked', false);
+        $('#luggage_input_value').prop('checked', false);
         $('#patientValidatedMsg').addClass('d-none');
         $('#viaRiderId').val('');
     });
@@ -313,7 +314,8 @@ $(document).ready(async function () {
             pickup_address: $('#tripPickupAddress').val(),
             appt_time: epoch,
             destination_address: $('#tripDestinationAddress').val(),
-            mobility_equipment: $('#mobilityEquipment').val(),
+            requires_wav: $('#wav_input_value').is(':checked'),
+            has_luggage: $('#luggage_input_value').is(':checked'),
             additional_notes_pickup: $('#additionalNotespickup').val(),
             additional_notes_dropoff: $('#additionalNotesdropoff').val()
         };
@@ -365,13 +367,13 @@ $(document).ready(async function () {
                 $('#result-direction').removeClass('to-appt').addClass('from-appt');
                 $('#result-direction').find('.direction-label').text('From Appointment');
             }
-            $('#result-pickup-address').text(resData.pickup?.description   || "-");
-            $('#result-destination-address').text(resData.dropoff?.description || "-");
-            $('#result-pickup-window').text(formatEta(resData.pickup_eta || "-"));
-            $('#result-dropoff-time').text(formatEta(resData.dropoff_eta || "-"));
-            $('#result-mobility-equipment').text(tripRequestData.mobility_equipment);
-            $('#result-driver-pickup-notes').text(resData.pickup?.notes || "-");
-            $('#result-driver-dropoff-notes').text(resData.dropoff?.notes || "-");
+            $('#result-pickup-address').text(resData.trip_details.pickup?.address   || "-");
+            $('#result-destination-address').text(resData.trip_details.dropoff?.address || "-");
+            $('#result-pickup-window').text(formatEta(resData.trip_details.pickup_eta || "-"));
+            $('#result-dropoff-time').text(formatEta(resData.trip_details.dropoff_eta || "-"));
+            $('#result-mobility-equipment').text(resData.trip_details.trip_properties?.join(", ") || "-");
+            $('#result-driver-pickup-notes').text(resData.trip_details.pickup?.notes || "-");
+            $('#result-driver-dropoff-notes').text(resData.trip_details.dropoff?.notes || "-");
 
             $('#clearFormBtn').click();
         } catch (error) {

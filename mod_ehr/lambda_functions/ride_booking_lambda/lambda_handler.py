@@ -116,6 +116,15 @@ def set_trip_request_body(body):
             "phone_number": body.get("phone", ""),
             "email": body.get("email", ""),
         }
+    trip_properties_list = []
+    if body.get("requires_wav", False):
+        trip_properties_list.append("WAV")
+    if body.get("has_luggage", False):
+        trip_properties_list.append("LUGGAGE")
+    if len(trip_properties_list) > 0:
+        request_body["trip_properties"] = trip_properties_list
+
+    print("request_body:", request_body)
 
     return request_body
 
@@ -133,7 +142,11 @@ def ride_booking_handler(event, context):
             #Book trip
             Booking_resp = Via().book_trip(request_trip_id)
             if Booking_resp.get("trip_status") == "CONFIRMED":
-                return Response(body={"message": "Trip booked successfully", "data": Booking_resp}, status=Status.HTTP_200_OK)
+
+                #get trip details
+                trip_details_resp = Via().get_trip_details(request_trip_id)
+                print("trip_details_resp:", trip_details_resp)
+                return Response(body={"message": "Trip booked successfully", "data": trip_details_resp}, status=Status.HTTP_200_OK)
             
 
         else:
