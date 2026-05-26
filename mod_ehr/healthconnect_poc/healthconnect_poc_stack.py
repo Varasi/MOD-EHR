@@ -60,12 +60,13 @@ class HealthconnectPocStack(Stack):
         # S3 Bucket
         
         self.create_cloudfront_dist()
+        self.deploy_frontend_assets()
         self.add_bucket_policy()
         self.add_event_bridge_scheduler()
         self.add_event_bridge_scheduler_epic()
 
         #veradigm provider setup
-        self.create_veradigm_provider_setup() # comment it out if we dont use sftp server
+        # self.create_veradigm_provider_setup() # comment it out if we dont use sftp server
 
         # Output
         self.print_output()
@@ -275,18 +276,24 @@ class HealthconnectPocStack(Stack):
                 restrict_public_buckets=False,
             ),
         )
+
+    def deploy_frontend_assets(self):
+        # Deploy all website assets with NO cache, 
+        # and automatically invalidate the CloudFront distribution
         s3_deployment.BucketDeployment(
             self,
-            f"EHRMultitenant{self.config.ENVIRONMENT.title()}BucketDeployment",
+            f"EHRMultitenant{self.config.ENVIRONMENT.title()}WebsiteDeployment",
             sources=[s3_deployment.Source.asset("dashboard_website/dist")],
             destination_bucket=self.bucket,
             prune=False,
-            # cache_control=[s3_deployment.CacheControl.no_cache()],
             cache_control=[
                 s3_deployment.CacheControl.from_string(
-                    "public, max-age=31536000, immutable"
+                    "no-cache, no-store, must-revalidate"
                 )
             ],
+            # Automatically clear the CloudFront cache during deployment
+            distribution=self.cloudfront_distribution,
+            distribution_paths=["/*"],
         )
 
     def create_cloudfront_dist(self):
@@ -929,11 +936,9 @@ class HealthconnectPocStack(Stack):
 
     def create_groups(self):
         self.user_pools_groups = [
-            "HIRTAOperationsStaff",
-            "HealthcareFacilityStaff",
-            "DallasCountyHealthDepartmentHealthNavigators",
-            "AppointmentsAdmin",
             "UserManagementAdmin",
+            "BookingAdmin",
+            "ViewOnly",
         ]
         for group in self.user_pools_groups:
             cognito.CfnUserPoolGroup(

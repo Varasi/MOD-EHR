@@ -35,7 +35,12 @@ $(document).ready(async function () {
     // preRender();
     toggleSideNavBar();
     const userRole = await getUserGroup();
-    if (userRole === "AppointmentsAdmin" || userRole === "UserManagementAdmin") {
+    
+    if (userRole === "ViewOnly") {
+        window.location.replace("dashboard.html");
+        return;
+    }
+    if (userRole === "BookingAdmin" || userRole === "UserManagementAdmin") {
         $("#appointments-nav").removeClass("d-none").addClass("visible");
         $("#patients-nav").removeClass("d-none").addClass("visible");
     }
@@ -165,6 +170,32 @@ $(document).ready(async function () {
         }
     });
 
+    // Enforce min and max constraints on accommodation inputs
+    $('#guest_count, #guest_wav_count, #pca_count, #pca_wav_count').on('input', function () {
+        let max = parseInt($(this).attr('max')) || 2;
+        let min = parseInt($(this).attr('min')) || 0;
+        let val = parseInt($(this).val());
+        if (!isNaN(val)) {
+            if (val > max) {
+                $(this).val(max);
+            } else if (val < min) {
+                $(this).val(min);
+            }
+        }
+    });
+
+    // Toggle accommodation help text
+    $('#accommodation-help-icon').on('click', function () {
+        $('#accommodation-help-text').toggleClass('d-none');
+    });
+
+    // Hide accommodation help text if clicking outside
+    $(document).on('click', function(e) {
+        if (!$(e.target).closest('#accommodation-help-text, #accommodation-help-icon').length) {
+            $('#accommodation-help-text').addClass('d-none');
+        }
+    });
+
     // 6. Clear Form logic
     $('#clearFormBtn').on('click', function() {
         $('input[type="text"], input[type="email"], input[type="tel"], input[type="time"], textarea').val('');
@@ -173,7 +204,7 @@ $(document).ready(async function () {
         $('#patientEmailCheck').prop('checked', false).trigger('change');
         $('#tripDirection').val('To Appointment').trigger('change');
         $('#wav_input_value').prop('checked', false);
-        $('#luggage_input_value').prop('checked', false);
+        $('#guest_count, #guest_wav_count, #pca_count, #pca_wav_count').val(0);
         $('#patientValidatedMsg').addClass('d-none');
         $('#viaRiderId').val('');
     });
@@ -315,7 +346,10 @@ $(document).ready(async function () {
             appt_time: epoch,
             destination_address: $('#tripDestinationAddress').val(),
             requires_wav: $('#wav_input_value').is(':checked'),
-            has_luggage: $('#luggage_input_value').is(':checked'),
+            guest_count: parseInt($('#guest_count').val()) || 0,
+            guest_wav_count: parseInt($('#guest_wav_count').val()) || 0,
+            pca_count: parseInt($('#pca_count').val()) || 0,
+            pca_wav_count: parseInt($('#pca_wav_count').val()) || 0,
             additional_notes_pickup: $('#additionalNotespickup').val(),
             additional_notes_dropoff: $('#additionalNotesdropoff').val()
         };
@@ -374,6 +408,10 @@ $(document).ready(async function () {
             $('#result-mobility-equipment').text(resData.trip_details.trip_properties?.join(", ") || "-");
             $('#result-driver-pickup-notes').text(resData.trip_details.pickup?.notes || "-");
             $('#result-driver-dropoff-notes').text(resData.trip_details.dropoff?.notes || "-");
+            $('#result-guest-count').text(tripRequestData.guest_count);
+            $('#result-guest-wav-count').text(tripRequestData.guest_wav_count);
+            $('#result-pca-count').text(tripRequestData.pca_count);
+            $('#result-pca-wav-count').text(tripRequestData.pca_wav_count);
 
             $('#clearFormBtn').click();
         } catch (error) {

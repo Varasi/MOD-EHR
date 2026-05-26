@@ -60,6 +60,9 @@ $(document).ready(async function () {
     toggleSideNavBar();
     $("#logout").click(logoutUser);
     const userRole = await getUserGroup();
+    if (userRole === "ViewOnly") {
+        $("#book-trip-nav").removeClass("visible").addClass("d-none");
+    }
     let hospital_map = {};
     if (hospital_id === "admin"){
         hospital_map = await renderHospitalColumn(accessToken);
@@ -112,7 +115,7 @@ $(document).ready(async function () {
                     lengthMenu: "_MENU_",
                     searchPlaceholder: "Search",
                 },
-                dom: userRole === "AppointmentsAdmin"
+                dom: (userRole === "BookingAdmin" || userRole === "UserManagementAdmin")
                     ? 'Bfrt<"bottom"lip>'
                     : 'frt<"bottom"lip>',
                 initComplete: function (settings, json) {

@@ -88,8 +88,11 @@ $(document).ready(async function () {
     toggleSideNavBar();
     $("#logout").click(logoutUser);
     const userRole = await getUserGroup();
-    if (userRole !== "AppointmentsAdmin" && userRole !== "UserManagementAdmin") {
+    if (userRole !== "BookingAdmin" && userRole !== "UserManagementAdmin" && userRole !== "ViewOnly") {
         window.location.href = "dashboard.html";
+    }
+    if (userRole === "ViewOnly") {
+        $("#book-trip-nav").removeClass("visible").addClass("d-none");
     }
     if (userRole === "UserManagementAdmin") {
         $("#user-management-nav").removeClass("d-none").addClass("visible")
@@ -189,20 +192,22 @@ $(document).ready(async function () {
             if (hospital_id === "admin") {
                 columns_data.push({ data: "hospital_id", title: "Hospital", render: function(data, type, row) { return hospital_map[data] || data; } });
             }
-            columns_data.push(
-                {
-                    data: null,
-                    render: function (data, type, row) {
-                        return (
-                            `<div class="d-flex"><button title="edit" class="editBtn btn flex-1" data-id="` +
-                            row.patient_id +  `" data-hospital-id="` + row.hospital_id +
-                            `" ><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 18 18" fill="none">
-  <path d="M14 7.33326L10.6667 3.99993M1.08331 16.9166L3.90362 16.6032C4.24819 16.5649 4.42048 16.5458 4.58152 16.4937C4.72439 16.4474 4.86035 16.3821 4.98572 16.2994C5.12702 16.2062 5.2496 16.0836 5.49475 15.8385L16.5 4.83326C17.4205 3.91279 17.4205 2.4204 16.5 1.49993C15.5795 0.579452 14.0871 0.579451 13.1667 1.49992L2.16142 12.5052C1.91627 12.7503 1.79369 12.8729 1.70051 13.0142C1.61784 13.1396 1.55249 13.2755 1.50624 13.4184C1.45411 13.5794 1.43497 13.7517 1.39668 14.0963L1.08331 16.9166Z" stroke="#111827" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-</svg></button>`
-                        );
+            if (userRole !== "ViewOnly") {
+                columns_data.push(
+                    {
+                        data: null,
+                        render: function (data, type, row) {
+                            return (
+                                `<div class="d-flex"><button title="edit" class="editBtn btn flex-1" data-id="` +
+                                row.patient_id +  `" data-hospital-id="` + row.hospital_id +
+                                `" ><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 18 18" fill="none">
+      <path d="M14 7.33326L10.6667 3.99993M1.08331 16.9166L3.90362 16.6032C4.24819 16.5649 4.42048 16.5458 4.58152 16.4937C4.72439 16.4474 4.86035 16.3821 4.98572 16.2994C5.12702 16.2062 5.2496 16.0836 5.49475 15.8385L16.5 4.83326C17.4205 3.91279 17.4205 2.4204 16.5 1.49993C15.5795 0.579452 14.0871 0.579451 13.1667 1.49992L2.16142 12.5052C1.91627 12.7503 1.79369 12.8729 1.70051 13.0142C1.61784 13.1396 1.55249 13.2755 1.50624 13.4184C1.45411 13.5794 1.43497 13.7517 1.39668 14.0963L1.08331 16.9166Z" stroke="#111827" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg></button>`
+                            );
+                        },
                     },
-                },
-            );
+                );
+            }
             let patient_records = JSON.parse(xhr.responseText);
             console.log(patient_records);
             const SearchIcon = $(
@@ -222,7 +227,7 @@ $(document).ready(async function () {
                     searchPlaceholder: "Search",
                 },
                 dom:
-                    userRole === "AppointmentsAdmin"
+                    (userRole === "BookingAdmin" || userRole === "UserManagementAdmin")
                         ? 'Bfrt<"bottom"lip>'
                         : 'frt<"bottom"lip>',
                 initComplete: function (settings, json) {
@@ -235,11 +240,20 @@ $(document).ready(async function () {
                 },
             });
             tablePaginationNavigationHandler(table);
+            
+            if (userRole === "ViewOnly") {
+                $(".add-patient").hide();
+            }
+
             table.on("draw.dt", function () {
                 tablePaginationNavigationHandler(table);
-                $(".editBtn").click(editPatient);
+                if (userRole !== "ViewOnly") {
+                    $(".editBtn").click(editPatient);
+                }
             });
-            $(".editBtn").click(editPatient);
+            if (userRole !== "ViewOnly") {
+                $(".editBtn").click(editPatient);
+            }
             postRender();
             $(".close").click(async function () {
                 $('label.error').remove();

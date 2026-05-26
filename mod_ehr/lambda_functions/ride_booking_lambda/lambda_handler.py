@@ -80,9 +80,23 @@ def get_lat_lng(address):
 def set_trip_request_body(body):
     dest_lat, dest_lng = get_lat_lng(body.get("destination_address", ""))
     pickup_lat, pickup_lng = get_lat_lng(body.get("pickup_address", ""))
-
+    total_passengers = 1
     request_body={}
     request_body["additional_passengers"]={}
+    if(body.get("guest_count", 0) > 0):
+        request_body["additional_passengers"]["Guest"]=body.get("guest_count", 0)
+        total_passengers += body.get("guest_count", 0)
+    if(body.get("guest_wav_count", 0) > 0):
+        request_body["additional_passengers"]["Guest_WAV"]=body.get("guest_wav_count", 0)
+        total_passengers += body.get("guest_wav_count", 0)
+    if(body.get("pca_count", 0) > 0):
+        request_body["additional_passengers"]["PCA"]=body.get("pca_count", 0)
+        total_passengers += body.get("pca_count", 0)
+    if(body.get("pca_wav_count", 0) > 0):
+        request_body["additional_passengers"]["PCA_WAV"]=body.get("pca_wav_count", 0)
+        total_passengers += body.get("pca_wav_count", 0)
+    request_body["passenger_count"]=total_passengers
+
     if body.get("trip_direction", "") == "To Appointment":
         request_body["arrive_at"]=body.get("appt_time", "")
     else:
@@ -101,7 +115,6 @@ def set_trip_request_body(body):
     }
     request_body["destination"] = destination
     request_body["origin"] = origin
-    request_body["passenger_count"]=1
 
     secrets_manager = SecretsManager()
     subservice = secrets_manager.get_secret_value("sub_service_name")
@@ -119,8 +132,6 @@ def set_trip_request_body(body):
     trip_properties_list = []
     if body.get("requires_wav", False):
         trip_properties_list.append("WAV")
-    if body.get("has_luggage", False):
-        trip_properties_list.append("LUGGAGE")
     if len(trip_properties_list) > 0:
         request_body["trip_properties"] = trip_properties_list
 

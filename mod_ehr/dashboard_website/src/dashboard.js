@@ -98,10 +98,14 @@ $(document).ready(async function () {
     }
     preRender();
     toggleSideNavBar();
+    
     const userRole = await getUserGroup();
-    if (userRole === "AppointmentsAdmin" || userRole === "UserManagementAdmin") {
+    if (userRole === "BookingAdmin" || userRole === "UserManagementAdmin" || userRole === "ViewOnly") {
         $("#appointments-nav").removeClass("invisible").addClass("visible");
         $("#patients-nav").removeClass("invisible").addClass("visible");
+    }
+    if (userRole === "ViewOnly") {
+        $("#book-trip-nav").removeClass("visible").addClass("d-none");
     }
     if (userRole === "UserManagementAdmin") {
         $("#user-management-nav").removeClass("d-none").addClass("visible");
@@ -159,7 +163,7 @@ $(document).ready(async function () {
                     render: function (data) { return hospital_map[data] || data; },
                 });
             }
-            if (userRole === "HIRTAOperationsStaff" || userRole === "AppointmentsAdmin" || userRole === "UserManagementAdmin") {
+            if (userRole === "BookingAdmin" || userRole === "UserManagementAdmin" || userRole === "ViewOnly") {
                 columns_data.push(
                     { data: "pick_up_note",  title: "Pick Up Note",  orderable: false },
                     { data: "pickup_spot",   title: "Pick Up Spot",  orderable: false },
@@ -172,10 +176,12 @@ $(document).ready(async function () {
             // adjacent regardless of which appointment-level column the user sorts by.
             columns_data.push(
                 { data: "_appointment_id", title: "", visible: false, searchable: false },
-                { data: "_leg_order",      title: "", visible: false, searchable: false }
+                { data: "_leg_order",      title: "", visible: false, searchable: false },
+                { data: "_appointment_time", title: "", visible: false, searchable: false }
             );
             const apptIdColIdx  = columns_data.findIndex(c => c.data === "_appointment_id");
             const legOrderColIdx = columns_data.findIndex(c => c.data === "_leg_order");
+            const apptTimeColIdx = columns_data.findIndex(c => c.data === "_appointment_time");
 
             let data = [];
             const dashboardRawData = JSON.parse(xhr.responseText);
@@ -203,12 +209,12 @@ $(document).ready(async function () {
                     const tripStatusHtml = isNotRequested
                         ? `<div class="d-flex flex-column gap-1 align-items-start">
                              <span class="lozenge-danger">Not Requested</span>
-                             <button class="book-ride-btn button-primary mt-1"
+                             ${userRole !== "ViewOnly" ? `<button class="book-ride-btn button-primary mt-1"
                                           data-appt-id="${appointmentRecord.id}"
                                           data-patient-id="${escapeAttr(appointmentRecord.patient_id)}"
                                           data-direction="${direction}"
                                           data-appt-location="${escapeAttr(appointmentRecord.location || '')}"
-                                          data-appt-time="${escapeAttr(apptTimeRaw)}">Book Ride</button>
+                                          data-appt-time="${escapeAttr(apptTimeRaw)}">Book Ride</button>` : ""}
                            </div>`
                         : `<span class="lozenge-success">${ride.trip_status}</span>`;
                     
@@ -229,7 +235,7 @@ $(document).ready(async function () {
                         _alt_confirmed_to:   appointmentRecord.alt_transport_confirmed_to   || false,
                         _alt_confirmed_from: appointmentRecord.alt_transport_confirmed_from || false,
                         _appointment_location: appointment_location,
-                        _appointment_time: direction === "TO APPT" ? appointmentRecord.start_time : appointmentRecord.end_time,
+                        _appointment_time: appointmentRecord.start_time,
                         _patient_id: appointmentRecord.patient_id,
                         // 0 = TO APPT, 1 = FROM APPT — used as a hidden secondary sort key
                         // to keep both leg rows of the same appointment adjacent after any sort.
@@ -258,6 +264,7 @@ $(document).ready(async function () {
                                    placeholder="Add notes…"
                                    data-appt-id="${escapeAttr(appointmentRecord.id)}"
                                    data-hospital-id="${escapeAttr(appointmentRecord.hospital_id)}"
+                                   ${userRole === "ViewOnly" ? "disabled" : ""}
                                >${escapeHtml(appointmentRecord.coordinator_notes)}</textarea>`
                             : "",
 
@@ -269,7 +276,8 @@ $(document).ready(async function () {
                                           data-appt-id="${escapeAttr(appointmentRecord.id)}"
                                           data-hospital-id="${escapeAttr(appointmentRecord.hospital_id)}"
                                           data-field="alt_transport_confirmed_to"
-                                          ${appointmentRecord.alt_transport_confirmed_to ? "checked" : ""} />
+                                          ${appointmentRecord.alt_transport_confirmed_to ? "checked" : ""}
+                                          ${userRole === "ViewOnly" ? "disabled" : ""} />
                                </div>`
                             : `<div class="alt-transport-cell">
                                    <input type="checkbox"
@@ -277,7 +285,8 @@ $(document).ready(async function () {
                                           data-appt-id="${escapeAttr(appointmentRecord.id)}"
                                           data-hospital-id="${escapeAttr(appointmentRecord.hospital_id)}"
                                           data-field="alt_transport_confirmed_from"
-                                          ${appointmentRecord.alt_transport_confirmed_from ? "checked" : ""} />
+                                          ${appointmentRecord.alt_transport_confirmed_from ? "checked" : ""}
+                                          ${userRole === "ViewOnly" ? "disabled" : ""} />
                                </div>`,
 
                         // Leg-specific columns.
@@ -299,7 +308,7 @@ $(document).ready(async function () {
                         drop_off_note: "N/A",
                     };
 
-                    if (userRole === "HIRTAOperationsStaff" || userRole === "AppointmentsAdmin" || userRole === "UserManagementAdmin") {
+                    if (userRole === "BookingAdmin" || userRole === "UserManagementAdmin" || userRole === "ViewOnly") {
                         row_data.pick_up_note  = "notes"   in ride.pickup  ? ride.pickup.notes    : "N/A";
                         row_data.pickup_spot   = "address" in ride.pickup  ? ride.pickup.address  : "N/A";
                         row_data.drop_off_note = "notes"   in ride.dropoff ? ride.dropoff.notes   : "N/A";
@@ -348,9 +357,12 @@ $(document).ready(async function () {
                 data: data,
                 columns: columns_data,
 
-                // After any user-driven sort, always secondary-sort by appointment ID
-                // then leg order so TO/FROM pairs stay adjacent for the rowspan logic.
-                orderFixed: { post: [[apptIdColIdx, "asc"], [legOrderColIdx, "asc"]] },
+                // Default sort by appointment time (earliest -> latest)
+                order: [[apptTimeColIdx, "asc"]],
+
+                // After any user-driven sort, always secondary-sort by appointment time,
+                // then ID, then leg order so TO/FROM pairs stay adjacent for the rowspan logic.
+                orderFixed: { post: [[apptTimeColIdx, "asc"], [apptIdColIdx, "asc"], [legOrderColIdx, "asc"]] },
 
                 createdRow: function (row, rowData) {
                     // Choose background colors for "TO APPT" and "FROM APPT" legs.
@@ -423,7 +435,7 @@ $(document).ready(async function () {
                     });
                 },
 
-                dom: userRole === "AppointmentsAdmin"
+                dom: (userRole === "BookingAdmin" || userRole === "UserManagementAdmin")
                     ? 'Bfrt<"bottom"lip>'
                     : 'frt<"bottom"lip>',
                 language: {
@@ -634,7 +646,8 @@ $(document).ready(async function () {
                                            data-appt-id="${escapeAttr(apptId)}"
                                            data-hospital-id="${escapeAttr(hospitalId)}"
                                            data-field="${dataField}"
-                                           ${isChecked ? "checked" : ""} />
+                                           ${isChecked ? "checked" : ""}
+                                           ${userRole === "ViewOnly" ? "disabled" : ""} />
                                 </div>`;
 
                                 // 3. Preserve the current live notes value on the first-leg
@@ -646,6 +659,7 @@ $(document).ready(async function () {
                                         placeholder="Add notes…"
                                         data-appt-id="${escapeAttr(apptId)}"
                                         data-hospital-id="${escapeAttr(hospitalId)}"
+                                        ${userRole === "ViewOnly" ? "disabled" : ""}
                                     >${escapeHtml(liveNotes)}</textarea>`;
                                 }
 

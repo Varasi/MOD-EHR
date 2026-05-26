@@ -65,7 +65,7 @@
 
   <body>
     <div id="root" class="p-0 overflow-auto">
-      <nav class="top-navb-bar" style="position: relative; z-index: 1060;">
+      <nav class="top-navb-bar" style="position: relative; z-index: 1060">
         <div class="d-flex flex-wrap flex-1 align-items-center">
           <div class="d-flex align-items-center gap-3">
             <img
@@ -75,9 +75,7 @@
               alt="brand-logo"
             />
             <div class="d-flex flex-column">
-              <div id="hospital-name" class="hospital-name-text">
-                
-              </div>
+              <div id="hospital-name" class="hospital-name-text"></div>
               <div class="top-nav-header-text"></div>
             </div>
           </div>
@@ -104,7 +102,7 @@
           <div
             class="d-flex justify-content-lg-between flex-1 d-none d-lg-flex"
             id="navitems_list"
-            style="z-index: 1060;"
+            style="z-index: 1060"
           >
             <div class="d-flex d-lg-none col-12 side-navbar-collapse">
               <button class="button-tertiary navbar_toggler">
@@ -138,11 +136,13 @@
                 <li id="appointments-nav">
                   <a class="nav-item" href="appointments.html">Appointments</a>
                 </li>
-            <li id="hospitals-nav" class="d-none">
+                <li id="hospitals-nav" class="d-none">
                   <a class="nav-item" href="hospitals.html">Hospitals</a>
                 </li>
                 <li id="user-management-nav" class="d-none">
-                    <a class="nav-item" href="userManagement.html">User Management</a>
+                  <a class="nav-item" href="userManagement.html"
+                    >User Management</a
+                  >
                 </li>
                 <li id="logs-nav">
                   <a class="nav-item" href="logs.html">Logs</a>
@@ -257,12 +257,14 @@
                   Patient Information
                 </div>
               </div>
-              <div class="m-3 p-2" style="z-index: 1;">
+              <div class="m-3 p-2" style="z-index: 1">
                 <label for="patientSearch" class="form-label"
-                  >Search Existing Patient <span id="timeLoader" class="">
-    <span class="spinner-border spinner-border-sm text-primary"></span>
-  </span></label
-                >
+                  >Search Existing Patient
+                  <span id="timeLoader" class="">
+                    <span
+                      class="spinner-border spinner-border-sm text-primary"
+                    ></span> </span
+                ></label>
                 <select
                   class="form-select"
                   id="patientSearch"
@@ -419,7 +421,10 @@
               </div>
               <div class="row m-3">
                 <div class="col-md-12 mb-3" id="tripPickupContainer">
-                  <label class="form-label" for="tripPickupAddress" id="tripPickupAddLabel"
+                  <label
+                    class="form-label"
+                    for="tripPickupAddress"
+                    id="tripPickupAddLabel"
                     >Pickup Address <span class="text-danger">*</span></label
                   >
                   <input
@@ -443,7 +448,10 @@
                   <div class="form-text">Time patient needs to arrive by</div>
                 </div>
                 <div class="col-md-6 mb-3" id="tripDestContainer">
-                  <label class="form-label" for="tripDestinationAddress" id="tripDestinationAddLabel"
+                  <label
+                    class="form-label"
+                    for="tripDestinationAddress"
+                    id="tripDestinationAddLabel"
                     >Destination Address
                     <span class="text-danger">*</span></label
                   >
@@ -453,7 +461,6 @@
                     id="tripDestinationAddress"
                     placeholder="Destination Address"
                   />
-                  
                 </div>
               </div>
             </div>
@@ -465,23 +472,103 @@
                 </div>
               </div>
               <div class="row m-3">
-                <div class="col-md-6 mb-3">
-                  <label class="form-label" for="mobilityEquipment"
-                    >Mobility Equipment</label
-                  >
-                  <div class="row">
+                <div class="row">
+                  <div class="col-md-6 mb-3">
+                    <label class="form-label" for="mobilityEquipment">Mobility Equipment</label>
+                    <div class="row">
                       <div class="col-md-6 mb-3">
-                          <div class="form-check">
-                              <input class="form-check-input" type="checkbox" id="wav_input_value">
-                              <label class="form-check-label" for="wav_input_value">WAV</label>
-                          </div>
+                        <div class="form-check">
+                          <input
+                            class="form-check-input"
+                            type="checkbox"
+                            id="wav_input_value"
+                          />
+                          <label class="form-check-label" for="wav_input_value">WAV</label>
+                        </div>
                       </div>
-                      <div class="col-md-6 mb-3">
-                          <div class="form-check">
-                              <input class="form-check-input" type="checkbox" id="luggage_input_value">
-                              <label class="form-check-label" for="luggage_input_value">Luggage</label>
-                          </div>
+                    </div>
+                  </div>
+                  <div class="col-md-12 mb-3 position-relative">
+                    <label class="form-label"
+                      >Accommodation
+                      <i
+                        id="accommodation-help-icon"
+                        class="bi bi-question-circle-fill ms-1"
+                        style="cursor: pointer"
+                      ></i
+                    ></label>
+                    <div id="accommodation-help-text" class="form-text d-none position-absolute bg-white border rounded p-2 shadow-sm mt-1" style="z-index: 1050; max-width: 350px;">
+                      PCA is Personal Care Assistant or Aide. <br/>WAV is a Wheelchair Accessible Vehicle
+                    </div>
+
+                    <div class="row">
+                      <div class="col-md-3 col-sm-6 mb-2">
+                        <div class="d-flex align-items-center gap-2">
+                          <label for="guest_count" class="col-form-label m-0 text-nowrap">Guest</label>
+                          <input
+                            type="number"
+                            class="form-control settings-input-field skeleton-text"
+                            id="guest_count"
+                            name="guest_count"
+                            min="0"
+                            max="2"
+                            value="0"
+                          />
+                          
+                        </div>
                       </div>
+
+                      <div class="col-md-3 col-sm-6 mb-2">
+                        <div class="d-flex align-items-center gap-2r">
+                          <label for="guest_wav_count" class="col-form-label m-0 text-nowrap">Guest (WAV)</label>
+                          
+                          <input
+                            type="number"
+                            class="form-control settings-input-field skeleton-text"
+                            id="guest_wav_count"
+                            name="guest_wav_count"
+                            min="0"
+                            max="2"
+                            value="0"
+                          />
+                          
+                        </div>
+                      </div>
+
+                      <div class="col-md-3 col-sm-6 mb-2">
+                        <div class="d-flex align-items-center gap-2">
+                          <label for="pca_count" class="col-form-label m-0 text-nowrap">PCA</label>
+                          
+                            <input
+                              type="number"
+                              class="form-control settings-input-field skeleton-text"
+                              id="pca_count"
+                              name="pca_count"
+                              min="0"
+                              max="2"
+                              value="0"
+                            />
+                          
+                        </div>
+                      </div>
+
+                      <div class="col-md-3 col-sm-6 mb-2">
+                        <div class="d-flex align-items-center gap-2">
+                          <label for="pca_wav_count" class="col-form-label m-0 text-nowrap">PCA (WAV)</label>
+                          
+                            <input
+                              type="number"
+                              class="form-control settings-input-field skeleton-text"
+                              id="pca_wav_count"
+                              name="pca_wav_count"
+                              min="0"
+                              max="2"
+                              value="0"
+                            />
+                          
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
                 <div class="col-md-12 mb-3">
@@ -493,11 +580,13 @@
                     id="additionalNotespickup"
                     id="additionalNotes"
                     placeholder="Any special instructions for the driver at pickup location..."
-                    placeholder="Any special instructions for the driver..." ></textarea>
+                    placeholder="Any special instructions for the driver..."
+                  ></textarea>
                 </div>
                 <div class="col-md-12 mb-3">
                   <label class="form-label" for="additionalNotesdropoff"
-                    >Additional Dropoff Notes for Driver</label>
+                    >Additional Dropoff Notes for Driver</label
+                  >
                   <textarea
                     class="form-control"
                     id="additionalNotesdropoff"
@@ -540,11 +629,18 @@
           <div class="col-xl-8 col-lg-10 mx-auto d-flex flex-column gap-3 px-3">
             <!-- Success Banner -->
             <div class="non-book-tab d-flex align-items-center">
-              <i class="bi bi-check-square-fill my-3 me-3" style="font-size: 30px; color: #3cb23c"></i>
+              <i
+                class="bi bi-check-square-fill my-3 me-3"
+                style="font-size: 30px; color: #3cb23c"
+              ></i>
               <div>
-                <span class="module-header-text" style="font-size:25px">Trip Booked Successfully!</span><br>
-                <span class="" style="font-size:15px">The trip request has been sent to HIRTA. They will confirm
-                  the exact pickup time shortly.</span>
+                <span class="module-header-text" style="font-size: 25px"
+                  >Trip Booked Successfully!</span
+                ><br />
+                <span class="" style="font-size: 15px"
+                  >The trip request has been sent to HIRTA. They will confirm
+                  the exact pickup time shortly.</span
+                >
               </div>
             </div>
             <!-- Patient Information -->
@@ -580,8 +676,15 @@
               </div>
               <div class="row m-3">
                 <small class="text-muted">DIRECTION</small>
-                <div id="result-direction" class="direction-cell to-appt d-inline-block mt-2">
-                  <span class="direction-label fs-5" style="font-size: 16px !important">To Appointment</span>
+                <div
+                  id="result-direction"
+                  class="direction-cell to-appt d-inline-block mt-2"
+                >
+                  <span
+                    class="direction-label fs-5"
+                    style="font-size: 16px !important"
+                    >To Appointment</span
+                  >
                 </div>
               </div>
               <div class="row m-3">
@@ -619,6 +722,15 @@
                   <div id="result-mobility-equipment"></div>
                 </div>
                 <div class="col-md-6 mb-3">
+                  <small class="text-muted">ACCOMMODATION</small>
+                  <div class="mt-1">
+                    <div><span class="text-muted me-2">Guest:</span><span id="result-guest-count">0</span></div>
+                    <div><span class="text-muted me-2">Guest (WAV):</span><span id="result-guest-wav-count">0</span></div>
+                    <div><span class="text-muted me-2">PCA:</span><span id="result-pca-count">0</span></div>
+                    <div><span class="text-muted me-2">PCA (WAV):</span><span id="result-pca-wav-count">0</span></div>
+                  </div>
+                </div>
+                <div class="col-md-6 mb-3">
                   <small class="text-muted">DRIVER PICKUP NOTES</small>
                   <div id="result-driver-pickup-notes"></div>
                 </div>
@@ -629,7 +741,10 @@
               </div>
             </div>
             <!-- Footer Note -->
-            <div class="book-tab d-flex flex-row align-items-center p-3" style="background-color: #fff9e1;">
+            <div
+              class="book-tab d-flex flex-row align-items-center p-3"
+              style="background-color: #fff9e1"
+            >
               <i class="bi bi-telephone-fill me-2"></i>
               <div>
                 For changes or cancellations, contact HIRTA Dispatch:
@@ -638,15 +753,28 @@
             </div>
 
             <!---home button-->
-            <div id="result-submit-form" class="non-book-tab d-flex flex-column">
+            <div
+              id="result-submit-form"
+              class="non-book-tab d-flex flex-column"
+            >
               <div class="row justify-content-end align-items-end">
                 <div class="col-md-auto">
-                  <button type="button" class="button-secondary mt-2" id="back-to-dashboard" fdprocessedid="6j615e">
+                  <button
+                    type="button"
+                    class="button-secondary mt-2"
+                    id="back-to-dashboard"
+                    fdprocessedid="6j615e"
+                  >
                     &larr; Back to Dashboard
                   </button>
                 </div>
                 <div class="col-md-auto">
-                  <button type="button" class="button-primary mt-2" id="book-another-trip" fdprocessedid="yut398">
+                  <button
+                    type="button"
+                    class="button-primary mt-2"
+                    id="book-another-trip"
+                    fdprocessedid="yut398"
+                  >
                     + Book Another Trip
                   </button>
                 </div>
@@ -663,7 +791,7 @@
           role="dialog"
           aria-labelledby="settingsModalLabel"
           aria-hidden="true"
-          style="z-index: 1070;"
+          style="z-index: 1070"
         >
           <div class="modal-body border-danger px-3 py-4">
             <form id="settingsForm">

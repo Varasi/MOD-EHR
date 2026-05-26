@@ -1,4 +1,5 @@
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
+from zoneinfo import ZoneInfo
 
 from health_connector_base.handlers import Response
 from health_connector_base.models import Appointment,Patient
@@ -32,10 +33,17 @@ def dashboard_handler(event, context):
     # time1_1 = datetime.now()
     # print("Time taken to filter valid patients-method-1:", time1_1 - time1)
 
+    # Empty for now. Add any future groups here that should NOT see pickup/dropoff details
     restricted_groups = {
-        "DallasCountyHealthDepartmentHealthNavigators",
-        "HealthcareFacilityStaff",
     }
+
+    tz = ZoneInfo("America/Chicago")
+    now = datetime.now(tz)
+    start_of_today = now.replace(hour=0, minute=0, second=0, microsecond=0)
+    end_of_today = start_of_today + timedelta(days=1)
+
+    start_of_today_utc = start_of_today.astimezone(timezone.utc)
+    end_of_today_utc = end_of_today.astimezone(timezone.utc)
 
     if hospital_id == "admin":
         valid_patients = {
@@ -43,7 +51,7 @@ def dashboard_handler(event, context):
                 filter_condition = Patient.via_rider_id.exists() & (Patient.via_rider_id != "")
             )
         }
-        for mapping in Appointment.scan(Appointment.end_time >= datetime.now(timezone.utc)):
+        for mapping in Appointment.scan((Appointment.end_time >= start_of_today_utc) & (Appointment.end_time < end_of_today_utc)):
             if (getattr(mapping, 'hospital_id', None), mapping.patient_id) in valid_patients:
                 if group_name in restricted_groups:
                     _redact_ride(mapping.ride)
@@ -55,7 +63,7 @@ def dashboard_handler(event, context):
                 filter_condition = Patient.via_rider_id.exists() & (Patient.via_rider_id != "")
             )
         }
-        for mapping in Appointment.query(hospital_id, filter_condition=(Appointment.end_time >= datetime.now(timezone.utc))):
+        for mapping in Appointment.query(hospital_id, filter_condition=((Appointment.end_time >= start_of_today_utc) & (Appointment.end_time < end_of_today_utc))):
             if mapping.patient_id in valid_patients:
                 if group_name in restricted_groups:
                     _redact_ride(mapping.ride)

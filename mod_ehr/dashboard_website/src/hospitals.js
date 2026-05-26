@@ -269,6 +269,9 @@ $(document).ready(async function () {
     });
     $(".add-hospital").click(addHospital);
     const userRole = await getUserGroup();
+    if (userRole === "ViewOnly") {
+        $("#book-trip-nav").removeClass("visible").addClass("d-none");
+    }
     if (userRole === "UserManagementAdmin") {
         $("#user-management-nav").removeClass("d-none").addClass("visible");
     }else{
@@ -525,7 +528,7 @@ $(document).ready(async function () {
                     searchPlaceholder: "Search",
                 },
                 dom:
-                    userRole === "AppointmentsAdmin"
+                    (userRole === "BookingAdmin" || userRole === "UserManagementAdmin")
                         ? 'Bfrt<"bottom"lip>'
                         : 'frt<"bottom"lip>',
                 initComplete: function (settings, json) {
