@@ -17,9 +17,9 @@ import {
 const VIA_LEG_MOCK = {
     trip_status: "Not Requested",
     dropoff: {},
-    dropoff_eta: "TBD",
+    latest_dropoff_eta: "TBD",
     pickup: {},
-    pickup_eta: "TBD",
+    latest_pickup_eta: "TBD",
 };
 
 /**
@@ -223,7 +223,9 @@ $(document).ready(async function () {
                             : new Date(appointmentRecord.start_time).toLocaleString("en-US", { timeZone: "America/Chicago" })
                     const appointment_location = appointmentRecord.location
                     const appointment_status = appointmentStatusHtml(appointmentRecord.status)
-
+                    
+                    const pTime = ride.latest_pickup_eta;
+                    const dTime = ride.latest_dropoff_eta;
 
                     const row_data = {
                         // Internal fields — not mapped to a column, used in callbacks.
@@ -292,12 +294,12 @@ $(document).ready(async function () {
                         // Leg-specific columns.
                         direction:           `<div class="direction-cell ${dirClass}"><span class="direction-label">${direction}</span></div>`,
                         trip_status:         tripStatusHtml,
-                        pickup_time:         ride.pickup_eta === "TBD"
+                        pickup_time:         (!pTime || pTime === "TBD")
                             ? "N/A"
-                            : new Date(ride.pickup_eta * 1000).toLocaleString("en-US", { timeZone: "America/Chicago" }),
-                        drop_off_time:       ride.dropoff_eta === "TBD"
+                            : new Date(pTime * 1000).toLocaleString("en-US", { timeZone: "America/Chicago" }),
+                        drop_off_time:       (!dTime || dTime === "TBD")
                             ? "N/A"
-                            : new Date(ride.dropoff_eta * 1000).toLocaleString("en-US", { timeZone: "America/Chicago" }),
+                            : new Date(dTime * 1000).toLocaleString("en-US", { timeZone: "America/Chicago" }),
                         driver_vehicle_info,
                         hospital_id:         appointmentRecord.hospital_id,
 
