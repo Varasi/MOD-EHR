@@ -117,3 +117,24 @@ class Hospital(BaseModel):
 
     class Meta:
         table_name = os.environ.get("HOSPITALS_TABLE_NAME")
+
+
+class Rider(BaseModel):
+    rider_id = UnicodeAttribute(hash_key=True)
+    first_name = UnicodeAttribute()
+    last_name = UnicodeAttribute()
+    phone_no = UnicodeAttribute()
+    dob = UnicodeAttribute()
+    status = UnicodeAttribute(default="active")
+
+    class Meta:
+        table_name = os.environ.get("RIDERS_TABLE_NAME")
+
+class RiderHospitalMatch(BaseModel):
+    rider_id = UnicodeAttribute(hash_key=True)
+    hospital_id = UnicodeAttribute(range_key=True)
+    epic_patient_id = UnicodeAttribute(null=True)
+    epic_verification_needed = BooleanAttribute(null=True, default=True)
+
+    class Meta:
+        table_name = os.environ.get("RIDER_HOSPITAL_MATCH_TABLE_NAME")

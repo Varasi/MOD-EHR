@@ -724,3 +724,23 @@ label.book-trip-form-lables {
 .phone-wrapper input {
   padding-left: 40px; /* creates space for +1 */
 }
+
+.status-active {
+  background-color: #DCFCE8;
+  color: #327B4D;
+  border: 1px solid transparent;
+  border-radius: var(--radius-8, 8px);
+  padding: 4px 12px;
+  display: inline-block;
+  font-weight: 600;
+}
+
+.status-inactive {
+  background-color: #F3F4F6;
+  color: #9296A1;
+  border: 1px solid transparent;
+  border-radius: var(--radius-8, 8px);
+  padding: 4px 12px;
+  display: inline-block;
+  font-weight: 600;
+}

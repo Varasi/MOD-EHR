@@ -131,3 +131,58 @@ class SmartEpicClient:
                 return xmltodict.parse(r.text)
             
         return ""
+    
+    def get_patient_match(self, row: dict) -> dict:
+        if not self.token:
+            self.set_access_token()
+        url = f"{self.base_url}/Patient/$match"
+        headers = self.add_auth_header({})
+        
+        # Construct the patient resource using data from the dynamoDB row
+        patient_resource = {
+            "resourceType": "Patient",
+            "name": [
+                {
+                    "family": row.get("last_name", ""),
+                    "given": [row.get("first_name", "")]
+                }
+            ]
+        }
+        
+        # Conditionally add DOB and Phone if they exist in the DB record
+        if row.get("date_of_birth"):
+            patient_resource["birthDate"] = row.get("date_of_birth")
+            
+        if row.get("phone"):
+            patient_resource["telecom"] = [
+                {
+                    "system": "phone",
+                    "value": row.get("phone"),
+                    "use": "mobile"
+                }
+            ]
+
+        request_body = {
+            "resourceType": "Parameters",
+            "parameter": [
+                {
+                    "name": "resource",
+                    "resource": patient_resource
+                },
+                {
+                    "name": "onlyCertainMatches",
+                    "valueBoolean": True
+                }
+            ]
+        }
+
+        r = requests.post(
+            url=url,
+            headers=headers,
+            json=request_body
+        )
+
+        if r.ok:
+            return xmltodict.parse(r.text)
+        
+        return ""

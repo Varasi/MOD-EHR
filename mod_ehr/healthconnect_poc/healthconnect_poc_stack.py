@@ -48,6 +48,8 @@ class HealthconnectPocStack(Stack):
         self.create_hospitals_lambda()
         self.create_epic_data_populator_lambda()
         self.create_ride_booking_lambda()
+        self.create_async_rider_processing_lambda()
+        self.create_riders_lambda()
         # Secret Manager
         self.create_secrets()
         # Cognito
@@ -241,6 +243,31 @@ class HealthconnectPocStack(Stack):
             ),
         )
         self.hospitals_table.grant_full_access(self.LambdaExecutionRole)
+        self.riders_table = dynamo_db.TableV2(
+            self,
+            f"EHRMultitenant{self.config.ENVIRONMENT.title()}RidersTable",
+            table_name=f"{self.config.ENVIRONMENT.lower()}_riders_table{self.version_suffix_us}",
+            contributor_insights=True,
+            point_in_time_recovery=True,
+            partition_key=dynamo_db.Attribute(
+                name="rider_id", type=dynamo_db.AttributeType.STRING
+            ),
+        )
+        self.riders_table.grant_full_access(self.LambdaExecutionRole)
+        self.rider_hospital_match_table = dynamo_db.TableV2(
+            self,
+            f"EHRMultitenant{self.config.ENVIRONMENT.title()}RiderHospitalMatchTable",
+            table_name=f"{self.config.ENVIRONMENT.lower()}_rider_hospital_match_table{self.version_suffix_us}",
+            contributor_insights=True,
+            point_in_time_recovery=True,
+            partition_key=dynamo_db.Attribute(
+                name="rider_id", type=dynamo_db.AttributeType.STRING
+            ),
+            sort_key=dynamo_db.Attribute(
+                name="hospital_id", type=dynamo_db.AttributeType.STRING
+            ),
+        )
+        self.rider_hospital_match_table.grant_full_access(self.LambdaExecutionRole)
 
     def create_vpc(self):
         self.vpc = ec2.Vpc(
@@ -703,6 +730,52 @@ class HealthconnectPocStack(Stack):
             }
         )
 
+    def create_async_rider_processing_lambda(self):
+        self.async_rider_processing_lambda = aws_lambda.Function(
+            self,
+            f"EHRMultitenant{self.config.ENVIRONMENT.title()}AsyncRiderProcessingLambda",
+            function_name=f"EHRMultitenant{self.config.ENVIRONMENT.title()}AsyncRiderProcessingLambda{self.version_suffix_us}",
+            runtime=aws_lambda.Runtime.PYTHON_3_11,
+            code=aws_lambda.Code.from_asset("lambda_functions/async_rider_processing_lambda"),
+            handler="lambda_handler.lambda_handler",
+            role=self.LambdaExecutionRole,
+            layers=[self.requirements_layer, self.base_layer],
+            vpc=self.vpc,
+            timeout=Duration.minutes(10),
+            memory_size=512,
+            environment={
+                "ENVIRONMENT": self.config.ENVIRONMENT.upper(),
+                "VERSION_SUFFIX": self.version_suffix,
+                "HOSPITALS_TABLE_NAME": self.hospitals_table.table_name,
+                "RIDERS_TABLE_NAME": self.riders_table.table_name,
+                "RIDER_HOSPITAL_MATCH_TABLE_NAME": self.rider_hospital_match_table.table_name,
+            }
+        )
+
+    def create_riders_lambda(self):
+        self.riders_lambda = aws_lambda.Function(
+            self,
+            f"EHRMultitenant{self.config.ENVIRONMENT.title()}RidersLambda",
+            function_name=f"EHRMultitenant{self.config.ENVIRONMENT.title()}RidersLambda{self.version_suffix_us}",
+            runtime=aws_lambda.Runtime.PYTHON_3_11,
+            code=aws_lambda.Code.from_asset("lambda_functions/riders_lambda"),
+            handler="lambda_handler.riders_handler",
+            role=self.LambdaExecutionRole,
+            layers=[self.requirements_layer, self.base_layer],
+            vpc=self.vpc,
+            timeout=Duration.minutes(10),
+            memory_size=512,
+            environment={
+                "KMS_AVAILABLE": "True",
+                "ENVIRONMENT": self.config.ENVIRONMENT.upper(),
+                "RIDERS_TABLE_NAME": self.riders_table.table_name,
+                "HOSPITALS_TABLE_NAME": self.hospitals_table.table_name,
+                "RIDER_HOSPITAL_MATCH_TABLE_NAME": self.rider_hospital_match_table.table_name,
+                "VERSION_SUFFIX": self.version_suffix,
+                "ASYNC_RIDER_LAMBDA_NAME": self.async_rider_processing_lambda.function_name,
+            }
+        )
+
     def add_event_bridge_scheduler_epic(self):
         self.event_bridge_rule = event_bridge.Rule(
             self,
@@ -754,6 +827,14 @@ class HealthconnectPocStack(Stack):
                     "X-Id-Token"
                 ]
             ),
+        )
+        self.api.add_gateway_response(
+            "IntegrationTimeout",
+            type=apigw.ResponseType.INTEGRATION_TIMEOUT,
+            response_headers={
+                "Access-Control-Allow-Origin": "'*'",
+                "Access-Control-Allow-Headers": "'*'"
+            }
         )
         # self.api.deployment_stage.options = apigw.StageOptions(
         #     tracing_enabled=True,
@@ -913,6 +994,38 @@ class HealthconnectPocStack(Stack):
         self.trip_booking_resource.add_method(
             "POST",
             apigw.LambdaIntegration(self.ride_booking_lambda, proxy=True),
+            authorizer=self.apigw_authorizer,
+            authorization_scopes=["aws.cognito.signin.user.admin"],
+        )
+        self.riders_resource = self.api.root.add_resource("riders")
+        self.riders_resource.add_method(
+            "GET",
+            apigw.LambdaIntegration(self.riders_lambda, proxy=True),
+            authorizer=self.apigw_authorizer,
+            authorization_scopes=["aws.cognito.signin.user.admin"],
+        )
+        self.riders_resource.add_method(
+            "POST",
+            apigw.LambdaIntegration(self.riders_lambda, proxy=True),
+            authorizer=self.apigw_authorizer,
+            authorization_scopes=["aws.cognito.signin.user.admin"],
+        )
+        self.rider_detail_resource = self.riders_resource.add_resource("{rider_id}")
+        self.rider_detail_resource.add_method(
+            "GET",
+            apigw.LambdaIntegration(self.riders_lambda, proxy=True),
+            authorizer=self.apigw_authorizer,
+            authorization_scopes=["aws.cognito.signin.user.admin"],
+        )
+        self.rider_detail_resource.add_method(
+            "PUT",
+            apigw.LambdaIntegration(self.riders_lambda, proxy=True),
+            authorizer=self.apigw_authorizer,
+            authorization_scopes=["aws.cognito.signin.user.admin"],
+        )
+        self.rider_detail_resource.add_method(
+            "DELETE",
+            apigw.LambdaIntegration(self.riders_lambda, proxy=True),
             authorizer=self.apigw_authorizer,
             authorization_scopes=["aws.cognito.signin.user.admin"],
         )

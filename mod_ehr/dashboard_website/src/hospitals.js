@@ -280,8 +280,10 @@ $(document).ready(async function () {
     if (hospital_id === "admin") {
         $("#user-management-nav").removeClass("d-none").addClass("visible");
         $("#hospitals-nav").removeClass("d-none").addClass("visible");
+        $("#riders-nav").removeClass("d-none").addClass("visible");
     }else{
         $("#hospitals-nav").removeClass("visible").addClass("d-none");
+        $("#riders-nav").removeClass("visible").addClass("d-none");
         window.location.href = "dashboard.html";
     }
     
@@ -390,7 +392,19 @@ $(document).ready(async function () {
         { data: "id", title: "ID" },
         { data: "name", title: "Hospital Name" },
         { data: "subdomain", title: "Subdomain" },
-        { data: "status", title: "Status" },
+        { 
+            data: "status", 
+            title: "Status",
+            render: function (data, type, row) {
+                if (!data) return "";
+                if (data.toLowerCase() === "active") {
+                    return `<span class="status-active">Active</span>`;
+                } else if (data.toLowerCase() === "inactive") {
+                    return `<span class="status-inactive">Inactive</span>`;
+                }
+                return data;
+            }
+        },
         { data: "provider", title: "Provider" },
         {
             data: null,

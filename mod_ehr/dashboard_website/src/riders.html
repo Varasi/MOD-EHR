@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
@@ -7,7 +7,11 @@
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.datatables.net/buttons/2.2.3/js/dataTables.buttons.min.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validate/1.19.3/jquery.validate.min.js"></script>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css"
+    />
     <link rel="stylesheet" href="./assets/css/styles.css" />
     <link rel="stylesheet" href="./assets/css/responsive.css" />
     <link rel="stylesheet" href="./assets/css/status.css" />
@@ -24,29 +28,25 @@
       integrity=""
       crossorigin="anonymous"
     />
-
-    <script src="dashboard.js" defer></script>
+    <script src="riders.js" defer></script>
+    <script src="common.js" defer></script>
     <script src="settingspanel.js" defer></script>
   </head>
-
   <body>
     <div id="root" class="p-0 overflow-auto">
-     <nav class="top-navb-bar">
+      <nav class="top-navb-bar">
         <div class="d-flex flex-wrap flex-1 align-items-center">
           <div class="d-flex align-items-center gap-3">
             <img
-                id ="tenant-brand-logo"
-                src=""
-                class="brand-logo"
-                alt="brand-logo"
-              />
+              id="tenant-brand-logo"
+              src=""
+              class="brand-logo"
+              alt="brand-logo"
+            />
             <div class="d-flex flex-column">
-              <div id="hospital-name" class="hospital-name-text">
-                
-              </div>
+              <div id="hospital-name" class="hospital-name-text"></div>
               <div class="top-nav-header-text"></div>
             </div>
-            
           </div>
           <div class="d-flex d-lg-none flex-1 justify-content-end">
             <button class="button-tertiary navbar_toggler">
@@ -94,7 +94,7 @@
             <div class="d-flex align-items-center col-12 col-lg-6">
               <ul class="top-nav-items m-0 flex-column flex-lg-row w-100">
                 <li>
-                  <a class="nav-item active" aria-current="page" href="dashboard.html"
+                  <a class="nav-item" aria-current="page" href="dashboard.html"
                     >Dashboard</a
                   >
                 </li>
@@ -102,14 +102,10 @@
                   <a class="nav-item" href="patients.html">Patients</a>
                 </li>
                 <li id="appointments-nav">
-                  <a class="nav-item" href="appointments.html"
-                    >Appointments</a
-                  >
+                  <a class="nav-item" href="appointments.html">Appointments</a>
                 </li>
-            <li id="hospitals-nav" class="d-none">
-                  <a class="nav-item" href="hospitals.html"
-                    >Hospitals</a
-                  >
+                <li id="hospitals-nav" class="d-none">
+                  <a class="nav-item" href="hospitals.html">Hospitals</a>
                 </li>
                 <li id="user-management-nav" class="d-none">
                   <a class="nav-item" href="userManagement.html"
@@ -117,17 +113,13 @@
                   >
                 </li>
                 <li id="logs-nav">
-                    <a class="nav-item " href="logs.html">Logs</a>
+                  <a class="nav-item" href="logs.html">Logs</a>
                 </li>
                 <li id="book-trip-nav">
-                  <a class="nav-item" href="bookTrip.html"
-                    >Book Trip</a
-                  >
+                  <a class="nav-item" href="bookTrip.html">Book Trip</a>
                 </li>
                 <li id="riders-nav">
-                  <a class="nav-item" href="riders.html"
-                      >Riders</a
-                  >
+                  <a class="nav-item active" href="riders.html">Riders</a>
                 </li>
               </ul>
             </div>
@@ -214,13 +206,21 @@
             class="d-flex flex-column flex-1 overflow-auto"
           >
             <div class="module-header">
-              <div class="module-header-text">Dashboard</div>
-            </div>
-            <div class="module-header">
-                <div class="assistance-text" id="assistance-text-dashboard">
-                  <i class="fa fa-phone" style="font-size:15px; padding-right: 5px; color: black!important;"></i>
-                  For assistance with rides, contact HIRTA Dispatch:
-                </div>
+              <div class="module-header-text">Riders</div>
+              <div class="d-flex gap-2">
+                <button
+                  id="button-primary"
+                  class="add-rider button-primary position-relative"
+                  data-toggle="modal"
+                  data-target="#riderModal"
+                  tabindex="0"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 14 14" fill="none">
+                    <path d="M2 7H12M7 12V2" stroke="white" stroke-width="2.5" stroke-linecap="square" stroke-linejoin="round" />
+                  </svg>
+                  Add Registered Rider
+                </button>
+              </div>
             </div>
             <div id="table-filter"></div>
             <div
@@ -243,6 +243,63 @@
         </div>
       </section>
       <section>
+      <div class="modal show" id="riderModal" tabindex="-1" role="dialog" aria-labelledby="riderModalLabel" aria-hidden="true">
+        <div class="modal-dialog-wrapper placement-center m-0 position-absolute" role="document">
+          <div class="modal-content border-0" id="borderRounded">
+            <div class="modal-body p-0">
+              <div class="module-header-text modal-header" id="button-primary">
+                <div>Add Registered Rider</div>
+                <button class="modal-close-icon close" id="close-add-rider">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 16 16" fill="none">
+                    <path d="M1.16667 12.8332L12.8333 1.1665M12.8333 12.8332L1.16667 1.1665" stroke="white" stroke-width="1.66667" stroke-linecap="round" stroke-linejoin="round" />
+                  </svg>
+                </button>
+              </div>
+              <div id="formContainer" class="flex-1 overflow-auto p-4">
+                <form id="riderForm" class="d-flex flex-column gap-3 col-12">
+                  <div>
+                    <label for="rider_id" class="form-label skeleton-text">Rider ID <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" id="rider_id" name="rider_id" required />
+                  </div>
+                  <div>
+                    <label for="first_name" class="form-label skeleton-text">First Name <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" id="first_name" name="first_name" required />
+                  </div>
+                  <div>
+                    <label for="last_name" class="form-label skeleton-text">Last Name <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" id="last_name" name="last_name" required />
+                  </div>
+                  <div>
+                    <label for="phone_no" class="form-label skeleton-text">Phone Number <span class="text-danger">*</span></label>
+                    <input type="tel" class="form-control" id="phone_no" name="phone_no" required />
+                  </div>
+                  <div>
+                    <label for="dob" class="form-label skeleton-text">Date of Birth <span class="text-danger">*</span></label>
+                    <input type="date" class="form-control" id="dob" name="dob" required />
+                  </div>
+                  <div>
+                    <label for="status" class="form-label skeleton-text">Status <span class="text-danger">*</span></label>
+                    <select class="form-select skeleton-text" id="status" name="status" required>
+                      <option value="active">Active</option>
+                      <option value="inactive">Inactive</option>
+                    </select>
+                  </div>
+                </form>
+              </div>
+            </div>
+            <div class="modal-footer" id="modal-footer">
+              <button type="button" class="close button-secondary m-0" data-dismiss="modal">
+                Close
+              </button>
+              <button id="button-primary" type="button" class="save button-primary m-0">
+                Save
+                <div class="loader-small d-none"></div>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
         <div
           class="position-absolute settings-dialog-wrapper bg-white shadow-sm border d-none"
           id="settingsModal"
@@ -250,7 +307,7 @@
           role="dialog"
           aria-labelledby="settingsModalLabel"
           aria-hidden="true"
-          style="z-index: 1070;"
+          style="z-index: 1070"
         >
           <div class="modal-body border-danger px-3 py-4">
             <form id="settingsForm">
@@ -259,13 +316,16 @@
                   <tr>
                     <td>
                       <div class="d-flex flex-column">
-                        <span class="skeleton-text form-label m-0 ">
+                        <span class="skeleton-text form-label m-0">
                           Prior period to start time
                         </span>
-                        <span class="form-label-help-text text-nowrap skeleton-text">
+                        <span
+                          class="form-label-help-text text-nowrap skeleton-text"
+                        >
                           The ride that ends closest to the appointment start
-                          time, or within <span id="prior_period_text">15</span> minutes
-                          prior, will be matched.
+                          time, or within
+                          <span id="prior_period_text">15</span> minutes prior,
+                          will be matched.
                         </span>
                       </div>
                     </td>
@@ -291,7 +351,9 @@
                         <span class="form-label m-0 skeleton-text">
                           Subsequent period after the start time
                         </span>
-                        <span class="form-label-help-text text-nowrap skeleton-text">
+                        <span
+                          class="form-label-help-text text-nowrap skeleton-text"
+                        >
                           The ride that ends closest to the appointment start
                           time, or within
                           <span id="subsequent_period_text">15</span> minutes
@@ -329,7 +391,14 @@
             >
               Close
             </button>
-            <button type="button" id="settings-form-submit-btn" class="save button-primary m-0" disabled>Save</button>
+            <button
+              type="button"
+              id="settings-form-submit-btn"
+              class="save button-primary m-0"
+              disabled
+            >
+              Save
+            </button>
           </div>
         </div>
       </section>

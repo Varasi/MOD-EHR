@@ -343,9 +343,10 @@ $(document).ready(async function () {
     }
     if(hospital_id === "admin"){
         $("#hospitals-nav").removeClass("d-none").addClass("visible");
-
+        $("#riders-nav").removeClass("d-none").addClass("visible");
     }else{
         $("#hospitals-nav").removeClass("visible").addClass("d-none");
+        $("#riders-nav").removeClass("visible").addClass("d-none");
     }
     $("#appointmentForm").validate({
         rules: {
