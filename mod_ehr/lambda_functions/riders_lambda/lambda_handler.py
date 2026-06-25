@@ -39,7 +39,50 @@ class RiderAPIHandler(APIHandler):
         print("user_hospital_id", user_hospital_id)
 
         if not is_admin:
-            return Response(body={"error": "Access denied. Only admins can access riders."}, status=Status.HTTP_403_FORBIDDEN)
+            if not user_hospital_id:
+                return Response(body={"error": "Access denied. hospital_id required."}, status=Status.HTTP_403_FORBIDDEN)
+            
+            if is_single_item_get:
+                rider_id = path_params["rider_id"]
+                try:
+                    match = models.RiderHospitalMatch.get(rider_id, user_hospital_id)
+                    if match.epic_verification_needed:
+                        return Response(body={"error": "Access denied. Rider match not verified."}, status=Status.HTTP_403_FORBIDDEN)
+                    
+                    rider = self.model.get(rider_id)
+                    rider_dict = {
+                        "patient_id": match.epic_patient_id,
+                        "name": f"{rider.first_name} {rider.last_name}",
+                        "via_rider_id": rider.rider_id,
+                        "phone": rider.phone_no,
+                        "dob": rider.dob,
+                        "hospital_id": user_hospital_id
+                    }
+                    return Response(body=rider_dict, status=Status.HTTP_200_OK)
+                except (models.RiderHospitalMatch.DoesNotExist, self.model.DoesNotExist):
+                    return Response(body={"error": "Rider not found or not matched to your hospital"}, status=Status.HTTP_404_NOT_FOUND)
+            else:
+                matches = list(models.RiderHospitalMatch.scan(
+                    filter_condition = (models.RiderHospitalMatch.hospital_id == user_hospital_id) &
+                                       models.RiderHospitalMatch.epic_patient_id.exists() & 
+                                       (models.RiderHospitalMatch.epic_verification_needed == False)
+                ))
+                
+                riders_data = []
+                for m in matches:
+                    try:
+                        rider = self.model.get(m.rider_id)
+                        riders_data.append({
+                            "patient_id": m.epic_patient_id,
+                            "name": f"{rider.first_name} {rider.last_name}",
+                            "via_rider_id": rider.rider_id,
+                            "phone": rider.phone_no,
+                            "dob": rider.dob,
+                            "hospital_id": user_hospital_id
+                        })
+                    except self.model.DoesNotExist:
+                        continue
+                return Response(body=riders_data, status=Status.HTTP_200_OK)
 
         hospitals = {h.id: h.name for h in models.Hospital.scan()}
 

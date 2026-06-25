@@ -2,7 +2,7 @@ from datetime import datetime, timezone, timedelta
 from zoneinfo import ZoneInfo
 
 from health_connector_base.handlers import Response
-from health_connector_base.models import Appointment,Patient
+from health_connector_base.models import Appointment, Patient, RiderHospitalMatch
 from health_connector_base.auth import require_tenant_isolation
 
 def _redact_ride(ride: dict) -> None:
@@ -27,12 +27,6 @@ def dashboard_handler(event, context):
     if query_params and "hospital_id" in query_params:
         hospital_id = query_params["hospital_id"]
 
-    # valid_patients = {
-    #     patient.patient_id for patient in Patient.scan() if patient.via_rider_id and patient.via_rider_id.strip()
-    # }
-    # time1_1 = datetime.now()
-    # print("Time taken to filter valid patients-method-1:", time1_1 - time1)
-
     # Empty for now. Add any future groups here that should NOT see pickup/dropoff details
     restricted_groups = {
     }
@@ -47,8 +41,8 @@ def dashboard_handler(event, context):
 
     if hospital_id == "admin":
         valid_patients = {
-            (patient.hospital_id, patient.patient_id) for patient in Patient.scan(
-                filter_condition = Patient.via_rider_id.exists() & (Patient.via_rider_id != "")
+            (match.hospital_id, match.epic_patient_id) for match in RiderHospitalMatch.scan(
+                filter_condition = RiderHospitalMatch.epic_patient_id.exists() & (RiderHospitalMatch.epic_verification_needed == False)
             )
         }
         for mapping in Appointment.scan((Appointment.end_time >= start_of_today_utc) & (Appointment.end_time < end_of_today_utc)):
@@ -58,9 +52,10 @@ def dashboard_handler(event, context):
                 res.append(mapping)
     else:
         valid_patients = {
-            patient.patient_id for patient in Patient.query(
-                hospital_id,
-                filter_condition = Patient.via_rider_id.exists() & (Patient.via_rider_id != "")
+            match.epic_patient_id for match in RiderHospitalMatch.scan(
+                filter_condition = (RiderHospitalMatch.hospital_id == hospital_id) &
+                                   RiderHospitalMatch.epic_patient_id.exists() & 
+                                   (RiderHospitalMatch.epic_verification_needed == False)
             )
         }
         for mapping in Appointment.query(hospital_id, filter_condition=((Appointment.end_time >= start_of_today_utc) & (Appointment.end_time < end_of_today_utc))):

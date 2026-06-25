@@ -19,6 +19,10 @@ import {
 function resetRiderForm() {
     $("#riderForm").trigger("reset");
     $('label.error').remove();
+    const fp = document.querySelector("#dob")._flatpickr;
+    if (fp) {
+        fp.clear();
+    }
 }
 
 async function editRider() {
@@ -41,7 +45,19 @@ async function editRider() {
             $("#first_name").val(rider.first_name);
             $("#last_name").val(rider.last_name);
             $("#phone_no").val(rider.phone_no);
-            $("#dob").val(rider.dob);
+            let dobVal = rider.dob || "";
+            if (dobVal.includes("-")) {
+                const parts = dobVal.split("-");
+                if (parts.length === 3 && parts[0].length === 4) {
+                    dobVal = `${parts[1]}-${parts[2]}-${parts[0]}`;
+                }
+            }
+            const fp = document.querySelector("#dob")._flatpickr;
+            if (fp) {
+                fp.setDate(dobVal, true);
+            } else {
+                $("#dob").val(dobVal);
+            }
             $("#status").val(rider.status);
             $("#riderModal .save").data("id", id);
         }
@@ -107,12 +123,63 @@ $(document).ready(async function () {
     }
     $("#logout").click(logoutUser);
 
-    var today = new Date();
-    var dd = String(today.getDate()).padStart(2, '0');
-    var mm = String(today.getMonth() + 1).padStart(2, '0');
-    var yyyy = today.getFullYear();
-    var todayStr = yyyy + '-' + mm + '-' + dd;
-    $("#dob").attr("max", todayStr);
+    // Custom date validation method for MM-DD-YYYY
+    $.validator.addMethod("mmDdYyyyDate", function (value, element) {
+        if (this.optional(element)) {
+            return true;
+        }
+        const regex = /^(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])-\d{4}$/;
+        if (!regex.test(value)) {
+            return false;
+        }
+        const parts = value.split("-");
+        const mm = parseInt(parts[0], 10);
+        const dd = parseInt(parts[1], 10);
+        const yyyy = parseInt(parts[2], 10);
+        const date = new Date(yyyy, mm - 1, dd);
+        if (date.getFullYear() !== yyyy || date.getMonth() !== mm - 1 || date.getDate() !== dd) {
+            return false;
+        }
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        if (date > today) {
+            return false;
+        }
+        return true;
+    }, "Please enter a valid Date of Birth (MM-DD-YYYY)");
+
+    // Auto-formatting for dob MM-DD-YYYY input
+    $("#dob").on("input", function (e) {
+        let val = $(this).val();
+        if (e.originalEvent && (e.originalEvent.inputType === "deleteContentBackward" || e.originalEvent.inputType === "deleteContentForward")) {
+            return;
+        }
+        let clean = val.replace(/\D/g, "");
+        if (clean.length > 8) {
+            clean = clean.substring(0, 8);
+        }
+        let formatted = "";
+        if (clean.length > 0) {
+            formatted += clean.substring(0, 2);
+        }
+        if (clean.length > 2) {
+            formatted += "-" + clean.substring(2, 4);
+        }
+        if (clean.length > 4) {
+            formatted += "-" + clean.substring(4, 8);
+        }
+        $(this).val(formatted);
+    });
+
+    // Initialize Flatpickr datepicker on dob field
+    flatpickr("#dob", {
+        dateFormat: "m-d-Y",
+        maxDate: "today",
+        allowInput: true,
+        onChange: function (selectedDates, dateStr, instance) {
+            $("#dob").trigger("change");
+        }
+    });
 
     $("#riderForm").validate({
         rules: {
@@ -121,7 +188,8 @@ $(document).ready(async function () {
             last_name: { required: true },
             phone_no: { required: true },
             dob: { 
-                required: true
+                required: true,
+                mmDdYyyyDate: true
             },
             status: { required: true }
         },
@@ -131,7 +199,8 @@ $(document).ready(async function () {
             last_name: { required: "Please enter Last Name" },
             phone_no: { required: "Please enter Phone Number" },
             dob: { 
-                required: "Please enter Date of Birth"
+                required: "Please enter Date of Birth",
+                mmDdYyyyDate: "Please enter a valid Date of Birth (MM-DD-YYYY)"
             },
             status: { required: "Please select Status" }
         },
@@ -258,12 +327,19 @@ $(document).ready(async function () {
                     let type = "POST";
                     const id = $(this).data("id");
                     
+                    let dobVal = $("#dob").val() || "";
+                    if (dobVal.includes("-")) {
+                        const parts = dobVal.split("-");
+                        if (parts.length === 3 && parts[2].length === 4) {
+                            dobVal = `${parts[2]}-${parts[0]}-${parts[1]}`;
+                        }
+                    }
                     let formData = {
                         rider_id: $("#rider_id").val(),
                         first_name: $("#first_name").val(),
                         last_name: $("#last_name").val(),
                         phone_no: $("#phone_no").val(),
-                        dob: $("#dob").val(),
+                        dob: dobVal,
                         status: $("#status").val(),
                     };
                     

@@ -32,7 +32,7 @@ function getRideLegs(ride) {
         return [{ direction: "TO APPT", dirClass: "to-appt", ride: ride || VIA_LEG_MOCK }];
     }
     return [
-        { direction: "TO APPT",   dirClass: "to-appt",   ride: ride.to_appointment   || VIA_LEG_MOCK },
+        { direction: "TO APPT", dirClass: "to-appt", ride: ride.to_appointment || VIA_LEG_MOCK },
         { direction: "FROM APPT", dirClass: "from-appt", ride: ride.from_appointment || VIA_LEG_MOCK },
     ];
 }
@@ -90,7 +90,7 @@ $(document).ready(async function () {
     const hostname = window.location.hostname;
     const dns_tenant = hostname.split('.')[0];
     const config = await loadTenantBranding(hospital_id);
-    
+
     if (config.subdomain !== dns_tenant) {
         alert("You are not authorized for this hospital.");
         await logoutUser();
@@ -98,7 +98,7 @@ $(document).ready(async function () {
     }
     preRender();
     toggleSideNavBar();
-    
+
     const userRole = await getUserGroup();
     if (userRole === "BookingAdmin" || userRole === "UserManagementAdmin" || userRole === "ViewOnly") {
         $("#appointments-nav").removeClass("invisible").addClass("visible");
@@ -109,15 +109,15 @@ $(document).ready(async function () {
     }
     if (userRole === "UserManagementAdmin") {
         $("#user-management-nav").removeClass("d-none").addClass("visible");
-    }else{
+    } else {
         $("#user-management-nav").removeClass("visible").addClass("d-none");
     }
     if (hospital_id === "admin") {
-       $("#hospitals-nav").removeClass("d-none").addClass("visible");
-       $("#riders-nav").removeClass("d-none").addClass("visible");
+        $("#hospitals-nav").removeClass("d-none").addClass("visible");
+        $("#riders-nav").removeClass("d-none").addClass("visible");
     } else {
-       $("#hospitals-nav").removeClass("visible").addClass("d-none");
-       $("#riders-nav").removeClass("visible").addClass("d-none");
+        $("#hospitals-nav").removeClass("visible").addClass("d-none");
+        $("#riders-nav").removeClass("visible").addClass("d-none");
     }
     $("#logout").click(logoutUser);
 
@@ -143,20 +143,20 @@ $(document).ready(async function () {
             let columns_data = [
                 // Appointment-level columns: both leg rows share the same value,
                 // so sorting by these is safe — pairs stay adjacent.
-                { data: "customer",             title: "Customer",             className: APPT_SPAN_CLASS },
-                { data: "appointment",          title: "Appointment",          className: APPT_SPAN_CLASS },
+                { data: "customer", title: "Customer", className: APPT_SPAN_CLASS },
+                { data: "appointment", title: "Appointment", className: APPT_SPAN_CLASS },
                 // { data: "appointment_time",     title: "Appointment Time",     className: APPT_SPAN_CLASS },
                 // { data: "appointment_location", title: "Appointment Location", className: APPT_SPAN_CLASS },
                 // { data: "appointment_status",   title: "Appointment Status",   className: APPT_SPAN_CLASS },
                 // Leg-specific / interactive columns: values differ between legs,
                 // so sorting would break the TO/FROM pair adjacency — disabled.
-                { data: "coordinator_notes",         title: "Coordinator Notes",    className: APPT_SPAN_CLASS, orderable: false },
+                { data: "coordinator_notes", title: "Coordinator Notes", className: APPT_SPAN_CLASS, orderable: false },
                 { data: "alt_transport_confirmed_to", className: "alt-transport-col", orderable: false, title: `Alternative Transportation Confirmed <svg class="alt-transport-filter-icon" xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" title="Toggle: hide confirmed"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>` },
-                { data: "direction",            title: "Direction",            orderable: false },
-                { data: "trip_status",          title: "Trip Status",          orderable: false },
-                { data: "pickup_time",          title: "Pickup Time",          orderable: false },
-                { data: "drop_off_time",        title: "Drop Off Time",        orderable: false },
-                { data: "driver_vehicle_info",  title: "Driver/Vehicle",       orderable: false },
+                { data: "direction", title: "Direction", orderable: false },
+                { data: "trip_status", title: "Trip Status", orderable: false },
+                { data: "pickup_time", title: "Pickup Time", orderable: false },
+                { data: "drop_off_time", title: "Drop Off Time", orderable: false },
+                { data: "driver_vehicle_info", title: "Driver/Vehicle", orderable: false },
             ];
             if (hospital_id === "admin") {
                 columns_data.push({
@@ -167,8 +167,8 @@ $(document).ready(async function () {
             }
             if (userRole === "BookingAdmin" || userRole === "UserManagementAdmin" || userRole === "ViewOnly") {
                 columns_data.push(
-                    { data: "pick_up_note",  title: "Pick Up Note",  orderable: false },
-                    { data: "pickup_spot",   title: "Pick Up Spot",  orderable: false },
+                    { data: "pick_up_note", title: "Pick Up Note", orderable: false },
+                    { data: "pickup_spot", title: "Pick Up Spot", orderable: false },
                     { data: "drop_off_spot", title: "Drop Off Spot", orderable: false },
                     { data: "drop_off_note", title: "Drop Off Note", orderable: false }
                 );
@@ -178,10 +178,10 @@ $(document).ready(async function () {
             // adjacent regardless of which appointment-level column the user sorts by.
             columns_data.push(
                 { data: "_appointment_id", title: "", visible: false, searchable: false },
-                { data: "_leg_order",      title: "", visible: false, searchable: false },
+                { data: "_leg_order", title: "", visible: false, searchable: false },
                 { data: "_appointment_time", title: "", visible: false, searchable: false }
             );
-            const apptIdColIdx  = columns_data.findIndex(c => c.data === "_appointment_id");
+            const apptIdColIdx = columns_data.findIndex(c => c.data === "_appointment_id");
             const legOrderColIdx = columns_data.findIndex(c => c.data === "_leg_order");
             const apptTimeColIdx = columns_data.findIndex(c => c.data === "_appointment_time");
 
@@ -207,7 +207,7 @@ $(document).ready(async function () {
 
                     const apptTimeRaw = direction === "TO APPT"
                         ? (appointmentRecord.start_time || "")
-                        : (appointmentRecord.end_time   || "");
+                        : (appointmentRecord.end_time || "");
                     const tripStatusHtml = isNotRequested
                         ? `<div class="d-flex flex-column gap-1 align-items-start">
                              <span class="lozenge-danger">Not Requested</span>
@@ -219,34 +219,34 @@ $(document).ready(async function () {
                                           data-appt-time="${escapeAttr(apptTimeRaw)}">Book Ride</button>` : ""}
                            </div>`
                         : `<span class="lozenge-success">${ride.trip_status}</span>`;
-                    
+
                     const appointment_time = appointmentRecord.start_time === "TBD"
-                            ? "TBD"
-                            : new Date(appointmentRecord.start_time).toLocaleString("en-US", { timeZone: "America/Chicago" })
+                        ? "TBD"
+                        : new Date(appointmentRecord.start_time).toLocaleString("en-US", { timeZone: "America/Chicago" })
                     const appointment_location = appointmentRecord.location
                     const appointment_status = appointmentStatusHtml(appointmentRecord.status)
-                    
+
                     const pTime = ride.latest_pickup_eta;
                     const dTime = ride.latest_dropoff_eta;
 
                     const row_data = {
                         // Internal fields — not mapped to a column, used in callbacks.
-                        _appointment_id:     appointmentRecord.id || (appointmentRecord.patient_id + "_" + appointmentRecord.start_time),
-                        _is_first_leg:       direction === "TO APPT",
+                        _appointment_id: appointmentRecord.id || (appointmentRecord.patient_id + "_" + appointmentRecord.start_time),
+                        _is_first_leg: direction === "TO APPT",
                         _trip_not_requested: isNotRequested,
                         // Both legs carry the full appointment-level confirmed state so the
                         // hide-confirmed filter can evaluate either row independently.
-                        _alt_confirmed_to:   appointmentRecord.alt_transport_confirmed_to   || false,
+                        _alt_confirmed_to: appointmentRecord.alt_transport_confirmed_to || false,
                         _alt_confirmed_from: appointmentRecord.alt_transport_confirmed_from || false,
                         _appointment_location: appointment_location,
                         _appointment_time: appointmentRecord.start_time,
                         _patient_id: appointmentRecord.patient_id,
                         // 0 = TO APPT, 1 = FROM APPT — used as a hidden secondary sort key
                         // to keep both leg rows of the same appointment adjacent after any sort.
-                        _leg_order:          direction === "TO APPT" ? 0 : 1,
+                        _leg_order: direction === "TO APPT" ? 0 : 1,
 
                         // Appointment-level columns (rowspanned across both legs).
-                        customer:             appointmentRecord.patient_name,
+                        customer: appointmentRecord.patient_name,
                         // appointment_time:     appointmentRecord.start_time === "TBD"
                         //     ? "TBD"
                         //     : new Date(appointmentRecord.start_time).toLocaleString("en-US", { timeZone: "America/Chicago" }),
@@ -294,28 +294,28 @@ $(document).ready(async function () {
                                </div>`,
 
                         // Leg-specific columns.
-                        direction:           `<div class="direction-cell ${dirClass}"><span class="direction-label">${direction}</span></div>`,
-                        trip_status:         tripStatusHtml,
-                        pickup_time:         (!pTime || pTime === "TBD")
+                        direction: `<div class="direction-cell ${dirClass}"><span class="direction-label">${direction}</span></div>`,
+                        trip_status: tripStatusHtml,
+                        pickup_time: (!pTime || pTime === "TBD")
                             ? "N/A"
                             : new Date(pTime * 1000).toLocaleString("en-US", { timeZone: "America/Chicago" }),
-                        drop_off_time:       (!dTime || dTime === "TBD")
+                        drop_off_time: (!dTime || dTime === "TBD")
                             ? "N/A"
                             : new Date(dTime * 1000).toLocaleString("en-US", { timeZone: "America/Chicago" }),
                         driver_vehicle_info,
-                        hospital_id:         appointmentRecord.hospital_id,
+                        hospital_id: appointmentRecord.hospital_id,
 
                         // Role-specific columns — populated below when the user has access.
-                        pick_up_note:  "N/A",
-                        pickup_spot:   "N/A",
+                        pick_up_note: "N/A",
+                        pickup_spot: "N/A",
                         drop_off_spot: "N/A",
                         drop_off_note: "N/A",
                     };
 
                     if (userRole === "BookingAdmin" || userRole === "UserManagementAdmin" || userRole === "ViewOnly") {
-                        row_data.pick_up_note  = "notes"   in ride.pickup  ? ride.pickup.notes    : "N/A";
-                        row_data.pickup_spot   = "address" in ride.pickup  ? ride.pickup.address  : "N/A";
-                        row_data.drop_off_note = "notes"   in ride.dropoff ? ride.dropoff.notes   : "N/A";
+                        row_data.pick_up_note = "notes" in ride.pickup ? ride.pickup.notes : "N/A";
+                        row_data.pickup_spot = "address" in ride.pickup ? ride.pickup.address : "N/A";
+                        row_data.drop_off_note = "notes" in ride.dropoff ? ride.dropoff.notes : "N/A";
                         row_data.drop_off_spot = "address" in ride.dropoff ? ride.dropoff.address : "N/A";
                     }
 
@@ -332,7 +332,7 @@ $(document).ready(async function () {
             // The settings.nTable guard prevents this from leaking into other tables.
             $.fn.dataTable.ext.search.push(function (settings, _data, _idx, rowData) {
                 if (settings.nTable !== document.getElementById("mod_ehr")) return true;
-                
+
                 if (hideConfirmedPatients && (rowData._alt_confirmed_to && rowData._alt_confirmed_from)) {
                     return false;
                 }
@@ -377,19 +377,19 @@ $(document).ready(async function () {
                     // (i.e. columns that do not have the 'appt-span-col' class)
                     const $rideCols = $(row).children('td:not(.appt-span-col):not(.alt-transport-col)');
                     const $nonRideCols = $(row).children('.appt-span-col, .alt-transport-col');
-                    
+
                     $rideCols.css('background-color', legBgColor);
                     $nonRideCols.css('background-color', nonRideBgColor);
-                    
+
                     // Add a darker left border to visually separate the sections
                     $rideCols.first().css('border-left', '2px solid #d1d5db');
                 },
 
                 drawCallback: function () {
                     const api = this.api();
-                    let prevApptId   = null;
+                    let prevApptId = null;
                     let prevFirstRow = null;
-                    let prevLastRow  = null;
+                    let prevLastRow = null;
 
                     // Marks the end of the current appointment group with the separator border.
                     // Non-spanning cells: class on the last row. Spanning cells: class directly
@@ -403,8 +403,8 @@ $(document).ready(async function () {
                     }
 
                     api.rows({ page: "current" }).every(function () {
-                        const rowData  = this.data();
-                        const $row     = $(this.node());
+                        const rowData = this.data();
+                        const $row = $(this.node());
                         // Select only the appointment-level cells via the CSS class added in columns_data.
                         const $apptCells = $row.children(`td.${APPT_SPAN_CLASS}`);
 
@@ -422,9 +422,9 @@ $(document).ready(async function () {
                             // First leg (or standalone legacy record): reset any prior span state.
                             markApptEnd();
                             $apptCells.show().removeAttr("rowspan");
-                            prevApptId   = rowData._appointment_id;
+                            prevApptId = rowData._appointment_id;
                             prevFirstRow = $row;
-                            prevLastRow  = $row;
+                            prevLastRow = $row;
                         }
                     });
                     // Mark the final appointment's last row.
@@ -450,18 +450,18 @@ $(document).ready(async function () {
                 initComplete: function () {
                     const api = this.api();
                     const $thead = $(api.table().header());
-                    
+
                     let directionVisIdx = -1;
-                    api.columns().every(function() {
+                    api.columns().every(function () {
                         if (this.dataSrc() === 'direction') {
                             directionVisIdx = this.index('visible');
                         }
                     });
-                    
+
                     if (directionVisIdx !== null && directionVisIdx !== -1 && $thead.find('tr.group-header').length === 0) {
                         const visibleColsCount = api.columns(':visible').count();
                         const rideDetailsColspan = visibleColsCount - directionVisIdx;
-                        
+
                         // Define header background and text colors for the grouped section
                         const headerBgColor = "#eff3fe";
                         const subHeaderBgColor = "#fafafa";
@@ -470,9 +470,9 @@ $(document).ready(async function () {
                         const dividerBorder = "2px solid #d1d5db"; // Darker border
 
                         const groupRow = $('<tr class="group-header"></tr>');
-                        
+
                         // Move previous column headers to the group row and span them vertically across 2 rows
-                        $thead.find('tr:not(.group-header) th').each(function(index) {
+                        $thead.find('tr:not(.group-header) th').each(function (index) {
                             if (index < directionVisIdx) {
                                 $(this).attr('rowspan', '2');
                                 $(this).css({
@@ -485,7 +485,7 @@ $(document).ready(async function () {
                         });
 
                         groupRow.append(`<th colspan="${rideDetailsColspan}" class="text-center" style="border-bottom: none; border-left: ${dividerBorder}; padding-bottom: 8px; background-color: ${headerBgColor}; color: ${headerTextColor}; font-weight: bold; box-shadow: 0 1px 0 0 ${headerBgColor};">HIRTA Ride details</th>`);
-                        
+
                         $thead.prepend(groupRow);
 
                         // Apply color specifically to the sub-headers under "Ride details"
@@ -528,7 +528,7 @@ $(document).ready(async function () {
 
                     // Restore any filters saved before the user navigated away.
                     const savedApptLocation = sessionStorage.getItem("dashboard_filter_appt_location") || "";
-                    const savedDropoffSpot  = sessionStorage.getItem("dashboard_filter_dropoff_spot")  || "";
+                    const savedDropoffSpot = sessionStorage.getItem("dashboard_filter_dropoff_spot") || "";
                     if (savedApptLocation) {
                         filterApptLocation = savedApptLocation;
                         $("#filter_appt_location").val(savedApptLocation);
@@ -549,28 +549,28 @@ $(document).ready(async function () {
             table.on("draw.dt", function () {
                 tablePaginationNavigationHandler(table);
             });
-            
-            $("#custom_datatable_filter").on("click", function(e) {
+
+            $("#custom_datatable_filter").on("click", function (e) {
                 e.stopPropagation();
                 $("#filter_options_container").toggleClass("d-none");
             });
 
             // Hide the filter dropdown if clicking outside
-            $(document).on("click", function(e) {
+            $(document).on("click", function (e) {
                 if (!$(e.target).closest('#filter_options_container, #custom_datatable_filter').length) {
                     $("#filter_options_container").addClass("d-none");
                 }
             });
 
             // Perform Custom search redraws for Appointment Location
-            $("#filter_appt_location").on("keyup change", function() {
+            $("#filter_appt_location").on("keyup change", function () {
                 filterApptLocation = $(this).val();
                 sessionStorage.setItem("dashboard_filter_appt_location", filterApptLocation);
                 table.draw();
             });
 
             // Perform Custom search redraws for Drop Off Spot
-            $("#filter_dropoff_spot").on("keyup change", function() {
+            $("#filter_dropoff_spot").on("keyup change", function () {
                 filterDropoffSpot = $(this).val();
                 sessionStorage.setItem("dashboard_filter_dropoff_spot", filterDropoffSpot);
                 table.draw();
@@ -596,10 +596,10 @@ $(document).ready(async function () {
                 e.stopPropagation();
                 const $btn = $(this);
                 sessionStorage.setItem("bookTrip_prefill", JSON.stringify({
-                    patient_id:    $btn.data("patient-id"),
-                    direction:     $btn.data("direction"),     // "TO APPT" | "FROM APPT"
+                    patient_id: $btn.data("patient-id"),
+                    direction: $btn.data("direction"),     // "TO APPT" | "FROM APPT"
                     appt_location: $btn.data("appt-location"),
-                    appt_time:     $btn.data("appt-time"),     // ISO string or "TBD"
+                    appt_time: $btn.data("appt-time"),     // ISO string or "TBD"
                 }));
                 window.location.href = "bookTrip.html";
             });
@@ -607,11 +607,11 @@ $(document).ready(async function () {
             // Save alt-transport confirmation immediately on toggle.
             // data-field tells us which model field to update (to vs from leg).
             $("#mod_ehr").on("change", ".alt-transport-checkbox", async function () {
-                const $el        = $(this);
-                const confirmed  = $el.prop("checked");
-                const apptId     = $el.data("appt-id");
+                const $el = $(this);
+                const confirmed = $el.prop("checked");
+                const apptId = $el.data("appt-id");
                 const hospitalId = $el.data("hospital-id");
-                const field      = $el.data("field"); // "alt_transport_confirmed_to" or "alt_transport_confirmed_from"
+                const field = $el.data("field"); // "alt_transport_confirmed_to" or "alt_transport_confirmed_from"
 
                 $el.prop("disabled", true);
 
@@ -620,8 +620,8 @@ $(document).ready(async function () {
                         method: "PUT",
                         headers: {
                             "Authorization": accessToken,
-                            "X-Id-Token":    idToken,
-                            "Content-Type":  "application/json",
+                            "X-Id-Token": idToken,
+                            "Content-Type": "application/json",
                         },
                         body: JSON.stringify({ hospital_id: hospitalId, [field]: confirmed }),
                     });
@@ -683,12 +683,12 @@ $(document).ready(async function () {
 
             // Save coordinator notes on blur, but only when the value has changed.
             $("#mod_ehr").on("blur", ".coordinator-notes-input", async function () {
-                const $el      = $(this);
+                const $el = $(this);
                 const newNotes = $el.val();
 
                 if (newNotes === $el.data("last-saved")) return;
 
-                const apptId     = $el.data("appt-id");
+                const apptId = $el.data("appt-id");
                 const hospitalId = $el.data("hospital-id");
 
                 $el.prop("disabled", true).addClass("notes-saving");
@@ -698,8 +698,8 @@ $(document).ready(async function () {
                         method: "PUT",
                         headers: {
                             "Authorization": accessToken,
-                            "X-Id-Token":    idToken,
-                            "Content-Type":  "application/json",
+                            "X-Id-Token": idToken,
+                            "Content-Type": "application/json",
                         },
                         body: JSON.stringify({ hospital_id: hospitalId, coordinator_notes: newNotes }),
                     });

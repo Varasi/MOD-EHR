@@ -48,8 +48,8 @@ class AppointmentAPIHandler(APIHandler):
         
         if hospital_id == "admin":
             valid_patients = {
-                (patient.hospital_id, patient.patient_id) for patient in Patient.scan(
-                    filter_condition = models.Patient.via_rider_id.exists() & (models.Patient.via_rider_id != "")
+                (match.hospital_id, match.epic_patient_id) for match in models.RiderHospitalMatch.scan(
+                    filter_condition = models.RiderHospitalMatch.epic_patient_id.exists() & (models.RiderHospitalMatch.epic_verification_needed == False)
                 )
             }
             print(f"Filtering appointments for admin access. Valid patients: {len(valid_patients)}")
@@ -63,9 +63,10 @@ class AppointmentAPIHandler(APIHandler):
                 return Response(body={"error": "hospital_id is required for non-admin users"}, status=Status.HTTP_400_BAD_REQUEST)
                 
             valid_patients = {
-                patient.patient_id for patient in Patient.query(
-                    hospital_id,
-                    filter_condition = models.Patient.via_rider_id.exists() & (models.Patient.via_rider_id != "")
+                match.epic_patient_id for match in models.RiderHospitalMatch.scan(
+                    filter_condition = (models.RiderHospitalMatch.hospital_id == hospital_id) &
+                                       models.RiderHospitalMatch.epic_patient_id.exists() & 
+                                       (models.RiderHospitalMatch.epic_verification_needed == False)
                 )
             }
             print(f"Filtering appointments for hospital_id: {hospital_id}")

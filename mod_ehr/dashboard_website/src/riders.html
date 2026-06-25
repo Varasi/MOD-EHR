@@ -17,6 +17,7 @@
     <link rel="stylesheet" href="./assets/css/status.css" />
     <link rel="stylesheet" href="./assets/css/buttons.css" />
     <link rel="stylesheet" href="./assets/css/skeletonLoader.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
     <link rel="icon" type="image/x-icon" href="./assets/Fav-icon.png" />
     <link
       href="https://cdn.jsdelivr.net/npm/typeface-poppins@1.1.13/index.min.css"
@@ -28,6 +29,7 @@
       integrity=""
       crossorigin="anonymous"
     />
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script src="riders.js" defer></script>
     <script src="common.js" defer></script>
     <script src="settingspanel.js" defer></script>
@@ -275,7 +277,7 @@
                   </div>
                   <div>
                     <label for="dob" class="form-label skeleton-text">Date of Birth <span class="text-danger">*</span></label>
-                    <input type="date" class="form-control" id="dob" name="dob" required />
+                    <input type="text" class="form-control" id="dob" name="dob" placeholder="MM-DD-YYYY" required />
                   </div>
                   <div>
                     <label for="status" class="form-label skeleton-text">Status <span class="text-danger">*</span></label>

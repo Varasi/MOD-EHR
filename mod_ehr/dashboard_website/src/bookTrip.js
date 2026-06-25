@@ -66,21 +66,44 @@ $(document).ready(async function () {
         allowClear: true
     });
     let patientsList = [];
-
-    // 2. Fetch patients from the API
+    // 2. Fetch verified riders from the API
     try {
         $('#timeLoader').removeClass("d-none")
-        const response = await fetch(`${BASE_URL}/api/patients/?hospital_id=${hospital_id}`, {
+        const response = await fetch(`${BASE_URL}/api/riders/?hospital_id=${hospital_id}`, {
             headers: {
                 'Authorization': accessToken,
                 'X-Id-Token': idToken
             }
         });
         if (response.ok) {
-            patientsList = await response.json();
+            const rawData = await response.json();
+            
+            // Check if this is the nested admin format
+            if (rawData.length > 0 && ('matches' in rawData[0] || 'first_name' in rawData[0])) {
+                patientsList = [];
+                rawData.forEach(rider => {
+                    if (rider.matches && Array.isArray(rider.matches)) {
+                        rider.matches.forEach(match => {
+                            if (!match.epic_verification_needed && match.epic_patient_id) {
+                                patientsList.push({
+                                    patient_id: match.epic_patient_id,
+                                    name: `${rider.first_name} ${rider.last_name}`,
+                                    via_rider_id: rider.rider_id,
+                                    phone: rider.phone_no,
+                                    dob: rider.dob,
+                                    hospital_id: match.hospital_id
+                                });
+                            }
+                        });
+                    }
+                });
+            } else {
+                patientsList = rawData;
+            }
+
             // Populate the dropdown
             patientsList.forEach(patient => {
-                const option = new Option(`${patient.name} (${patient.patient_id})`, patient.patient_id, false, false);
+                const option = new Option(`${patient.name} (${patient.via_rider_id || ''})`, patient.patient_id, false, false);
                 $(option).attr('data-via-rider-id', patient.via_rider_id || '');
                 $('#patientSearch').append(option);
             });
@@ -88,13 +111,12 @@ $(document).ready(async function () {
             $('#timeLoader').addClass("d-none")
         }
     } catch (error) {
-        console.error("Error fetching patients:", error);
-        toggleAlertMessage("Error fetching patients. Please try again.", "danger");
+        console.error("Error fetching riders:", error);
+        toggleAlertMessage("Error fetching riders. Please try again.", "danger");
         $('#timeLoader').addClass("d-none")
     } finally{
         $('#timeLoader').addClass("d-none")
     }
-
     // Fills all patient form fields from a patient object.
     // Called both from the change handler and from the prefill path.
     function applyPatientToForm(patient) {

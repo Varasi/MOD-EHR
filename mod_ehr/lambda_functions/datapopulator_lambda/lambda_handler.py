@@ -12,7 +12,7 @@ from health_connector_base.constants import (
     VIA_RIDE_MOCK,
 )
 from health_connector_base.location_manager import LocationManager
-from health_connector_base.models import Appointment, FTPLogs, Patient, Settings, Hospital
+from health_connector_base.models import Appointment, FTPLogs, Patient, Settings, Hospital, RiderHospitalMatch
 from health_connector_base.smart_epic import JWTHelper, SmartEpicClient
 from health_connector_base.via import Via
 from pydantic_models import AppointmentsList
@@ -46,30 +46,30 @@ class AppointmentsMapperWithVia:
         Returns:
             dict: The patient-rider mapping.
         """
-
+        hospital_providers = {h.id: h.provider for h in Hospital.scan()}
+        
+        epic_mapping = {}
+        veradigm_mapping = {}
+        all_mapping = {}
+        
+        matches = RiderHospitalMatch.scan(
+            filter_condition = RiderHospitalMatch.epic_patient_id.exists() & 
+                               (RiderHospitalMatch.epic_verification_needed == False)
+        )
+        
+        for match in matches:
+            provider = hospital_providers.get(match.hospital_id, "epic")
+            key = (match.hospital_id, match.epic_patient_id)
+            all_mapping[key] = match.rider_id
+            if provider == "epic":
+                epic_mapping[key] = match.rider_id
+            elif provider == "veradigm":
+                veradigm_mapping[key] = match.rider_id
+                
         return {
-            "epic": {
-                (patient.hospital_id, patient.patient_id): patient.via_rider_id
-                for patient in Patient.scan(
-                    filter_condition=(
-                        Patient.via_rider_id.exists() & (Patient.provider == "epic")
-                    )
-                )
-            },
-            "veradigm": {
-                (patient.hospital_id, patient.patient_id): patient.via_rider_id
-                for patient in Patient.scan(
-                    filter_condition=(
-                        Patient.via_rider_id.exists() & (Patient.provider == "veradigm")
-                    )
-                )
-            },
-            "all": {
-                (patient.hospital_id, patient.patient_id): patient.via_rider_id
-                for patient in Patient.scan(
-                    filter_condition=(Patient.via_rider_id.exists())
-                )
-            },
+            "epic": epic_mapping,
+            "veradigm": veradigm_mapping,
+            "all": all_mapping
         }
 
     def _get_jwt(self):

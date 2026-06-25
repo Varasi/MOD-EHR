@@ -73,9 +73,12 @@ def tenant_provisioning(event, context, **kwargs):
         
         # Update hospital status to ACTIVE
         hospital = models.Hospital.get(event["id"])
-        hospital.status = "Active"
-        hospital.save()
-        print(f"Hospital {event['id']} status updated to ACTIVE")
+        if hospital.status == "PENDING":
+            hospital.status = "Active"
+            hospital.save()
+            print(f"Hospital {event['id']} status updated to ACTIVE")
+        else:
+            print(f"Hospital {event['id']} status is '{hospital.status}', keeping as is")
     except Exception as e:
         print(f"Error during provisioning: {e}")
         raise e

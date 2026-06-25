@@ -25,15 +25,39 @@ async function getCachedPatients(){
         console.log("Serving patients from cache");
         return cachedPatients;
     }
-    console.log("Fetching patients into cache");
+    console.log("Fetching riders into cache");
     const [accessToken, hospital_id] = await getAccesstokenAndCustomAttribute("custom:hospital_id");
-    const response = await fetch(`${BASE_URL}/api/patients/?hospital_id=${hospital_id}`, {
-        headers: { 'Authorization': accessToken, 'X-Id-Token': await getIdToken()}
+    const idToken = await getIdToken();
+    const response = await fetch(`${BASE_URL}/api/riders/?hospital_id=${hospital_id}`, {
+        headers: { 'Authorization': accessToken, 'X-Id-Token': idToken }
     });
     
     if (response.ok) {
-        cachedPatients = await response.json();
-        cachedPatients.sort((a, b) => a.name.localeCompare(b.name));
+        const rawData = await response.json();
+        let list = [];
+        // Check if this is the nested admin format
+        if (rawData.length > 0 && ('matches' in rawData[0] || 'first_name' in rawData[0])) {
+            rawData.forEach(rider => {
+                if (rider.matches && Array.isArray(rider.matches)) {
+                    rider.matches.forEach(match => {
+                        if (!match.epic_verification_needed && match.epic_patient_id) {
+                            list.push({
+                                patient_id: match.epic_patient_id,
+                                name: `${rider.first_name} ${rider.last_name}`,
+                                via_rider_id: rider.rider_id,
+                                phone: rider.phone_no,
+                                dob: rider.dob,
+                                hospital_id: match.hospital_id
+                            });
+                        }
+                    });
+                }
+            });
+        } else {
+            list = rawData;
+        }
+        list.sort((a, b) => a.name.localeCompare(b.name));
+        cachedPatients = list;
     }
     
     return cachedPatients || [];
@@ -56,7 +80,7 @@ async function EditAppointment() {
             $("#patientName").append(
                 $("<option>", {
                     value: `${patient.name}-${patient.patient_id}`,
-                    text: `${patient.name} (${patient.patient_id})`
+                    text: `${patient.name} (${patient.via_rider_id || ''})`
                 })
             );
         });
@@ -249,37 +273,28 @@ async function DeleteAppointment() {
     xhr.send();
 }
 async function addAppointment() {
-    const [accessToken, hospital_id] = await getAccesstokenAndCustomAttribute("custom:hospital_id");
-    const xhr = new XMLHttpRequest();
-    xhr.open("GET", `${BASE_URL}/api/patients/?hospital_id=${hospital_id}`);
-    xhr.setRequestHeader("Authorization", accessToken);
-    xhr.setRequestHeader("X-Id-Token", await getIdToken());
-    xhr.onreadystatechange = async function () {
-        if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
-            let patient_records = JSON.parse(xhr.responseText);
-            $("#patientName").empty();
-            patient_records.sort((a, b) => a.name.localeCompare(b.name));
-            for (let patient of patient_records) {
-                console.log(patient);
-                let option = $("<option>", {
-                    // value: `${patient["name"]}-${patient["epic_id"]}`,
-                    // text: `${patient["name"]} (${patient["epic_id"]})`,
-                    value: `${patient["name"]}-${patient["patient_id"]}`,
-                    text: `${patient["name"]} (${patient["patient_id"]})`,
-                });
-                $("#patientName").append(option);
-            }
-            $("#appointmentModal").css({
-                display: "block",
-            });
-            $("#patientName").select2({
-                width: '100%',
-                placeholder: "Select a patient",
-                allowClear: true
-            });
-        }
-    };
-    xhr.send();
+    try {
+        const patients = await getCachedPatients();
+        $("#patientName").empty();
+        patients.forEach(patient => {
+            $("#patientName").append(
+                $("<option>", {
+                    value: `${patient.name}-${patient.patient_id}`,
+                    text: `${patient.name} (${patient.via_rider_id || ''})`
+                })
+            );
+        });
+        $("#appointmentModal").css({
+            display: "block",
+        });
+        $("#patientName").select2({
+            width: '100%',
+            placeholder: "Select a patient",
+            allowClear: true
+        });
+    } catch (error) {
+        console.error("Error loading patients for add appointment:", error);
+    }
 }
 async function renderHospitalColumn(accessToken) {
     const idToken = await getIdToken();

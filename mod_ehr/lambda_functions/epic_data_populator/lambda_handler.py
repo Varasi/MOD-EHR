@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta, timezone
-from health_connector_base.models import Appointment, Hospital, Patient
+from health_connector_base.models import Appointment, Hospital, Rider, RiderHospitalMatch
 from health_connector_base.smart_epic import JWTHelper, SmartEpicClient
 from health_connector_base.secrets_manager import KMSClient
 
@@ -21,16 +21,27 @@ class AppointmentsMapperWithEpic:
     
     def get_patient_mapping_for_hospital(self, hospital_id: str) -> dict:
         """
-        Returns the patient-rider mapping for a specific hospital.
-        This assumes the Patient model has a `hospital_id` attribute.
+        Returns the patient-rider mapping for a specific hospital using RiderHospitalMatch.
+        Lists/prints out the riders and maps epic_patient_id to rider_id.
         """
-        return {
-            patient.patient_id: patient.via_rider_id
-            for patient in Patient.query(
-                hospital_id,
-                filter_condition=(Patient.provider == "epic") & (Patient.via_rider_id.exists())
-            )
-        }
+        mapping = {}
+        matches = list(RiderHospitalMatch.scan(
+            (RiderHospitalMatch.hospital_id == hospital_id) &
+            (RiderHospitalMatch.epic_patient_id.exists()) &
+            (RiderHospitalMatch.epic_verification_needed == False)
+        ))
+        
+        print(f"Listing verified riders for hospital {hospital_id}:")
+        for match in matches:
+            try:
+                rider = Rider.get(match.rider_id)
+                print(f"Rider - ID: {rider.rider_id}, Name: {rider.first_name} {rider.last_name}, Phone: {rider.phone_no}, DOB: {rider.dob}")
+            except Rider.DoesNotExist:
+                print(f"Rider with ID {match.rider_id} not found in Rider table.")
+            
+            mapping[match.epic_patient_id] = match.rider_id
+            
+        return mapping
         
     def _map_participant_data_location(self, appointment: dict, smart_client: SmartEpicClient, patient_id: str) -> dict:
         result = {}
