@@ -61,7 +61,7 @@ $(document).ready(async function () {
     $('#patientSearch').select2({
         theme: 'bootstrap-5',
         width: '100%',
-        placeholder: "Search for name or patient ID...",
+        placeholder: "Search for name...",
         allowClear: true
     });
     let patientsList = [];
@@ -371,6 +371,11 @@ $(document).ready(async function () {
                 body: JSON.stringify(tripRequestData)
             });
             
+            // Handle API Gateway 29s timeout gracefully
+            if (response.status === 504) {
+                throw new Error("The request is taking longer than expected. Your trip is likely still being booked in the background. Please check the dashboard in a few minutes.");
+            }
+            
             const data = await response.json();
             if (!response.ok) {
                 throw new Error(data.message || "Failed to book trip");
@@ -483,6 +488,11 @@ $(document).ready(async function () {
             if (appt_time && appt_time !== "TBD") {
                 const d = new Date(appt_time);
                 if (!isNaN(d.getTime())) {
+                    // Add a 15-minute buffer to the pickup time for return trips
+                    if (tripDir === "From Appointment") {
+                        d.setMinutes(d.getMinutes() + 15);
+                    }
+
                     const parts = new Intl.DateTimeFormat("en-US", {
                         timeZone: "America/Chicago",
                         hour:     "2-digit",
