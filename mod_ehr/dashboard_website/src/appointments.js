@@ -16,7 +16,8 @@ import {
   getAccesstokenAndCustomAttribute,
   loadTenantBranding,
   CUSTOM_DOMAIN,
-  getIdToken
+  getIdToken,
+  isProductionOrUAT
 } from "./common";
 let cachedPatients = null;
 async function getCachedPatients(){
@@ -333,6 +334,9 @@ $(document).ready(async function () {
     if (userRole !== "BookingAdmin" && userRole !== "UserManagementAdmin" && userRole !== "ViewOnly") {
         window.location.href = "dashboard.html";
     }
+    if (userRole !== "ViewOnly" && !isProductionOrUAT()) {
+        $(".add-appointment").removeClass("d-none").show();
+    }
     if (userRole === "ViewOnly") {
         $("#book-trip-nav").removeClass("visible").addClass("d-none");
     }
@@ -497,8 +501,10 @@ $(document).ready(async function () {
             });
             tablePaginationNavigationHandler(table);
             
-            if (userRole === "ViewOnly") {
-                $(".add-appointment").hide();
+            if (userRole !== "ViewOnly" && !isProductionOrUAT()) {
+                $(".add-appointment").removeClass("d-none").show();
+            } else {
+                $(".add-appointment").addClass("d-none").hide();
             }
 
             table.on("draw.dt", function () {

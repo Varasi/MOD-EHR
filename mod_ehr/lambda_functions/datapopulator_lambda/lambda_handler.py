@@ -372,14 +372,20 @@ class AppointmentsMapperWithVia:
             )
         with Patient.batch_write() as batch:
             for patient_id, patient_name in new_patients.items():
-                batch.save(
-                    Patient(
-                        name=patient_name,
-                        patient_id=patient_id,
-                        provider="veradigm",
-                        hospital_id=hospital_id,
+                try:
+                    patient = Patient.get(hospital_id, patient_id)
+                    if patient.name != patient_name:
+                        patient.name = patient_name
+                        batch.save(patient)
+                except Patient.DoesNotExist:
+                    batch.save(
+                        Patient(
+                            name=patient_name,
+                            patient_id=patient_id,
+                            provider="veradigm",
+                            hospital_id=hospital_id,
+                        )
                     )
-                )
 
     def process_all(self, patient_mapping):
         print("Processing all appointments")

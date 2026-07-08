@@ -1,891 +1,570 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Health Connector</title>
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
-    <script src="https://cdn.datatables.net/buttons/2.2.3/js/dataTables.buttons.min.js"></script>
-    <link
-      href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css"
-      rel="stylesheet"
-    />
-    <link
-      rel="stylesheet"
-      href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css"
-    />
-    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-    <link
-      rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css"
-    />
-    <link
-      rel="stylesheet"
-      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css"
-    />
-    <link rel="stylesheet" href="./assets/css/styles.css" />
-    <link rel="stylesheet" href="./assets/css/responsive.css" />
-    <link rel="stylesheet" href="./assets/css/status.css" />
-    <link rel="stylesheet" href="./assets/css/buttons.css" />
-    <link rel="stylesheet" href="./assets/css/skeletonLoader.css" />
-    <link rel="icon" type="image/x-icon" href="./assets/Fav-icon.png" />
-    <link
-      href="https://cdn.jsdelivr.net/npm/typeface-poppins@1.1.13/index.min.css"
-      rel="stylesheet"
-    />
-    <link
-      href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css"
-      rel="stylesheet"
-      integrity=""
-      crossorigin="anonymous"
-    />
 
-    <script src="bookTrip.js" defer></script>
-    <script src="settingspanel.js" defer></script>
-    <script type="text/javascript" defer>
-      function googleMapsAutoComplete() {
-        let pickup_input = document.getElementById("tripPickupAddress");
-        let dropoff_input = document.getElementById("tripDestinationAddress");
-        let pickup_autocomplete = new google.maps.places.Autocomplete(
-          pickup_input,
-          {
-            types: ["geocode"],
-          },
-        );
-        let dropoff_autocomplete = new google.maps.places.Autocomplete(
-          dropoff_input,
-          {
-            types: ["geocode"],
-          },
-        );
-      }
-    </script>
-  </head>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Health Connector</title>
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
+  <script src="https://cdn.datatables.net/buttons/2.2.3/js/dataTables.buttons.min.js"></script>
+  <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+  <link rel="stylesheet"
+    href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" />
+  <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css" />
+  <link rel="stylesheet" href="./assets/css/styles.css" />
+  <link rel="stylesheet" href="./assets/css/responsive.css" />
+  <link rel="stylesheet" href="./assets/css/status.css" />
+  <link rel="stylesheet" href="./assets/css/buttons.css" />
+  <link rel="stylesheet" href="./assets/css/skeletonLoader.css" />
+  <link rel="icon" type="image/x-icon" href="./assets/Fav-icon.png" />
+  <link href="https://cdn.jsdelivr.net/npm/typeface-poppins@1.1.13/index.min.css" rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity=""
+    crossorigin="anonymous" />
 
-  <body>
-    <div id="root" class="p-0 overflow-auto">
-      <nav class="top-navb-bar" style="position: relative; z-index: 1060">
-        <div class="d-flex flex-wrap flex-1 align-items-center">
-          <div class="d-flex align-items-center gap-3">
-            <img
-              id="tenant-brand-logo"
-              src=""
-              class="brand-logo"
-              alt="brand-logo"
-            />
-            <div class="d-flex flex-column">
-              <div id="hospital-name" class="hospital-name-text"></div>
-              <div class="top-nav-header-text"></div>
-            </div>
+  <script src="bookTrip.js" defer></script>
+  <script src="settingspanel.js" defer></script>
+  <script type="text/javascript" defer>
+    function googleMapsAutoComplete() {
+      let pickup_input = document.getElementById("tripPickupAddress");
+      let dropoff_input = document.getElementById("tripDestinationAddress");
+      let pickup_autocomplete = new google.maps.places.Autocomplete(
+        pickup_input,
+        {
+          types: ["geocode"],
+        },
+      );
+      let dropoff_autocomplete = new google.maps.places.Autocomplete(
+        dropoff_input,
+        {
+          types: ["geocode"],
+        },
+      );
+    }
+  </script>
+</head>
+
+<body>
+  <div id="root" class="p-0 overflow-auto">
+    <nav class="top-navb-bar" style="position: relative; z-index: 1060">
+      <div class="d-flex flex-wrap flex-1 align-items-center">
+        <div class="d-flex align-items-center gap-3">
+          <img id="tenant-brand-logo" src="" class="brand-logo" alt="brand-logo" />
+          <div class="d-flex flex-column">
+            <div id="hospital-name" class="hospital-name-text"></div>
+            <div class="top-nav-header-text"></div>
           </div>
-          <div class="d-flex d-lg-none flex-1 justify-content-end">
+        </div>
+        <div class="d-flex d-lg-none flex-1 justify-content-end">
+          <button class="button-tertiary navbar_toggler">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
+              <path d="M4 6H20M4 12H20M4 18H20" stroke="#111827" stroke-width="2" stroke-linecap="round"
+                stroke-linejoin="round" />
+            </svg>
+          </button>
+        </div>
+
+        <div class="d-flex justify-content-lg-between flex-1 d-none d-lg-flex" id="navitems_list" style="z-index: 1060">
+          <div class="d-flex d-lg-none col-12 side-navbar-collapse">
             <button class="button-tertiary navbar_toggler">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="24"
-                height="24"
-                viewBox="0 0 24 24"
-                fill="none"
-              >
-                <path
-                  d="M4 6H20M4 12H20M4 18H20"
-                  stroke="#111827"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                />
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <path d="M1 15L15 1M15 15L1 1" stroke="#111827" stroke-width="2" stroke-linecap="round"
+                  stroke-linejoin="round" />
               </svg>
             </button>
           </div>
-
+          <div class="d-flex align-items-center col-12 col-lg-6">
+            <ul class="top-nav-items m-0 flex-column flex-lg-row w-100">
+              <li>
+                <a class="nav-item" aria-current="page" href="dashboard.html">Dashboard</a>
+              </li>
+              <li id="patients-nav">
+                <a class="nav-item" href="patients.html">Patients</a>
+              </li>
+              <li id="appointments-nav">
+                <a class="nav-item" href="appointments.html">Appointments</a>
+              </li>
+              <li id="hospitals-nav" class="d-none">
+                <a class="nav-item" href="hospitals.html">Hospitals</a>
+              </li>
+              <li id="user-management-nav" class="d-none">
+                <a class="nav-item" href="userManagement.html">User Management</a>
+              </li>
+              <li id="logs-nav">
+                <a class="nav-item" href="logs.html">Logs</a>
+              </li>
+              <li id="book-trip-nav">
+                <a class="nav-item active" href="bookTrip.html">Book Trip</a>
+              </li>
+            </ul>
+          </div>
           <div
-            class="d-flex justify-content-lg-between flex-1 d-none d-lg-flex"
-            id="navitems_list"
-            style="z-index: 1060"
-          >
-            <div class="d-flex d-lg-none col-12 side-navbar-collapse">
-              <button class="button-tertiary navbar_toggler">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="16"
-                  height="16"
-                  viewBox="0 0 16 16"
-                  fill="none"
-                >
-                  <path
-                    d="M1 15L15 1M15 15L1 1"
-                    stroke="#111827"
-                    stroke-width="2"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                  />
-                </svg>
-              </button>
-            </div>
-            <div class="d-flex align-items-center col-12 col-lg-6">
-              <ul class="top-nav-items m-0 flex-column flex-lg-row w-100">
-                <li>
-                  <a class="nav-item" aria-current="page" href="dashboard.html"
-                    >Dashboard</a
-                  >
-                </li>
-                <li id="patients-nav">
-                  <a class="nav-item" href="patients.html">Patients</a>
-                </li>
-                <li id="appointments-nav">
-                  <a class="nav-item" href="appointments.html">Appointments</a>
-                </li>
-                <li id="hospitals-nav" class="d-none">
-                  <a class="nav-item" href="hospitals.html">Hospitals</a>
-                </li>
-                <li id="user-management-nav" class="d-none">
-                  <a class="nav-item" href="userManagement.html"
-                    >User Management</a
-                  >
-                </li>
-                <li id="logs-nav">
-                  <a class="nav-item" href="logs.html">Logs</a>
-                </li>
-                <li id="book-trip-nav">
-                  <a class="nav-item active" href="bookTrip.html">Book Trip</a>
-                </li>
-              </ul>
-            </div>
-            <div
-              class="d-flex flex-column flex-lg-row justify-content-end align-items-stretch align-items-lg-center nav-actions col-12 col-lg-6"
-            >
-              <button
-                tabindex="0"
-                class="button-tertiary navbar_toggler"
-                id="settingsToggler"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="16"
-                  height="16"
-                  viewBox="0 0 16 16"
-                  fill="none"
-                >
-                  <path
-                    d="M6.26344 12.9138L6.65307 13.79C6.7689 14.0509 6.95792 14.2725 7.19722 14.4281C7.43652 14.5836 7.71581 14.6664 8.00122 14.6663C8.28663 14.6664 8.56592 14.5836 8.80522 14.4281C9.04452 14.2725 9.23354 14.0509 9.34937 13.79L9.739 12.9138C9.8777 12.6028 10.111 12.3436 10.4057 12.173C10.7022 12.002 11.0452 11.9291 11.3857 11.9649L12.339 12.0663C12.6228 12.0964 12.9092 12.0434 13.1635 11.9139C13.4177 11.7844 13.629 11.5839 13.7716 11.3367C13.9144 11.0897 13.9824 10.8065 13.9674 10.5216C13.9524 10.2367 13.8551 9.96221 13.6871 9.73153L13.1227 8.95597C12.9217 8.67776 12.8143 8.34288 12.816 7.99967C12.816 7.6574 12.9244 7.32391 13.1257 7.04708L13.6901 6.27153C13.858 6.04084 13.9554 5.76639 13.9704 5.48146C13.9854 5.19653 13.9173 4.91337 13.7746 4.66634C13.632 4.41916 13.4207 4.21867 13.1664 4.08916C12.9121 3.95965 12.6257 3.90669 12.342 3.93671L11.3886 4.03819C11.0482 4.07395 10.7052 4.00109 10.4086 3.83004C10.1134 3.65851 9.88001 3.39791 9.74196 3.0856L9.34937 2.2093C9.23354 1.94846 9.04452 1.72682 8.80522 1.57127C8.56592 1.41573 8.28663 1.33296 8.00122 1.33301C7.71581 1.33296 7.43652 1.41573 7.19722 1.57127C6.95792 1.72682 6.7689 1.94846 6.65307 2.2093L6.26344 3.0856C6.1254 3.39791 5.89202 3.65851 5.59678 3.83004C5.30025 4.00109 4.95722 4.07395 4.61678 4.03819L3.66048 3.93671C3.3767 3.90669 3.09031 3.95965 2.83602 4.08916C2.58174 4.21867 2.37049 4.41916 2.22789 4.66634C2.0851 4.91337 2.01708 5.19653 2.03207 5.48146C2.04705 5.76639 2.14441 6.04084 2.31233 6.27153L2.87678 7.04708C3.07807 7.32391 3.18647 7.6574 3.18641 7.99967C3.18647 8.34195 3.07807 8.67544 2.87678 8.95227L2.31233 9.72782C2.14441 9.95851 2.04705 10.233 2.03207 10.5179C2.01708 10.8028 2.0851 11.086 2.22789 11.333C2.37063 11.5801 2.58191 11.7804 2.83615 11.9099C3.0904 12.0394 3.37672 12.0925 3.66048 12.0626L4.61381 11.9612C4.95426 11.9254 5.29729 11.9983 5.59381 12.1693C5.89017 12.3404 6.12462 12.601 6.26344 12.9138Z"
-                    stroke="#374151"
-                    stroke-width="1.5"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                  />
-                  <path
-                    d="M8.00003 9.99967C9.1046 9.99967 10 9.10424 10 7.99967C10 6.89511 9.1046 5.99967 8.00003 5.99967C6.89546 5.99967 6.00003 6.89511 6.00003 7.99967C6.00003 9.10424 6.89546 9.99967 8.00003 9.99967Z"
-                    stroke="#374151"
-                    stroke-width="1.5"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                  />
-                </svg>
-                Settings
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="16"
-                  height="16"
-                  viewBox="0 0 16 16"
-                  fill="none"
-                >
-                  <path
-                    d="M4.66675 6L8.00008 9.33333L11.3334 6"
-                    stroke="#374151"
-                    stroke-width="1.5"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                  />
-                </svg>
-              </button>
-              <button
-                id="logout"
-                class="button-tertiary"
-                aria-label="logout"
-                tabindex="0"
-              >
-                Logout
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="16"
-                  height="16"
-                  viewBox="0 0 16 16"
-                  fill="none"
-                >
-                  <path
-                    d="M10.6667 11.3333L14 8M14 8L10.6667 4.66667M14 8H6M6 2H5.2C4.0799 2 3.51984 2 3.09202 2.21799C2.7157 2.40973 2.40973 2.71569 2.21799 3.09202C2 3.51984 2 4.07989 2 5.2V10.8C2 11.9201 2 12.4802 2.21799 12.908C2.40973 13.2843 2.71569 13.5903 3.09202 13.782C3.51984 14 4.0799 14 5.2 14H6"
-                    stroke="#374151"
-                    stroke-width="1.5"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                  />
-                </svg>
-              </button>
-            </div>
+            class="d-flex flex-column flex-lg-row justify-content-end align-items-stretch align-items-lg-center nav-actions col-12 col-lg-6">
+            <button tabindex="0" class="button-tertiary navbar_toggler" id="settingsToggler">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <path
+                  d="M6.26344 12.9138L6.65307 13.79C6.7689 14.0509 6.95792 14.2725 7.19722 14.4281C7.43652 14.5836 7.71581 14.6664 8.00122 14.6663C8.28663 14.6664 8.56592 14.5836 8.80522 14.4281C9.04452 14.2725 9.23354 14.0509 9.34937 13.79L9.739 12.9138C9.8777 12.6028 10.111 12.3436 10.4057 12.173C10.7022 12.002 11.0452 11.9291 11.3857 11.9649L12.339 12.0663C12.6228 12.0964 12.9092 12.0434 13.1635 11.9139C13.4177 11.7844 13.629 11.5839 13.7716 11.3367C13.9144 11.0897 13.9824 10.8065 13.9674 10.5216C13.9524 10.2367 13.8551 9.96221 13.6871 9.73153L13.1227 8.95597C12.9217 8.67776 12.8143 8.34288 12.816 7.99967C12.816 7.6574 12.9244 7.32391 13.1257 7.04708L13.6901 6.27153C13.858 6.04084 13.9554 5.76639 13.9704 5.48146C13.9854 5.19653 13.9173 4.91337 13.7746 4.66634C13.632 4.41916 13.4207 4.21867 13.1664 4.08916C12.9121 3.95965 12.6257 3.90669 12.342 3.93671L11.3886 4.03819C11.0482 4.07395 10.7052 4.00109 10.4086 3.83004C10.1134 3.65851 9.88001 3.39791 9.74196 3.0856L9.34937 2.2093C9.23354 1.94846 9.04452 1.72682 8.80522 1.57127C8.56592 1.41573 8.28663 1.33296 8.00122 1.33301C7.71581 1.33296 7.43652 1.41573 7.19722 1.57127C6.95792 1.72682 6.7689 1.94846 6.65307 2.2093L6.26344 3.0856C6.1254 3.39791 5.89202 3.65851 5.59678 3.83004C5.30025 4.00109 4.95722 4.07395 4.61678 4.03819L3.66048 3.93671C3.3767 3.90669 3.09031 3.95965 2.83602 4.08916C2.58174 4.21867 2.37049 4.41916 2.22789 4.66634C2.0851 4.91337 2.01708 5.19653 2.03207 5.48146C2.04705 5.76639 2.14441 6.04084 2.31233 6.27153L2.87678 7.04708C3.07807 7.32391 3.18647 7.6574 3.18641 7.99967C3.18647 8.34195 3.07807 8.67544 2.87678 8.95227L2.31233 9.72782C2.14441 9.95851 2.04705 10.233 2.03207 10.5179C2.01708 10.8028 2.0851 11.086 2.22789 11.333C2.37063 11.5801 2.58191 11.7804 2.83615 11.9099C3.0904 12.0394 3.37672 12.0925 3.66048 12.0626L4.61381 11.9612C4.95426 11.9254 5.29729 11.9983 5.59381 12.1693C5.89017 12.3404 6.12462 12.601 6.26344 12.9138Z"
+                  stroke="#374151" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                <path
+                  d="M8.00003 9.99967C9.1046 9.99967 10 9.10424 10 7.99967C10 6.89511 9.1046 5.99967 8.00003 5.99967C6.89546 5.99967 6.00003 6.89511 6.00003 7.99967C6.00003 9.10424 6.89546 9.99967 8.00003 9.99967Z"
+                  stroke="#374151" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+              Settings
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <path d="M4.66675 6L8.00008 9.33333L11.3334 6" stroke="#374151" stroke-width="1.5"
+                  stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+            </button>
+            <button id="logout" class="button-tertiary" aria-label="logout" tabindex="0">
+              Logout
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <path
+                  d="M10.6667 11.3333L14 8M14 8L10.6667 4.66667M14 8H6M6 2H5.2C4.0799 2 3.51984 2 3.09202 2.21799C2.7157 2.40973 2.40973 2.71569 2.21799 3.09202C2 3.51984 2 4.07989 2 5.2V10.8C2 11.9201 2 12.4802 2.21799 12.908C2.40973 13.2843 2.71569 13.5903 3.09202 13.782C3.51984 14 4.0799 14 5.2 14H6"
+                  stroke="#374151" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+            </button>
           </div>
         </div>
-      </nav>
-      <section
-        id="booking-form"
-        class="dashBoard-body d-flex flex-column flex-1 gap-2"
-      >
-        <div class="flex-1 table-container overflow-auto py-3">
-          <div class="col-xl-8 col-lg-10 mx-auto d-flex flex-column gap-3 px-3">
-            <div class="book-tab d-flex flex-column">
-              <div class="module-header">
-                <div class="module-header-text">Book a Trip</div>
-              </div>
-              <div class="module-header">
-                <div class="assistance-text" id="assistance-text-dashboard">
-                  <i
-                    class="fa fa-phone"
-                    style="
+      </div>
+    </nav>
+    <section id="booking-form" class="dashBoard-body d-flex flex-column flex-1 gap-2">
+      <div class="flex-1 table-container overflow-auto py-3">
+        <div class="col-xl-8 col-lg-10 mx-auto d-flex flex-column gap-3 px-3">
+          <div class="book-tab d-flex flex-column">
+            <div class="module-header">
+              <div class="module-header-text">Book a Trip</div>
+            </div>
+            <div class="module-header">
+              <div class="assistance-text" id="assistance-text-dashboard">
+                <i class="fa fa-phone" style="
                       font-size: 15px;
                       padding-right: 5px;
                       color: black !important;
-                    "
-                  ></i>
-                  For assistance with rides, contact HIRTA Dispatch:
-                </div>
+                    "></i>
+                For assistance with rides, contact HIRTA Dispatch:
               </div>
             </div>
-            <div id="patient-form" class="book-tab d-flex flex-column">
-              <div class="module-header mt-3">
-                <div class="module-header-text">
-                  <i class="bi bi-person-fill"></i>
-                  Patient Information
+          </div>
+          <div id="patient-form" class="book-tab d-flex flex-column">
+            <div class="module-header mt-3">
+              <div class="module-header-text">
+                <i class="bi bi-person-fill"></i>
+                Patient Information
+              </div>
+            </div>
+            <div class="m-3 p-2" style="z-index: 1">
+              <label for="patientSearch" class="form-label">Search Existing Patient
+                <span id="timeLoader" class="">
+                  <span class="spinner-border spinner-border-sm text-primary"></span> </span></label>
+              <select class="form-select" id="patientSearch" aria-label="Search for patient">
+                <option value="" selected>-- Enter New Patient --</option>
+              </select>
+            </div>
+            <div class="d-flex align-items-center px-4">
+              <hr class="flex-grow-1" />
+              <span class="mx-2 text-muted">or enter patient details</span>
+              <hr class="flex-grow-1" />
+            </div>
+            <div class="row m-3">
+              <div class="col-md-6 mb-3">
+                <label for="patientFirstName" class="form-label">First Name <span class="text-danger">*</span></label>
+                <input type="text" class="patient-input form-control" id="patientFirstName" placeholder="First Name"
+                  required />
+              </div>
+              <div class="col-md-6 mb-3">
+                <label for="patientLastName" class="form-label">Last Name <span class="text-danger">*</span></label>
+                <input type="text" class="patient-input form-control" id="patientLastName" placeholder="Last Name"
+                  required />
+              </div>
+              <div class="col-md-6 mb-3">
+                <label for="patientphone" class="form-label">Phone Number <span class="text-danger">*</span></label>
+                <div class="phone-wrapper">
+                  <span class="prefix">+1</span>
+                  <input type="tel" class="patient-input form-control" id="patientphone" placeholder="Phone Number"
+                    required />
                 </div>
               </div>
-              <div class="m-3 p-2" style="z-index: 1">
-                <label for="patientSearch" class="form-label"
-                  >Search Existing Patient
-                  <span id="timeLoader" class="">
-                    <span
-                      class="spinner-border spinner-border-sm text-primary"
-                    ></span> </span
-                ></label>
-                <select
-                  class="form-select"
-                  id="patientSearch"
-                  aria-label="Search for patient"
-                >
-                  <option value="" selected>-- Enter New Patient --</option>
+              <div class="col-md-6 mb-3">
+                <label for="patientEmail" class="form-label">Email <span class="text-danger">*</span></label>
+                <input type="email" class="patient-input form-control mb-2" id="patientEmail" placeholder="Email"
+                  required />
+                <div class="form-check">
+                  <input class="patient-input form-check-input" type="checkbox" id="patientEmailCheck" />
+                  <label class="form-check-label" for="patientEmailCheck">
+                    Patient does not have an email address
+                  </label>
+                </div>
+              </div>
+              <div class="col-md-6 mb-3 d-none">
+                <label for="viaRiderId" class="form-label">Via Rider ID
+                </label>
+                <input type="text" class="patient-input form-control" id="viaRiderId" placeholder="ID" required />
+              </div>
+              <input type="hidden" id="viaRiderId" />
+            </div>
+            <div class="d-flex align-items-center px-3">
+              <hr class="flex-grow-1" />
+            </div>
+            <div class="row mx-3 mb-3">
+              <div class="col-md-auto">
+                <button type="button" id="validatePatientBtn" class="button-primary">
+                  Validate Patient
+                </button>
+              </div>
+              <!-- Loader -->
+              <div class="col-md-auto d-flex align-items-center d-none" id="patientLoading">
+                <span class="text-primary fw-bold">
+                  <span class="spinner-border spinner-border-sm me-2"></span>
+                  Validating...
+                </span>
+              </div>
+              <!-- Success -->
+              <div class="col-md-auto d-flex align-items-center d-none" id="patientValidatedMsg">
+                <span class="text-success fw-bold"><i class="bi bi-check-circle-fill"></i> Patient
+                  Validated</span>
+              </div>
+            </div>
+          </div>
+          <div id="trip-form" class="book-tab d-flex flex-column">
+            <div class="module-header mt-3">
+              <div class="module-header-text">
+                <i class="bi bi-car-front-fill"></i>
+                Trip Details
+              </div>
+            </div>
+            <div class="row m-3">
+              <div class="col-md-3 mb-3">
+                <label class="form-label" for="tripDirection">Trip Direction</label>
+                <select class="form-select" id="tripDirection">
+                  <option>To Appointment</option>
+                  <option>From Appointment</option>
                 </select>
               </div>
-              <div class="d-flex align-items-center px-4">
-                <hr class="flex-grow-1" />
-                <span class="mx-2 text-muted">or enter patient details</span>
-                <hr class="flex-grow-1" />
-              </div>
-              <div class="row m-3">
-                <div class="col-md-6 mb-3">
-                  <label for="patientFirstName" class="form-label"
-                    >First Name <span class="text-danger">*</span></label
-                  >
-                  <input
-                    type="text"
-                    class="patient-input form-control"
-                    id="patientFirstName"
-                    placeholder="First Name"
-                    required
-                  />
-                </div>
-                <div class="col-md-6 mb-3">
-                  <label for="patientLastName" class="form-label"
-                    >Last Name <span class="text-danger">*</span></label
-                  >
-                  <input
-                    type="text"
-                    class="patient-input form-control"
-                    id="patientLastName"
-                    placeholder="Last Name"
-                    required
-                  />
-                </div>
-                <div class="col-md-6 mb-3">
-                  <label for="patientphone" class="form-label"
-                    >Phone Number <span class="text-danger">*</span></label
-                  >
-                  <div class="phone-wrapper">
-                    <span class="prefix">+1</span>
-                    <input
-                      type="tel"
-                      class="patient-input form-control"
-                      id="patientphone"
-                      placeholder="Phone Number"
-                      required
-                    />
-                  </div>
-                </div>
-                <div class="col-md-6 mb-3">
-                  <label for="patientEmail" class="form-label"
-                    >Email <span class="text-danger">*</span></label
-                  >
-                  <input
-                    type="email"
-                    class="patient-input form-control mb-2"
-                    id="patientEmail"
-                    placeholder="Email"
-                    required
-                  />
-                  <div class="form-check">
-                    <input
-                      class="patient-input form-check-input"
-                      type="checkbox"
-                      id="patientEmailCheck"
-                    />
-                    <label class="form-check-label" for="patientEmailCheck">
-                      Patient does not have an email address
-                    </label>
-                  </div>
-                </div>
-                <div class="col-md-6 mb-3 d-none">
-                  <label for="viaRiderId" class="form-label"
-                    >Via Rider ID
-                  </label>
-                  <input
-                    type="text"
-                    class="patient-input form-control"
-                    id="viaRiderId"
-                    placeholder="ID"
-                    required
-                  />
-                </div>
-                <input type="hidden" id="viaRiderId" />
-              </div>
-              <div class="d-flex align-items-center px-3">
-                <hr class="flex-grow-1" />
-              </div>
-              <div class="row mx-3 mb-3">
-                <div class="col-md-auto">
-                  <button
-                    type="button"
-                    id="validatePatientBtn"
-                    class="button-primary"
-                  >
-                    Validate Patient
-                  </button>
-                </div>
-                <!-- Loader -->
-                <div
-                  class="col-md-auto d-flex align-items-center d-none"
-                  id="patientLoading"
-                >
-                  <span class="text-primary fw-bold">
-                    <span class="spinner-border spinner-border-sm me-2"></span>
-                    Validating...
-                  </span>
-                </div>
-                <!-- Success -->
-                <div
-                  class="col-md-auto d-flex align-items-center d-none"
-                  id="patientValidatedMsg"
-                >
-                  <span class="text-success fw-bold"
-                    ><i class="bi bi-check-circle-fill"></i> Patient
-                    Validated</span
-                  >
-                </div>
+            </div>
+            <div class="mx-4">
+              <div id="tripDirectionDisplay" class="direction-cell to-appt d-inline-block">
+                <span class="direction-label fs-5" style="font-size: 18px !important">To Appointment</span>
               </div>
             </div>
-            <div id="trip-form" class="book-tab d-flex flex-column">
-              <div class="module-header mt-3">
-                <div class="module-header-text">
-                  <i class="bi bi-car-front-fill"></i>
-                  Trip Details
-                </div>
+            <div class="row m-3">
+              <div class="col-md-12 mb-3" id="tripPickupContainer">
+                <label class="form-label" for="tripPickupAddress" id="tripPickupAddLabel">Pickup Address <span
+                    class="text-danger">*</span></label>
+                <input type="text" class="form-control" id="tripPickupAddress" placeholder="Pickup Address" />
               </div>
-              <div class="row m-3">
-                <div class="col-md-3 mb-3">
-                  <label class="form-label" for="tripDirection"
-                    >Trip Direction</label
-                  >
-                  <select class="form-select" id="tripDirection">
-                    <option>To Appointment</option>
-                    <option>From Appointment</option>
-                  </select>
-                </div>
+              <div class="col-md-6 mb-3">
+                <label class="form-label" for="tripDropoffTime">Requested Dropoff Time
+                  <span class="text-danger">*</span></label>
+                <input type="time" class="form-control" id="tripDropoffTime" placeholder="Dropoff Time" />
+                <div class="form-text">Time patient needs to arrive by</div>
               </div>
-              <div class="mx-4">
-                <div
-                  id="tripDirectionDisplay"
-                  class="direction-cell to-appt d-inline-block"
-                >
-                  <span
-                    class="direction-label fs-5"
-                    style="font-size: 18px !important"
-                    >To Appointment</span
-                  >
-                </div>
-              </div>
-              <div class="row m-3">
-                <div class="col-md-12 mb-3" id="tripPickupContainer">
-                  <label
-                    class="form-label"
-                    for="tripPickupAddress"
-                    id="tripPickupAddLabel"
-                    >Pickup Address <span class="text-danger">*</span></label
-                  >
-                  <input
-                    type="text"
-                    class="form-control"
-                    id="tripPickupAddress"
-                    placeholder="Pickup Address"
-                  />
-                </div>
-                <div class="col-md-6 mb-3">
-                  <label class="form-label" for="tripDropoffTime"
-                    >Requested Dropoff Time
-                    <span class="text-danger">*</span></label
-                  >
-                  <input
-                    type="time"
-                    class="form-control"
-                    id="tripDropoffTime"
-                    placeholder="Dropoff Time"
-                  />
-                  <div class="form-text">Time patient needs to arrive by</div>
-                </div>
-                <div class="col-md-6 mb-3" id="tripDestContainer">
-                  <label
-                    class="form-label"
-                    for="tripDestinationAddress"
-                    id="tripDestinationAddLabel"
-                    >Destination Address
-                    <span class="text-danger">*</span></label
-                  >
-                  <input
-                    type="text"
-                    class="form-control"
-                    id="tripDestinationAddress"
-                    placeholder="Destination Address"
-                  />
-                </div>
-              </div>
-            </div>
-            <div id="special-needs-form" class="book-tab d-flex flex-column">
-              <div class="module-header mt-3">
-                <div class="module-header-text">
-                  <i class="bi bi-person-wheelchair"></i>
-                  Special Needs & Mobility
-                </div>
-              </div>
-              <div class="row m-3">
-                <div class="row">
-                  <div class="col-md-6 mb-3">
-                    <label class="form-label" for="mobilityEquipment">Mobility Equipment</label>
-                    <div class="row">
-                      <div class="col-md-6 mb-3">
-                        <div class="form-check">
-                          <input
-                            class="form-check-input"
-                            type="checkbox"
-                            id="wav_input_value"
-                          />
-                          <label class="form-check-label" for="wav_input_value">WAV</label>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  <div class="col-md-12 mb-3 position-relative">
-                    <label class="form-label"
-                      >Accommodation
-                      <i
-                        id="accommodation-help-icon"
-                        class="bi bi-question-circle-fill ms-1"
-                        style="cursor: pointer"
-                      ></i
-                    ></label>
-                    <div id="accommodation-help-text" class="form-text d-none position-absolute bg-white border rounded p-2 shadow-sm mt-1" style="z-index: 1050; max-width: 350px;">
-                      PCA is Personal Care Assistant or Aide. <br/>WAV is a Wheelchair Accessible Vehicle
-                    </div>
-
-                    <div class="row">
-                      <div class="col-md-3 col-sm-6 mb-2">
-                        <div class="d-flex align-items-center gap-2">
-                          <label for="guest_count" class="col-form-label m-0 text-nowrap">Guest</label>
-                          <input
-                            type="number"
-                            class="form-control settings-input-field skeleton-text"
-                            id="guest_count"
-                            name="guest_count"
-                            min="0"
-                            max="2"
-                            value="0"
-                          />
-                          
-                        </div>
-                      </div>
-
-                      <div class="col-md-3 col-sm-6 mb-2">
-                        <div class="d-flex align-items-center gap-2r">
-                          <label for="guest_wav_count" class="col-form-label m-0 text-nowrap">Guest (WAV)</label>
-                          
-                          <input
-                            type="number"
-                            class="form-control settings-input-field skeleton-text"
-                            id="guest_wav_count"
-                            name="guest_wav_count"
-                            min="0"
-                            max="2"
-                            value="0"
-                          />
-                          
-                        </div>
-                      </div>
-
-                      <div class="col-md-3 col-sm-6 mb-2">
-                        <div class="d-flex align-items-center gap-2">
-                          <label for="pca_count" class="col-form-label m-0 text-nowrap">PCA</label>
-                          
-                            <input
-                              type="number"
-                              class="form-control settings-input-field skeleton-text"
-                              id="pca_count"
-                              name="pca_count"
-                              min="0"
-                              max="2"
-                              value="0"
-                            />
-                          
-                        </div>
-                      </div>
-
-                      <div class="col-md-3 col-sm-6 mb-2">
-                        <div class="d-flex align-items-center gap-2">
-                          <label for="pca_wav_count" class="col-form-label m-0 text-nowrap">PCA (WAV)</label>
-                          
-                            <input
-                              type="number"
-                              class="form-control settings-input-field skeleton-text"
-                              id="pca_wav_count"
-                              name="pca_wav_count"
-                              min="0"
-                              max="2"
-                              value="0"
-                            />
-                          
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <div class="col-md-12 mb-3">
-                  <label class="form-label" for="additionalNotespickup"
-                    >Additional Pickup Notes for Driver</label
-                  >
-                  <textarea
-                    class="form-control"
-                    id="additionalNotespickup"
-                    id="additionalNotes"
-                    placeholder="Any special instructions for the driver at pickup location..."
-                    placeholder="Any special instructions for the driver..."
-                  ></textarea>
-                </div>
-                <div class="col-md-12 mb-3">
-                  <label class="form-label" for="additionalNotesdropoff"
-                    >Additional Dropoff Notes for Driver</label
-                  >
-                  <textarea
-                    class="form-control"
-                    id="additionalNotesdropoff"
-                    rows="3"
-                    placeholder="Any special instructions for the driver at dropoff location..."
-                  ></textarea>
-                </div>
-              </div>
-            </div>
-            <div id="submit-form" class="non-book-tab d-flex flex-column">
-              <div class="row m-3 justify-content-end align-items-end">
-                <div class="col-md-auto">
-                  <button
-                    type="button"
-                    class="button-secondary"
-                    id="clearFormBtn"
-                  >
-                    Clear Form
-                  </button>
-                </div>
-                <div class="col-md-auto">
-                  <button
-                    type="button"
-                    class="button-primary"
-                    id="submitTripBtn"
-                  >
-                    Submit Trip Request &rarr;
-                  </button>
-                </div>
+              <div class="col-md-6 mb-3" id="tripDestContainer">
+                <label class="form-label" for="tripDestinationAddress" id="tripDestinationAddLabel">Destination Address
+                  <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" id="tripDestinationAddress" placeholder="Destination Address" />
               </div>
             </div>
           </div>
-        </div>
-      </section>
-      <section
-        id="booking-response"
-        class="dashBoard-body d-flex flex-column flex-1 gap-2 d-none"
-      >
-        <div class="flex-1 table-container overflow-auto py-3">
-          <div class="col-xl-8 col-lg-10 mx-auto d-flex flex-column gap-3 px-3">
-            <!-- Success Banner -->
-            <div class="non-book-tab d-flex align-items-center">
-              <i
-                class="bi bi-check-square-fill my-3 me-3"
-                style="font-size: 30px; color: #3cb23c"
-              ></i>
-              <div>
-                <span class="module-header-text" style="font-size: 25px"
-                  >Trip Booked Successfully!</span
-                ><br />
-                <span class="" style="font-size: 15px"
-                  >The trip request has been sent to HIRTA. They will confirm
-                  the exact pickup time shortly.</span
-                >
+          <div id="special-needs-form" class="book-tab d-flex flex-column">
+            <div class="module-header mt-3">
+              <div class="module-header-text">
+                <i class="bi bi-person-wheelchair"></i>
+                Special Needs & Mobility
               </div>
             </div>
-            <!-- Patient Information -->
-            <div class="book-tab d-flex flex-column">
-              <div class="module-header mt-3">
-                <div class="module-header-text">
-                  <i class="bi bi-person-fill"></i>
-                  Patient Information
-                </div>
-              </div>
-              <div class="row m-3">
+            <div class="row m-3">
+              <div class="row">
                 <div class="col-md-6 mb-3">
-                  <small class="text-muted">NAME</small>
-                  <div id="result-name"></div>
-                </div>
-                <div class="col-md-6 mb-3">
-                  <small class="text-muted">PHONE</small>
-                  <div id="result-phone"></div>
-                </div>
-                <div class="col-md-6 mb-3">
-                  <small class="text-muted">EMAIL</small>
-                  <div id="result-email"></div>
-                </div>
-              </div>
-            </div>
-            <!-- Trip Details -->
-            <div class="book-tab d-flex flex-column">
-              <div class="module-header mt-3">
-                <div class="module-header-text">
-                  <i class="bi bi-car-front-fill"></i>
-                  Trip Details
-                </div>
-              </div>
-              <div class="row m-3">
-                <small class="text-muted">DIRECTION</small>
-                <div
-                  id="result-direction"
-                  class="direction-cell to-appt d-inline-block mt-2"
-                >
-                  <span
-                    class="direction-label fs-5"
-                    style="font-size: 16px !important"
-                    >To Appointment</span
-                  >
-                </div>
-              </div>
-              <div class="row m-3">
-                <div class="col-md-6 mb-3">
-                  <small class="text-muted">PICKUP ADDRESS</small>
-                  <div id="result-pickup-address"></div>
-                </div>
-                <div class="col-md-6 mb-3">
-                  <small class="text-muted">PICKUP WINDOW</small>
-                  <div id="result-pickup-window"></div>
-                </div>
-              </div>
-              <div class="row m-3">
-                <div class="col-md-6 mb-3">
-                  <small class="text-muted">DESTINATION ADDRESS</small>
-                  <div id="result-destination-address"></div>
-                </div>
-                <div class="col-md-6 mb-3">
-                  <small class="text-muted">DROPOFF TIME</small>
-                  <div id="result-dropoff-time"></div>
-                </div>
-              </div>
-            </div>
-            <!-- Special Needs -->
-            <div class="book-tab d-flex flex-column">
-              <div class="module-header mt-3">
-                <div class="module-header-text">
-                  <i class="bi bi-person-wheelchair"></i>
-                  Special Needs &amp; Mobility
-                </div>
-              </div>
-              <div class="row m-3">
-                <div class="col-md-6 mb-3">
-                  <small class="text-muted">MOBILITY EQUIPMENT</small>
-                  <div id="result-mobility-equipment"></div>
-                </div>
-                <div class="col-md-6 mb-3">
-                  <small class="text-muted">ACCOMMODATION</small>
-                  <div class="mt-1">
-                    <div><span class="text-muted me-2">Guest:</span><span id="result-guest-count">0</span></div>
-                    <div><span class="text-muted me-2">Guest (WAV):</span><span id="result-guest-wav-count">0</span></div>
-                    <div><span class="text-muted me-2">PCA:</span><span id="result-pca-count">0</span></div>
-                    <div><span class="text-muted me-2">PCA (WAV):</span><span id="result-pca-wav-count">0</span></div>
+                  <label class="form-label" for="mobilityEquipment">Mobility Equipment</label>
+                  <div class="row">
+                    <div class="col-md-6 mb-3">
+                      <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="wav_input_value" />
+                        <label class="form-check-label" for="wav_input_value">WAV</label>
+                      </div>
+                    </div>
                   </div>
                 </div>
-                <div class="col-md-6 mb-3">
-                  <small class="text-muted">DRIVER PICKUP NOTES</small>
-                  <div id="result-driver-pickup-notes"></div>
-                </div>
-                <div class="col-md-6 mb-3">
-                  <small class="text-muted">DRIVER DROPOFF NOTES</small>
-                  <div id="result-driver-dropoff-notes"></div>
-                </div>
-              </div>
-            </div>
-            <!-- Footer Note -->
-            <div
-              class="book-tab d-flex flex-row align-items-center p-3"
-              style="background-color: #fff9e1"
-            >
-              <i class="bi bi-telephone-fill me-2"></i>
-              <div>
-                For changes or cancellations, contact HIRTA Dispatch:
-                <strong id="result-hirta-contact"></strong>
-              </div>
-            </div>
+                <div class="col-md-12 mb-3 position-relative">
+                  <label class="form-label">Accommodation
+                    <i id="accommodation-help-icon" class="bi bi-question-circle-fill ms-1"
+                      style="cursor: pointer"></i></label>
+                  <div id="accommodation-help-text"
+                    class="form-text d-none position-absolute bg-white border rounded p-2 shadow-sm mt-1"
+                    style="z-index: 1050; max-width: 350px;">
+                    PCA is Personal Care Assistant or Aide. <br />WAV is a Wheelchair Accessible Vehicle
+                  </div>
 
-            <!---home button-->
-            <div
-              id="result-submit-form"
-              class="non-book-tab d-flex flex-column"
-            >
-              <div class="row justify-content-end align-items-end">
-                <div class="col-md-auto">
-                  <button
-                    type="button"
-                    class="button-secondary mt-2"
-                    id="back-to-dashboard"
-                    fdprocessedid="6j615e"
-                  >
-                    &larr; Back to Dashboard
-                  </button>
-                </div>
-                <div class="col-md-auto">
-                  <button
-                    type="button"
-                    class="button-primary mt-2"
-                    id="book-another-trip"
-                    fdprocessedid="yut398"
-                  >
-                    + Book Another Trip
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-      <section>
-        <div
-          class="position-absolute settings-dialog-wrapper bg-white shadow-sm border d-none"
-          id="settingsModal"
-          tabindex="-1"
-          role="dialog"
-          aria-labelledby="settingsModalLabel"
-          aria-hidden="true"
-          style="z-index: 1070"
-        >
-          <div class="modal-body border-danger px-3 py-4">
-            <form id="settingsForm">
-              <table class="settings-form-table">
-                <tbody>
-                  <tr>
-                    <td>
-                      <div class="d-flex flex-column">
-                        <span class="skeleton-text form-label m-0">
-                          Prior period to start time
-                        </span>
-                        <span
-                          class="form-label-help-text text-nowrap skeleton-text"
-                        >
-                          The ride that ends closest to the appointment start
-                          time, or within
-                          <span id="prior_period_text">15</span> minutes prior,
-                          will be matched.
-                        </span>
-                      </div>
-                    </td>
-                    <td>
+                  <div class="row">
+                    <div class="col-md-3 col-sm-6 mb-2">
                       <div class="d-flex align-items-center gap-2">
-                        <input
-                          type="number"
-                          class="form-control settings-input-field skeleton-text"
-                          id="prior_period"
-                          name="patient_name"
-                          required
-                          min="15"
-                          placeholder="15"
-                          value="15"
-                        />
-                        <span> min </span>
-                      </div>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td>
-                      <div class="d-flex flex-column">
-                        <span class="form-label m-0 skeleton-text">
-                          Subsequent period after the start time
-                        </span>
-                        <span
-                          class="form-label-help-text text-nowrap skeleton-text"
-                        >
-                          The ride that ends closest to the appointment start
-                          time, or within
-                          <span id="subsequent_period_text">15</span> minutes
-                          following it will be matched.
-                        </span>
-                      </div>
-                    </td>
-                    <td>
-                      <div class="d-flex align-items-center gap-2">
-                        <input
-                          type="number"
-                          class="form-control settings-input-field skeleton-text"
-                          id="subsequent_period"
-                          name="patient_name"
-                          required
-                          min="15"
-                          placeholder="15"
-                          value="15"
-                        />
-                        <span> min </span>
-                      </div>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </form>
-          </div>
+                        <label for="guest_count" class="col-form-label m-0 text-nowrap">Guest</label>
+                        <input type="number" class="form-control settings-input-field skeleton-text" id="guest_count"
+                          name="guest_count" min="0" max="2" value="0" />
 
-          <div class="modal-footer" id="modal-footer">
-            <button
-              type="button"
-              id="closeSettingsModal"
-              class="close button-secondary m-0"
-              data-dismiss="modal"
-            >
-              Close
-            </button>
-            <button
-              type="button"
-              id="settings-form-submit-btn"
-              class="save button-primary m-0"
-              disabled
-            >
-              Save
-            </button>
+                      </div>
+                    </div>
+
+                    <div class="col-md-3 col-sm-6 mb-2">
+                      <div class="d-flex align-items-center gap-2r">
+                        <label for="guest_wav_count" class="col-form-label m-0 text-nowrap">Guest (WAV)</label>
+
+                        <input type="number" class="form-control settings-input-field skeleton-text"
+                          id="guest_wav_count" name="guest_wav_count" min="0" max="2" value="0" />
+
+                      </div>
+                    </div>
+
+                    <div class="col-md-3 col-sm-6 mb-2">
+                      <div class="d-flex align-items-center gap-2">
+                        <label for="pca_count" class="col-form-label m-0 text-nowrap">PCA</label>
+
+                        <input type="number" class="form-control settings-input-field skeleton-text" id="pca_count"
+                          name="pca_count" min="0" max="2" value="0" />
+
+                      </div>
+                    </div>
+
+                    <div class="col-md-3 col-sm-6 mb-2">
+                      <div class="d-flex align-items-center gap-2">
+                        <label for="pca_wav_count" class="col-form-label m-0 text-nowrap">PCA (WAV)</label>
+
+                        <input type="number" class="form-control settings-input-field skeleton-text" id="pca_wav_count"
+                          name="pca_wav_count" min="0" max="2" value="0" />
+
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-12 mb-3">
+                <label class="form-label" for="additionalNotespickup">Additional Pickup Notes for Driver</label>
+                <textarea class="form-control" id="additionalNotespickup" id="additionalNotes"
+                  placeholder="Any special instructions for the driver at pickup location..."
+                  placeholder="Any special instructions for the driver..."></textarea>
+              </div>
+              <div class="col-md-12 mb-3">
+                <label class="form-label" for="additionalNotesdropoff">Additional Dropoff Notes for Driver</label>
+                <textarea class="form-control" id="additionalNotesdropoff" rows="3"
+                  placeholder="Any special instructions for the driver at dropoff location..."></textarea>
+              </div>
+            </div>
+          </div>
+          <div id="submit-form" class="non-book-tab d-flex flex-column">
+            <div class="row m-3 justify-content-end align-items-end">
+              <div class="col-md-auto">
+                <button type="button" class="button-secondary" id="clearFormBtn">
+                  Clear Form
+                </button>
+              </div>
+              <div class="col-md-auto">
+                <button type="button" class="button-primary" id="submitTripBtn">
+                  Submit Trip Request &rarr;
+                </button>
+              </div>
+            </div>
           </div>
         </div>
-      </section>
-    </div>
-  </body>
+      </div>
+    </section>
+    <section id="booking-response" class="dashBoard-body d-flex flex-column flex-1 gap-2 d-none">
+      <div class="flex-1 table-container overflow-auto py-3">
+        <div class="col-xl-8 col-lg-10 mx-auto d-flex flex-column gap-3 px-3">
+          <!-- Success Banner -->
+          <div class="non-book-tab d-flex align-items-center">
+            <i class="bi bi-check-square-fill my-3 me-3" style="font-size: 30px; color: #3cb23c"></i>
+            <div>
+              <span class="module-header-text" style="font-size: 25px">Trip Booked Successfully!</span><br />
+              <span class="" style="font-size: 15px">The trip request has been successfully booked with HIRTA.
+                The rider will receive a notification of exact pickup time.</span>
+            </div>
+          </div>
+          <!-- Patient Information -->
+          <div class="book-tab d-flex flex-column">
+            <div class="module-header mt-3">
+              <div class="module-header-text">
+                <i class="bi bi-person-fill"></i>
+                Patient Information
+              </div>
+            </div>
+            <div class="row m-3">
+              <div class="col-md-6 mb-3">
+                <small class="text-muted">NAME</small>
+                <div id="result-name"></div>
+              </div>
+              <div class="col-md-6 mb-3">
+                <small class="text-muted">PHONE</small>
+                <div id="result-phone"></div>
+              </div>
+              <div class="col-md-6 mb-3">
+                <small class="text-muted">EMAIL</small>
+                <div id="result-email"></div>
+              </div>
+            </div>
+          </div>
+          <!-- Trip Details -->
+          <div class="book-tab d-flex flex-column">
+            <div class="module-header mt-3">
+              <div class="module-header-text">
+                <i class="bi bi-car-front-fill"></i>
+                Trip Details
+              </div>
+            </div>
+            <div class="row m-3">
+              <small class="text-muted">DIRECTION</small>
+              <div id="result-direction" class="direction-cell to-appt d-inline-block mt-2">
+                <span class="direction-label fs-5" style="font-size: 16px !important">To Appointment</span>
+              </div>
+            </div>
+            <div class="row m-3">
+              <div class="col-md-6 mb-3">
+                <small class="text-muted">PICKUP ADDRESS</small>
+                <div id="result-pickup-address"></div>
+              </div>
+              <div class="col-md-6 mb-3">
+                <small class="text-muted">PICKUP WINDOW</small>
+                <div id="result-pickup-window"></div>
+              </div>
+            </div>
+            <div class="row m-3">
+              <div class="col-md-6 mb-3">
+                <small class="text-muted">DESTINATION ADDRESS</small>
+                <div id="result-destination-address"></div>
+              </div>
+              <div class="col-md-6 mb-3">
+                <small class="text-muted">REQUESTED TIME</small>
+                <div id="result-dropoff-time"></div>
+              </div>
+            </div>
+          </div>
+          <!-- Special Needs -->
+          <div class="book-tab d-flex flex-column">
+            <div class="module-header mt-3">
+              <div class="module-header-text">
+                <i class="bi bi-person-wheelchair"></i>
+                Special Needs &amp; Mobility
+              </div>
+            </div>
+            <div class="row m-3">
+              <div class="col-md-6 mb-3">
+                <small class="text-muted">MOBILITY EQUIPMENT</small>
+                <div id="result-mobility-equipment"></div>
+              </div>
+              <div class="col-md-6 mb-3">
+                <small class="text-muted">ACCOMMODATION</small>
+                <div class="mt-1">
+                  <div><span class="text-muted me-2">Guest:</span><span id="result-guest-count">0</span></div>
+                  <div><span class="text-muted me-2">Guest (WAV):</span><span id="result-guest-wav-count">0</span></div>
+                  <div><span class="text-muted me-2">PCA:</span><span id="result-pca-count">0</span></div>
+                  <div><span class="text-muted me-2">PCA (WAV):</span><span id="result-pca-wav-count">0</span></div>
+                </div>
+              </div>
+              <div class="col-md-6 mb-3">
+                <small class="text-muted">DRIVER PICKUP NOTES</small>
+                <div id="result-driver-pickup-notes"></div>
+              </div>
+              <div class="col-md-6 mb-3">
+                <small class="text-muted">DRIVER DROPOFF NOTES</small>
+                <div id="result-driver-dropoff-notes"></div>
+              </div>
+            </div>
+          </div>
+          <!-- Footer Note -->
+          <div class="book-tab d-flex flex-row align-items-center p-3" style="background-color: #fff9e1">
+            <i class="bi bi-telephone-fill me-2"></i>
+            <div>
+              For changes or cancellations, contact HIRTA Dispatch:
+              <strong id="result-hirta-contact"></strong>
+            </div>
+          </div>
+
+          <!---home button-->
+          <div id="result-submit-form" class="non-book-tab d-flex flex-column">
+            <div class="row justify-content-end align-items-end">
+              <div class="col-md-auto">
+                <button type="button" class="button-secondary mt-2" id="back-to-dashboard" fdprocessedid="6j615e">
+                  &larr; Back to Dashboard
+                </button>
+              </div>
+              <div class="col-md-auto">
+                <button type="button" class="button-primary mt-2" id="book-another-trip" fdprocessedid="yut398">
+                  + Book Another Trip
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+    <section>
+      <div class="position-absolute settings-dialog-wrapper bg-white shadow-sm border d-none" id="settingsModal"
+        tabindex="-1" role="dialog" aria-labelledby="settingsModalLabel" aria-hidden="true" style="z-index: 1070">
+        <div class="modal-body border-danger px-3 py-4">
+          <form id="settingsForm">
+            <table class="settings-form-table">
+              <tbody>
+                <tr>
+                  <td>
+                    <div class="d-flex flex-column">
+                      <span class="skeleton-text form-label m-0">
+                        Prior period to start time
+                      </span>
+                      <span class="form-label-help-text text-nowrap skeleton-text">
+                        The ride that ends closest to the appointment start
+                        time, or within
+                        <span id="prior_period_text">15</span> minutes prior,
+                        will be matched.
+                      </span>
+                    </div>
+                  </td>
+                  <td>
+                    <div class="d-flex align-items-center gap-2">
+                      <input type="number" class="form-control settings-input-field skeleton-text" id="prior_period"
+                        name="patient_name" required min="15" placeholder="15" value="15" />
+                      <span> min </span>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td>
+                    <div class="d-flex flex-column">
+                      <span class="form-label m-0 skeleton-text">
+                        Subsequent period after the start time
+                      </span>
+                      <span class="form-label-help-text text-nowrap skeleton-text">
+                        The ride that ends closest to the appointment start
+                        time, or within
+                        <span id="subsequent_period_text">15</span> minutes
+                        following it will be matched.
+                      </span>
+                    </div>
+                  </td>
+                  <td>
+                    <div class="d-flex align-items-center gap-2">
+                      <input type="number" class="form-control settings-input-field skeleton-text"
+                        id="subsequent_period" name="patient_name" required min="15" placeholder="15" value="15" />
+                      <span> min </span>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </form>
+        </div>
+
+        <div class="modal-footer" id="modal-footer">
+          <button type="button" id="closeSettingsModal" class="close button-secondary m-0" data-dismiss="modal">
+            Close
+          </button>
+          <button type="button" id="settings-form-submit-btn" class="save button-primary m-0" disabled>
+            Save
+          </button>
+        </div>
+      </div>
+    </section>
+  </div>
+</body>
+
 </html>

@@ -38,6 +38,17 @@ def validating_rider_handler(event, context):
                 res_body = {"message": f"{field_list} fields are incorrect. Please check and try again."}
                 return Response(body=res_body,status=Status.HTTP_400_BAD_REQUEST)
 
+            sub_services = res_body.get('sub_services', {})
+            is_registered_health_connector = sub_services.get('Health_Connector', False)
+            is_registered_nemt = sub_services.get('NEMT', False)
+            if is_registered_health_connector:
+                chosen_sub_service = "Health_Connector"
+            elif is_registered_nemt:
+                chosen_sub_service = "NEMT"
+            else:
+                chosen_sub_service = ""
+            res_body["chosen_sub_service"] = chosen_sub_service
+
         else:
             res_body = {"message": "NoSuchRiderError"}
             return Response(body=res_body,status=Status.HTTP_400_BAD_REQUEST)
@@ -116,8 +127,10 @@ def set_trip_request_body(body):
     request_body["destination"] = destination
     request_body["origin"] = origin
 
-    secrets_manager = SecretsManager()
-    subservice = secrets_manager.get_secret_value("sub_service_name")
+    subservice = body.get("sub_service")
+    if not subservice:
+        secrets_manager = SecretsManager()
+        subservice = secrets_manager.get_secret_value("sub_service_name")
 
     request_body["sub_service"] = subservice
     if body.get("via_rider_id", ""):

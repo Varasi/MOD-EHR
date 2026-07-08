@@ -15,7 +15,7 @@ import {
     toggleAlertMessage,
     GOOGLE_MAPS_KEY
 } from "./common";
-import { DateTime } from "luxon"; 
+import { DateTime } from "luxon";
 
 $(document).ready(async function () {
     $('head').append(`<script src = "https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_KEY}&libraries=places&callback=googleMapsAutoComplete" async defer></script>`);
@@ -23,10 +23,11 @@ $(document).ready(async function () {
     $("#result-hirta-contact").text(HIRTA_CONTACT);
     const [accessToken, hospital_id] = await getAccesstokenAndCustomAttribute("custom:hospital_id");
     const idToken = await getIdToken();
+    let chosenSubService = "";
     const hostname = window.location.hostname;
     const dns_tenant = hostname.split('.')[0];
     const config = await loadTenantBranding(hospital_id);
-    
+
     if (config.subdomain !== dns_tenant) {
         alert("You are not authorized for this hospital.");
         await logoutUser();
@@ -35,7 +36,7 @@ $(document).ready(async function () {
     // preRender();
     toggleSideNavBar();
     const userRole = await getUserGroup();
-    
+
     if (userRole === "ViewOnly") {
         window.location.replace("dashboard.html");
         return;
@@ -46,18 +47,18 @@ $(document).ready(async function () {
     }
     if (userRole === "UserManagementAdmin") {
         $("#user-management-nav").removeClass("d-none").addClass("visible");
-    }else{
+    } else {
         $("#user-management-nav").removeClass("visible").addClass("d-none");
     }
     if (hospital_id === "admin") {
         $("#hospitals-nav").removeClass("d-none").addClass("visible");
     } else {
         $("#hospitals-nav").removeClass("visible").addClass("d-none");
-        
+
     }
     $("#logout").click(logoutUser);
 
-     // 1. Initialize Select2 for the patient search dropdown
+    // 1. Initialize Select2 for the patient search dropdown
     $('#patientSearch').select2({
         theme: 'bootstrap-5',
         width: '100%',
@@ -79,7 +80,7 @@ $(document).ready(async function () {
             patientsList = await response.json();
             // Populate the dropdown
             patientsList.forEach(patient => {
-                const option = new Option(`${patient.name} (${patient.patient_id})`, patient.patient_id, false, false);
+                const option = new Option(patient.name, patient.patient_id, false, false);
                 $(option).attr('data-via-rider-id', patient.via_rider_id || '');
                 $('#patientSearch').append(option);
             });
@@ -90,7 +91,7 @@ $(document).ready(async function () {
         console.error("Error fetching patients:", error);
         toggleAlertMessage("Error fetching patients. Please try again.", "danger");
         $('#timeLoader').addClass("d-none")
-    } finally{
+    } finally {
         $('#timeLoader').addClass("d-none")
     }
 
@@ -118,10 +119,12 @@ $(document).ready(async function () {
                 if (!$('#tripDestinationAddress').val()) $('#tripDestinationAddress').val(addr);
             }
         }
+        $('label[for="patientEmailCheck"]').text("Patient does not require an email address");
     }
 
     // 3. Auto-fill form fields when a patient is selected
-    $('#patientSearch').on('change', function() {
+    $('#patientSearch').on('change', function () {
+        chosenSubService = "";
         const selectedId = $(this).val();
         if (selectedId) {
             const patient = patientsList.find(p => String(p.patient_id) === String(selectedId));
@@ -135,15 +138,17 @@ $(document).ready(async function () {
             $('#patientEmailCheck').prop('checked', false);
             $('#patientEmail').prop('disabled', false);
             $('#viaRiderId').val('');
+            $('label[for="patientEmailCheck"]').text("Patient does not have an email address");
         }
     });
     // remove validated tag if input is chnaged
     $('.patient-input').on('input', function () {
         $('#patientValidatedMsg').addClass('d-none');
+        chosenSubService = "";
     });
 
     // 4. Disable email input if "Patient does not have an email address" is checked
-    $('#patientEmailCheck').on('change', function() {
+    $('#patientEmailCheck').on('change', function () {
         $('#patientEmail').prop('disabled', $(this).is(':checked'));
         if ($(this).is(':checked')) {
             $('#patientEmail').val('');
@@ -151,7 +156,7 @@ $(document).ready(async function () {
     });
 
     // 5. Update the text display when "Trip Direction" changes
-    $('#tripDirection').on('change', function() {
+    $('#tripDirection').on('change', function () {
         const direction = $(this).val();
         const $display = $('#tripDirectionDisplay');
         const $timeLabel = $('label[for="tripDropoffTime"]');
@@ -190,14 +195,14 @@ $(document).ready(async function () {
     });
 
     // Hide accommodation help text if clicking outside
-    $(document).on('click', function(e) {
+    $(document).on('click', function (e) {
         if (!$(e.target).closest('#accommodation-help-text, #accommodation-help-icon').length) {
             $('#accommodation-help-text').addClass('d-none');
         }
     });
 
     // 6. Clear Form logic
-    $('#clearFormBtn').on('click', function() {
+    $('#clearFormBtn').on('click', function () {
         $('input[type="text"], input[type="email"], input[type="tel"], input[type="time"], textarea').val('');
         $('input[type="text"], input[type="email"], input[type="tel"], input[type="time"], textarea').val('').removeClass('is-invalid');
         $('#patientSearch').val(null).trigger('change');
@@ -207,10 +212,11 @@ $(document).ready(async function () {
         $('#guest_count, #guest_wav_count, #pca_count, #pca_wav_count').val(0);
         $('#patientValidatedMsg').addClass('d-none');
         $('#viaRiderId').val('');
+        chosenSubService = "";
     });
 
     // 7. Validate Patient logic
-    $('#validatePatientBtn').on('click', async function() {
+    $('#validatePatientBtn').on('click', async function () {
         let isValid = true;
         $('#patientValidatedMsg').addClass('d-none');
         $('#validatePatientBtn').prop('disabled', true);
@@ -227,7 +233,7 @@ $(document).ready(async function () {
         checkField('#patientFirstName');
         checkField('#patientLastName');
         checkField('#patientphone');
-        
+
         if (!$('#patientEmailCheck').is(':checked')) {
             checkField('#patientEmail');
         } else {
@@ -235,20 +241,20 @@ $(document).ready(async function () {
         }
 
         if (isValid) {
-            
+
             $('#patientLoading').removeClass('d-none');
             const patientData = {
                 first_name: $('#patientFirstName').val(),
                 last_name: $('#patientLastName').val(),
-                phone: '+1'+ $('#patientphone').val(),
+                phone: '+1' + $('#patientphone').val(),
                 email: $('#patientEmailCheck').is(':checked') ? null : $('#patientEmail').val(),
                 via_rider_id: $('#viaRiderId').val() || null
             };
-            
+
             console.log("Sending patient details to backend for validation:", patientData);
-            
+
             // API call to send the validated patient data to the backend
-            
+
             try {
                 const response = await fetch(`${BASE_URL}/api/validate_patient`, {
                     method: 'POST',
@@ -261,37 +267,39 @@ $(document).ready(async function () {
                 });
                 const data = await response.json();
                 if (!response.ok) {
-                    throw new Error(data.message);  
+                    throw new Error(data.message);
                 }
+                chosenSubService = data.chosen_sub_service || "";
+                console.log("chosenSUbservice:", chosenSubService)
                 $('#patientValidatedMsg').removeClass('d-none');
                 $('#patientLoading').addClass('d-none');
                 toggleAlertMessage("Patient validated successfully!", "success");
             } catch (error) {
                 $('#patientValidatedMsg').addClass('d-none');
                 $('#patientLoading').addClass('d-none');
-                if (error.message === "NoSuchRiderError"){
+                if (error.message === "NoSuchRiderError") {
                     toggleAlertMessage("Rider not found. Please check the details and try again.", "danger")
-                }else if(error.message.includes("fields are incorrect")){
+                } else if (error.message.includes("fields are incorrect")) {
                     toggleAlertMessage(error.message, "danger");
-                }else{
+                } else {
                     toggleAlertMessage("Failed to validate patient. Please check the details and try again.", "danger");
                 }
             }
         } else {
             $('#patientValidatedMsg').addClass('d-none');
-            toggleAlertMessage("Please fill in all required fields.","danger");
+            toggleAlertMessage("Please fill in all required fields.", "danger");
         }
         $('#validatePatientBtn').prop('disabled', false);
     });
 
     // Remove validation styling when typing
-    $('input[type="text"], input[type="email"], input[type="tel"]').on('input', function() {
+    $('input[type="text"], input[type="email"], input[type="tel"]').on('input', function () {
         $(this).removeClass('is-invalid');
     });
 
     // postRender();
     //submit form logic
-    $('#submitTripBtn').on('click', async function() {
+    $('#submitTripBtn').on('click', async function () {
         // 1. Check if patient is validated
         if ($('#patientValidatedMsg').hasClass('d-none')) {
             toggleAlertMessage("Please validate the patient before submitting.", "danger");
@@ -322,7 +330,7 @@ $(document).ready(async function () {
         const timeValue = $('#tripDropoffTime').val();
         let epoch = null;
         let dt = null;
-        if(timeValue){
+        if (timeValue) {
             const today = new Date().toLocaleDateString('en-CA', { timeZone: "America/Chicago" });
             dt = DateTime.fromFormat(
                 `${today} ${timeValue}`,
@@ -350,6 +358,7 @@ $(document).ready(async function () {
             guest_wav_count: parseInt($('#guest_wav_count').val()) || 0,
             pca_count: parseInt($('#pca_count').val()) || 0,
             pca_wav_count: parseInt($('#pca_wav_count').val()) || 0,
+            sub_service: chosenSubService,
             additional_notes_pickup: $('#additionalNotespickup').val(),
             additional_notes_dropoff: $('#additionalNotesdropoff').val()
         };
@@ -370,31 +379,53 @@ $(document).ready(async function () {
                 },
                 body: JSON.stringify(tripRequestData)
             });
-            
+
             // Handle API Gateway 29s timeout gracefully
             if (response.status === 504) {
                 throw new Error("The request is taking longer than expected. Your trip is likely still being booked in the background. Please check the dashboard in a few minutes.");
             }
-            
+
             const data = await response.json();
             if (!response.ok) {
                 throw new Error(data.message || "Failed to book trip");
             }
-            
+
             toggleAlertMessage("Trip booked successfully!", "success");
             $('#booking-form').addClass('d-none');
             $('#booking-response').removeClass('d-none');
 
             const resData = data.data;
-            const formatEta = (epochSec) => {
+            const formatPickupWindow = (epochSec) => {
                 if (!epochSec) return "N/A";
-                return new Date(epochSec * 1000).toLocaleTimeString("en-US", {
-                    timeZone: "America/Chicago",
-                    hour:     "2-digit",
-                    minute:   "2-digit",
-                    hour12:   true,
-                });
+                const date1 = new Date(epochSec * 1000);
+                const date2 = new Date((epochSec + 20 * 60) * 1000);
+                const formatTime = (date) => {
+                    return date.toLocaleTimeString("en-US", {
+                        timeZone: "America/Chicago",
+                        hour: "numeric",
+                        minute: "2-digit",
+                        hour12: true,
+                    });
+                };
+                return `${formatTime(date1)} - ${formatTime(date2)}`;
             };
+
+            let requestedTimeStr = "N/A";
+            const timeVal = $('#tripDropoffTime').val();
+            if (timeVal) {
+                const parts = timeVal.split(':');
+                let hour = parseInt(parts[0], 10);
+                const min = parts[1];
+                const ampm = hour >= 12 ? 'PM' : 'AM';
+                hour = hour % 12;
+                hour = hour ? hour : 12;
+                const formattedTime = `${hour}:${min} ${ampm}`;
+                if (tripRequestData.trip_direction === 'To Appointment') {
+                    requestedTimeStr = `Arrive by ${formattedTime}`;
+                } else {
+                    requestedTimeStr = `Depart at ${formattedTime}`;
+                }
+            }
 
             $('#result-name').text(`${tripRequestData.first_name} ${tripRequestData.last_name}`);
             $('#result-phone').text(tripRequestData.phone);
@@ -406,10 +437,10 @@ $(document).ready(async function () {
                 $('#result-direction').removeClass('to-appt').addClass('from-appt');
                 $('#result-direction').find('.direction-label').text('From Appointment');
             }
-            $('#result-pickup-address').text(resData.trip_details.pickup?.address   || "-");
+            $('#result-pickup-address').text(resData.trip_details.pickup?.address || "-");
             $('#result-destination-address').text(resData.trip_details.dropoff?.address || "-");
-            $('#result-pickup-window').text(formatEta(resData.trip_details.pickup_eta || "-"));
-            $('#result-dropoff-time').text(formatEta(resData.trip_details.dropoff_eta || "-"));
+            $('#result-pickup-window').text(formatPickupWindow(resData.trip_details.earliest_pickup_eta));
+            $('#result-dropoff-time').text(requestedTimeStr);
             $('#result-mobility-equipment').text(resData.trip_details.trip_properties?.join(", ") || "-");
             $('#result-driver-pickup-notes').text(resData.trip_details.pickup?.notes || "-");
             $('#result-driver-dropoff-notes').text(resData.trip_details.dropoff?.notes || "-");
@@ -428,16 +459,16 @@ $(document).ready(async function () {
     });
 
     //result page home button logic
-    $('#back-to-dashboard').click(function() {
+    $('#back-to-dashboard').click(function () {
         window.location.replace('dashboard.html');
     });
-    $('#book-another-trip').click(function() {
+    $('#book-another-trip').click(function () {
         window.location.replace('bookTrip.html');
     });
 
 
     // Remove validation styling when typing in the trip fields
-    $('#tripPickupAddress, #tripDropoffTime, #tripDestinationAddress').on('input change', function() {
+    $('#tripPickupAddress, #tripDropoffTime, #tripDestinationAddress').on('input change', function () {
         $(this).removeClass('is-invalid');
     });
 
@@ -495,11 +526,11 @@ $(document).ready(async function () {
 
                     const parts = new Intl.DateTimeFormat("en-US", {
                         timeZone: "America/Chicago",
-                        hour:     "2-digit",
-                        minute:   "2-digit",
-                        hour12:   false,
+                        hour: "2-digit",
+                        minute: "2-digit",
+                        hour12: false,
                     }).formatToParts(d);
-                    const hh = parts.find(p => p.type === "hour")?.value   || "00";
+                    const hh = parts.find(p => p.type === "hour")?.value || "00";
                     const mm = parts.find(p => p.type === "minute")?.value || "00";
                     $('#tripDropoffTime').val(`${hh}:${mm}`);
                 }

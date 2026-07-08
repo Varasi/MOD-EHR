@@ -66,7 +66,7 @@ class HealthconnectPocStack(Stack):
         self.add_event_bridge_scheduler_epic()
 
         #veradigm provider setup
-        # self.create_veradigm_provider_setup() # comment it out if we dont use sftp server
+        self.create_veradigm_provider_setup() # comment it out if we dont use sftp server
 
         # Output
         self.print_output()

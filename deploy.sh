@@ -4,6 +4,7 @@ POOL_ID="<pool_id>"
 CLIENT_ID="<client_id>"
 IDENTITY_POOL_ID="<identity_pool_id>"
 GOOGLE_MAPS_KEY="<google_maps_key>"
+ENVIRONMENT="development"
 LAYER_DIR="layers/python/lib/python3.11/site-packages/"
 echo "Current working directory $PWD"
 echo "Creating layers directory"
@@ -26,4 +27,4 @@ zip -r ../health_connector_base.zip * -x "*/__pycache__/*"
 echo "$PWD"
 cd ../
 cd dashboard_website
-npx webpack --env REGION=$REGION POOL_ID=$POOL_ID CLIENT_ID=$CLIENT_ID  IDENTITY_POOL_ID=$IDENTITY_POOL_ID GOOGLE_MAPS_KEY=$GOOGLE_MAPS_KEY 
+npx webpack --env REGION=$REGION POOL_ID=$POOL_ID CLIENT_ID=$CLIENT_ID  IDENTITY_POOL_ID=$IDENTITY_POOL_ID GOOGLE_MAPS_KEY=$GOOGLE_MAPS_KEY ENVIRONMENT=$ENVIRONMENT 

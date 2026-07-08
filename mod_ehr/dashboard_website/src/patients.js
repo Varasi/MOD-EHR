@@ -13,6 +13,7 @@ import {
     getAccesstokenAndCustomAttribute,
     loadTenantBranding,
     CUSTOM_DOMAIN,
+    isProductionOrUAT,
 } from "./common";
 async function editPatient() {
     const [accessToken, hospital_id] = await getAccesstokenAndCustomAttribute("custom:hospital_id");
@@ -90,6 +91,9 @@ $(document).ready(async function () {
     const userRole = await getUserGroup();
     if (userRole !== "BookingAdmin" && userRole !== "UserManagementAdmin" && userRole !== "ViewOnly") {
         window.location.href = "dashboard.html";
+    }
+    if (userRole !== "ViewOnly" && !isProductionOrUAT()) {
+        $(".add-patient").removeClass("d-none").show();
     }
     if (userRole === "ViewOnly") {
         $("#book-trip-nav").removeClass("visible").addClass("d-none");
@@ -241,8 +245,10 @@ $(document).ready(async function () {
             });
             tablePaginationNavigationHandler(table);
             
-            if (userRole === "ViewOnly") {
-                $(".add-patient").hide();
+            if (userRole !== "ViewOnly" && !isProductionOrUAT()) {
+                $(".add-patient").removeClass("d-none").show();
+            } else {
+                $(".add-patient").addClass("d-none").hide();
             }
 
             table.on("draw.dt", function () {

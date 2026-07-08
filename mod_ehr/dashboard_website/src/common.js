@@ -11,6 +11,22 @@ export const PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-
 export const { GOOGLE_MAPS_KEY } = process.env
 export const { CUSTOM_DOMAIN } = process.env
 export const { HIRTA_CONTACT } = process.env
+export const { ENVIRONMENT } = process.env;
+
+export function isProductionOrUAT() {
+    const env = (ENVIRONMENT || "").toLowerCase();
+    if (env === "production" || env === "prod" || env === "uat") {
+        return true;
+    }
+    if (env === "development" || env === "dev" || env === "local") {
+        return false;
+    }
+    const hostname = window.location.hostname.toLowerCase();
+    if (hostname.includes("localhost") || hostname.includes("127.0.0.1")) {
+        return false;
+    }
+    return false;
+}
 Amplify.configure({
     Auth: {
         mandatorySignIn: true,
@@ -49,9 +65,9 @@ export async function loadTenantBranding(tenantId) {
         }
         window.location.href = 'index.html';
         // Return a promise that never resolves to prevent callers from continuing.
-        return new Promise(() => {});
+        return new Promise(() => { });
     }
-    
+
     const config = await response.json();
 
     $("#hospital-name").text(config.hospitalName);
@@ -128,7 +144,7 @@ export function toggleSkeletonLoader(elementId, action) {
     if (targetBody) {
         const elements = targetBody.querySelectorAll("*");
         elements.forEach((element) => {
-          if (element.classList.contains("skeleton-text")) {
+            if (element.classList.contains("skeleton-text")) {
                 if (action === "add") {
                     element.classList.add("skeleton");
                     element.style.setProperty("margin-bottom", "4px", "important");
@@ -141,7 +157,7 @@ export function toggleSkeletonLoader(elementId, action) {
     }
 };
 export function getCustomAttributeForUser(cognitoIdentityServiceProvider, username, attributeName) {
-  return new Promise((resolve, reject) => {
+    return new Promise((resolve, reject) => {
         cognitoIdentityServiceProvider.adminGetUser(
             { ...COGNITO_PARAMS, Username: username },
             (err, data) => {
@@ -158,94 +174,94 @@ export function getCustomAttributeForUser(cognitoIdentityServiceProvider, userna
                     } else {
                         resolve(hospitalIdAttribute.Value);
                     }
-                    
+
                 }
             }
         );
     });
 }
 export function getUserGroupNameForUser(cognitoIdentityServiceProvider, username) {
-  return new Promise((resolve, reject) => {
-      cognitoIdentityServiceProvider.adminListGroupsForUser(
-          { ...COGNITO_PARAMS, Username: username, Limit: 1 },
-          (err, data) => {
-              if (err) {
-                  resolve("N/A");
-              } else if (data.Groups && data.Groups.length > 0) {
-                  resolve(data.Groups[0].GroupName);
-              } else {
-                  resolve("N/A");
-              }
-          }
-      );
-  });
+    return new Promise((resolve, reject) => {
+        cognitoIdentityServiceProvider.adminListGroupsForUser(
+            { ...COGNITO_PARAMS, Username: username, Limit: 1 },
+            (err, data) => {
+                if (err) {
+                    resolve("N/A");
+                } else if (data.Groups && data.Groups.length > 0) {
+                    resolve(data.Groups[0].GroupName);
+                } else {
+                    resolve("N/A");
+                }
+            }
+        );
+    });
 }
 export function toggleLoder(elementId, action) {
-  const loader = document.querySelector(`#${elementId} .loader-small`);
+    const loader = document.querySelector(`#${elementId} .loader-small`);
 
-  if (loader) {
-    if (action === "add") {
-      loader.classList.remove("d-none");
-    } else {
-      loader.classList.add("d-none");
+    if (loader) {
+        if (action === "add") {
+            loader.classList.remove("d-none");
+        } else {
+            loader.classList.add("d-none");
+        }
     }
-  } 
 }
 export function togglePasswordVisibility(elementId, iconId) {
-  const passwordField = document.getElementById(elementId);
-  const icon = document.getElementById(iconId);
-  if (passwordField) {
-    if (passwordField.type === "text") {
-      passwordField.type = "password";
-      icon.classList.remove("eye-icon");
-      icon.classList.add("eye-off-icon");
-    } else {
-      passwordField.type = "text";
-      icon.classList.remove("eye-off-icon");
-      icon.classList.add("eye-icon");
+    const passwordField = document.getElementById(elementId);
+    const icon = document.getElementById(iconId);
+    if (passwordField) {
+        if (passwordField.type === "text") {
+            passwordField.type = "password";
+            icon.classList.remove("eye-icon");
+            icon.classList.add("eye-off-icon");
+        } else {
+            passwordField.type = "text";
+            icon.classList.remove("eye-off-icon");
+            icon.classList.add("eye-icon");
+        }
     }
-  }
 }
 export function toggleAlertMessage(alertMessage, status = "success") {
-  const rootElement = document.getElementById("root");
-  const alertElement = document.createElement("div");
-  alertElement.id = "customAlert";
-  alertElement.className = `custom-alert custom-alert-${status}`;
-  const alertMessageElement = document.createElement("div");
-  alertMessageElement.className = "flex-1";
-  alertMessageElement.innerHTML = alertMessage;
-  alertElement.appendChild(alertMessageElement);
-  if (rootElement) {
-    rootElement.appendChild(alertElement);
-    setTimeout(function () {
-      rootElement.removeChild(alertElement);
-    }, 3000);
-  }
+    const rootElement = document.getElementById("root");
+    const alertElement = document.createElement("div");
+    alertElement.id = "customAlert";
+    alertElement.className = `custom-alert custom-alert-${status}`;
+    const alertMessageElement = document.createElement("div");
+    alertMessageElement.className = "flex-1";
+    alertMessageElement.innerHTML = alertMessage;
+    alertElement.appendChild(alertMessageElement);
+    if (rootElement) {
+        rootElement.appendChild(alertElement);
+        setTimeout(function () {
+            rootElement.removeChild(alertElement);
+        }, 3000);
+    }
 }
 
 
 export function toggleSideNavBar() {
-  const navbarTogglers = document.querySelectorAll(".navbar_toggler");
-  const navItemsList = document.getElementById("navitems_list");
-  const settingsModal = document.getElementById("settingsModal");
-  const togglelogic = () => {
-    if (navItemsList.classList.contains("d-none") && window.innerWidth <= 992) {
-      navItemsList.classList.add("side-nav-bar");
-      navItemsList.classList.remove("d-none");
-      settingsModal.classList.add("d-none");
-    } else {
-      navItemsList.classList.add("d-none");
-      navItemsList.classList.remove("d-flex");
-      navItemsList.classList.remove("side-nav-bar");
-    }
-  };
-  navbarTogglers.forEach((element) => {
-    element.addEventListener("click", togglelogic);
-  });
-  window.addEventListener("resize", () => {
-    if (window.innerWidth > 992) {
-      navItemsList.classList.remove("side-nav-bar");
-      navItemsList.classList.add("d-none");
-    }
-  });
+    const navbarTogglers = document.querySelectorAll(".navbar_toggler");
+    const navItemsList = document.getElementById("navitems_list");
+    const settingsModal = document.getElementById("settingsModal");
+    const togglelogic = () => {
+        if (navItemsList.classList.contains("d-none") && window.innerWidth <= 992) {
+            navItemsList.classList.add("side-nav-bar");
+            navItemsList.classList.remove("d-none");
+            settingsModal.classList.add("d-none");
+        } else {
+            navItemsList.classList.add("d-none");
+            navItemsList.classList.remove("d-flex");
+            navItemsList.classList.remove("side-nav-bar");
+        }
+    };
+    navbarTogglers.forEach((element) => {
+        element.addEventListener("click", togglelogic);
+    });
+    window.addEventListener("resize", () => {
+        if (window.innerWidth > 992) {
+            navItemsList.classList.remove("side-nav-bar");
+            navItemsList.classList.add("d-none");
+        }
+    });
 }
