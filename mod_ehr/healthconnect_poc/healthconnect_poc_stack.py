@@ -47,6 +47,7 @@ class HealthconnectPocStack(Stack):
         self.create_logs_lambda()
         self.create_hospitals_lambda()
         self.create_epic_data_populator_lambda()
+        self.create_ride_booking_lambda()
         # Secret Manager
         self.create_secrets()
         # Cognito
@@ -59,6 +60,7 @@ class HealthconnectPocStack(Stack):
         # S3 Bucket
         
         self.create_cloudfront_dist()
+        self.deploy_frontend_assets()
         self.add_bucket_policy()
         self.add_event_bridge_scheduler()
         self.add_event_bridge_scheduler_epic()
@@ -274,18 +276,24 @@ class HealthconnectPocStack(Stack):
                 restrict_public_buckets=False,
             ),
         )
+
+    def deploy_frontend_assets(self):
+        # Deploy all website assets with NO cache, 
+        # and automatically invalidate the CloudFront distribution
         s3_deployment.BucketDeployment(
             self,
-            f"EHRMultitenant{self.config.ENVIRONMENT.title()}BucketDeployment",
+            f"EHRMultitenant{self.config.ENVIRONMENT.title()}WebsiteDeployment",
             sources=[s3_deployment.Source.asset("dashboard_website/dist")],
             destination_bucket=self.bucket,
             prune=False,
-            # cache_control=[s3_deployment.CacheControl.no_cache()],
             cache_control=[
                 s3_deployment.CacheControl.from_string(
-                    "public, max-age=31536000, immutable"
+                    "no-cache, no-store, must-revalidate"
                 )
             ],
+            # Automatically clear the CloudFront cache during deployment
+            distribution=self.cloudfront_distribution,
+            distribution_paths=["/*"],
         )
 
     def create_cloudfront_dist(self):
@@ -676,7 +684,25 @@ class HealthconnectPocStack(Stack):
                 "ENVIRONMENT": self.config.ENVIRONMENT.upper(),
             },
         )
-    
+    def create_ride_booking_lambda(self):
+        self.ride_booking_lambda = aws_lambda.Function(
+            self,
+            f"EHRMultitenant{self.config.ENVIRONMENT.title()}RideBookingLambda{self.version_suffix_us}",
+            function_name=f"EHRMultitenant{self.config.ENVIRONMENT.title()}RideBookingLambda{self.version_suffix_us}",
+            runtime=aws_lambda.Runtime.PYTHON_3_11,
+            code=aws_lambda.Code.from_asset("lambda_functions/ride_booking_lambda"),
+            handler="lambda_handler.lambda_handler",
+            role=self.LambdaExecutionRole,
+            layers=[self.requirements_layer, self.base_layer],
+            vpc=self.vpc,
+            timeout=Duration.minutes(10),
+            memory_size=512,
+            environment={
+                "ENVIRONMENT": self.config.ENVIRONMENT.upper(),
+                "VERSION_SUFFIX": self.version_suffix,
+            }
+        )
+
     def add_event_bridge_scheduler_epic(self):
         self.event_bridge_rule = event_bridge.Rule(
             self,
@@ -876,6 +902,20 @@ class HealthconnectPocStack(Stack):
             authorizer=self.apigw_authorizer,
             authorization_scopes=["aws.cognito.signin.user.admin"],
         )
+        self.validate_patient_resource = self.api.root.add_resource("validate_patient")
+        self.validate_patient_resource.add_method(
+            "POST",
+            apigw.LambdaIntegration(self.ride_booking_lambda, proxy=True),
+            authorizer=self.apigw_authorizer,
+            authorization_scopes=["aws.cognito.signin.user.admin"],
+        )
+        self.trip_booking_resource = self.api.root.add_resource("trip_booking")
+        self.trip_booking_resource.add_method(
+            "POST",
+            apigw.LambdaIntegration(self.ride_booking_lambda, proxy=True),
+            authorizer=self.apigw_authorizer,
+            authorization_scopes=["aws.cognito.signin.user.admin"],
+        )
 
     def create_cognitouser_pool(self):
         self.user_pool = cognito.UserPool(
@@ -896,11 +936,9 @@ class HealthconnectPocStack(Stack):
 
     def create_groups(self):
         self.user_pools_groups = [
-            "HIRTAOperationsStaff",
-            "HealthcareFacilityStaff",
-            "DallasCountyHealthDepartmentHealthNavigators",
-            "AppointmentsAdmin",
             "UserManagementAdmin",
+            "BookingAdmin",
+            "ViewOnly",
         ]
         for group in self.user_pools_groups:
             cognito.CfnUserPoolGroup(
