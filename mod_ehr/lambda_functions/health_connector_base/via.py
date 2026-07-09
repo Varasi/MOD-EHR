@@ -2,7 +2,7 @@ import contextlib
 
 import requests
 from health_connector_base import SecretsManager
-
+import json
 
 class Via(object):
     def __init__(self):
@@ -70,3 +70,94 @@ class Via(object):
                 trips += self.get_ride_details(resp)
         print(trips)
         return {"trips": trips}
+    
+    def get_rider_validation(self, rider_id: str|None, rider_email: str|None, rider_phone: str|None, first_name: str|None, last_name: str|None):
+        print("get rider validation function called")
+        if not self.token:
+            self.set_token()
+        
+        parameters = {}
+        if rider_id:
+            parameters["rider_id"] = rider_id
+        elif rider_email:
+            parameters["email"] = rider_email
+        elif rider_phone:
+            parameters["phone_number"] = rider_phone
+        else:
+            raise ValueError("We require either rider_id, email, or phone number")
+        
+
+        r = requests.get(
+            f"https://{self.via_api_url}/riders",
+            params=parameters,
+            headers=self.auth_header,
+        )
+        print("r", r.json())
+        riders_list = []
+        if r.status_code == 200:
+            resp = r.json()
+            if rider_id:
+                riders_list.append(resp)
+            else:
+                riders_list = resp.get("riders", [])
+            return riders_list
+        else:
+            raise ValueError(json.dumps({
+                "message": r.json(),
+                "status": r.status_code
+            }))
+
+    def request_new_trip(self, request_body):
+        if not self.token:
+            self.set_token()
+        
+        r = requests.post(
+            f"https://{self.via_api_url}/trips/request",
+            json=request_body,
+            headers=self.auth_header,
+        )
+        print("r", r.json())
+        if r.status_code == 200:
+            return r.json()
+        else:
+            raise ValueError(json.dumps({
+                "message": r.json(),
+                "status": r.status_code
+            }))
+
+    def book_trip(self, trip_id):
+        if not self.token:
+            self.set_token()
+        r = requests.post(
+            f"https://{self.via_api_url}/trips/book",
+            json={"trip_id": trip_id},
+            headers=self.auth_header,
+        )
+        print("r", r.json())
+        if r.status_code == 200:
+            return r.json() 
+        else:
+            raise ValueError(json.dumps({
+                "message": r.json(),
+                "status": r.status_code
+            }))
+        
+    def get_trip_details(self, trip_id):
+        if not self.token:
+            self.set_token()
+        r = requests.get(
+            f"https://{self.via_api_url}/trips/details",
+            params={"trip_id": trip_id},
+            headers=self.auth_header,
+        )
+        print("r", r.json())
+        if r.status_code == 200:
+            return r.json() 
+        else:
+            raise ValueError(json.dumps({
+                "message": r.json(),
+                "status": r.status_code
+            }))
+        
+        
+        

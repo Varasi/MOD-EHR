@@ -56,19 +56,28 @@ $(document).ready(async function () {
         await logoutUser();
         window.location.replace(`https://${config.subdomain}${CUSTOM_DOMAIN}/logs.html`);
     }
+    preRender();
+    toggleSideNavBar();
+    $("#logout").click(logoutUser);
     const userRole = await getUserGroup();
+    if (userRole === "ViewOnly") {
+        $("#book-trip-nav").removeClass("visible").addClass("d-none");
+    }
     let hospital_map = {};
     if (hospital_id === "admin"){
         hospital_map = await renderHospitalColumn(accessToken);
         console.log("Hospital Map: ", hospital_map);
     }
     if(hospital_id === "admin"){
-        $("#hospitals-nav").removeClass("invisible")
-        $("#hospitals-nav").addClass("visible")
+        $("#hospitals-nav").removeClass("d-none").addClass("visible");
 
     }else{
-        $("#hospitals-nav").removeClass("visible")
-        $("#hospitals-nav").addClass("invisible")
+        $("#hospitals-nav").removeClass("visible").addClass("d-none");
+    }
+    if (userRole === "UserManagementAdmin") {
+        $("#user-management-nav").removeClass("d-none").addClass("visible");
+    }else{
+        $("#user-management-nav").removeClass("visible").addClass("d-none");
     }
     
     const xhr = new XMLHttpRequest();
@@ -106,7 +115,7 @@ $(document).ready(async function () {
                     lengthMenu: "_MENU_",
                     searchPlaceholder: "Search",
                 },
-                dom: userRole === "AppointmentsAdmin"
+                dom: (userRole === "BookingAdmin" || userRole === "UserManagementAdmin")
                     ? 'Bfrt<"bottom"lip>'
                     : 'frt<"bottom"lip>',
                 initComplete: function (settings, json) {

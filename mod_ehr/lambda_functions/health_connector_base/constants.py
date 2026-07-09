@@ -77,12 +77,17 @@ class HttpMethods:
 
 
 ORIGINS_ALLOWED = "*"
-VIA_RIDE_MOCK = {
+_RIDE_LEG_MOCK = {
     "trip_status": "Not Requested",
     "dropoff": {},
     "dropoff_eta": "TBD",
     "pickup": {},
     "pickup_eta": "TBD",
+}
+
+VIA_RIDE_MOCK = {
+    "to_appointment": {**_RIDE_LEG_MOCK},
+    "from_appointment": {**_RIDE_LEG_MOCK},
 }
 
 

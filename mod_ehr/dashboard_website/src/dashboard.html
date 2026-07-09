@@ -7,6 +7,7 @@
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.datatables.net/buttons/2.2.3/js/dataTables.buttons.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
     <link rel="stylesheet" href="./assets/css/styles.css" />
     <link rel="stylesheet" href="./assets/css/responsive.css" />
     <link rel="stylesheet" href="./assets/css/status.css" />
@@ -35,13 +36,13 @@
           <div class="d-flex align-items-center gap-3">
             <img
                 id ="tenant-brand-logo"
-                src="/assets/tenants/admin/branding/logo.png"
+                src=""
                 class="brand-logo"
                 alt="brand-logo"
               />
             <div class="d-flex flex-column">
               <div id="hospital-name" class="hospital-name-text">
-                Health Connector
+                
               </div>
               <div class="top-nav-header-text"></div>
             </div>
@@ -105,18 +106,23 @@
                     >Appointments</a
                   >
                 </li>
-                <li id="hospitals-nav">
+            <li id="hospitals-nav" class="d-none">
                   <a class="nav-item" href="hospitals.html"
                     >Hospitals</a
                   >
                 </li>
-                <li id="user-management-nav">
+                <li id="user-management-nav" class="d-none">
                   <a class="nav-item" href="userManagement.html"
                     >User Management</a
                   >
                 </li>
                 <li id="logs-nav">
                     <a class="nav-item " href="logs.html">Logs</a>
+                </li>
+                <li id="book-trip-nav">
+                  <a class="nav-item" href="bookTrip.html"
+                    >Book Trip</a
+                  >
                 </li>
               </ul>
             </div>
@@ -205,7 +211,12 @@
             <div class="module-header">
               <div class="module-header-text">Dashboard</div>
             </div>
-
+            <div class="module-header">
+                <div class="assistance-text" id="assistance-text-dashboard">
+                  <i class="fa fa-phone" style="font-size:15px; padding-right: 5px; color: black!important;"></i>
+                  For assistance with rides, contact HIRTA Dispatch:
+                </div>
+            </div>
             <div id="table-filter"></div>
             <div
               id="tableContainer"
@@ -234,6 +245,7 @@
           role="dialog"
           aria-labelledby="settingsModalLabel"
           aria-hidden="true"
+          style="z-index: 1070;"
         >
           <div class="modal-body border-danger px-3 py-4">
             <form id="settingsForm">

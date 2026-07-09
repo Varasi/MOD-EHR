@@ -432,6 +432,11 @@ tbody>tr>td:last-child {
     background-color: var(--bg-success-primary-light);
 }
 
+.appt-last-row > td,
+td.appt-last-row {
+    border-bottom: 2px solid #45669b !important;
+}
+
 #borderRounded {
     border-radius: 16px;
 }
@@ -543,7 +548,18 @@ tbody>tr>td:last-child {
 .module-header {
     padding: var(--spacing-12) var(--spacing_24);
 }
-
+.assistance-text {
+    border: solid !important;
+    border-width: 2px !important;
+    border-radius: 10px;
+    background-color: #ecf3ff;
+    padding: inherit;
+    border-color: #bfd4ff !important;
+    font-size: 15px;
+    margin-top: -10px;
+    color: #3567ff;
+    font-weight: 500;
+}
 .current:active {
     background-color: var(--primary-button-background-color);
 }
@@ -676,4 +692,35 @@ tbody>tr>td:last-child {
   font-weight: 600;
   font-size: 18px;
   color: #1f2937;
+}
+
+.book-tab {
+    background-color: var(--background-color-BG-primary);
+    border-radius: var(--radius-12);
+    padding: 0 0 var(--spacing-12) 0;
+}
+
+.non-book-tab {
+    border-radius: var(--radius-12);
+    padding: 0 0 var(--spacing-12) 0;
+}
+label.book-trip-form-lables {
+    font-size: inherit;
+    margin-left: 0.5rem;
+}
+.phone-wrapper {
+  position: relative;
+}
+.prefix {
+  position: absolute;
+  top: 50%;
+  left: 12px;
+  transform: translateY(-50%);
+  color: #999;
+  font-size: 14px;
+  pointer-events: none; /* prevents clicking on it */
+}
+
+.phone-wrapper input {
+  padding-left: 40px; /* creates space for +1 */
 }

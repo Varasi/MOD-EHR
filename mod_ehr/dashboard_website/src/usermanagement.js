@@ -347,13 +347,20 @@ $(document).ready(async function () {
     if (userRole !== "UserManagementAdmin") {
         window.location.href = "dashboard.html";
     }
+    if (userRole === "ViewOnly") {
+        $("#book-trip-nav").removeClass("visible").addClass("d-none");
+    }
     if(hospital_id === "admin"){
-        $("#hospitals-nav").removeClass("invisible")
-        $("#hospitals-nav").addClass("visible")
+        $("#hospitals-nav").removeClass("d-none").addClass("visible");
 
     }else{
-        $("#hospitals-nav").removeClass("visible")
-        $("#hospitals-nav").addClass("invisible")
+        $("#hospitals-nav").removeClass("visible").addClass("d-none");
+    }
+    if (userRole === "UserManagementAdmin") {
+        $("#user-management-nav").removeClass("d-none").addClass("visible");
+    }else{
+        $("#user-management-nav").removeClass("visible").addClass("d-none");
+        window.location.href = "dashboard.html";
     }
     const xhr = new XMLHttpRequest();
     if (hospital_id === "admin") {
@@ -693,7 +700,7 @@ $(document).ready(async function () {
                     searchPlaceholder: "Search",
                 },
                 dom:
-                    userRole === "AppointmentsAdmin"
+                    (userRole === "BookingAdmin" || userRole === "UserManagementAdmin")
                         ? 'Bfrt<"bottom"lip>'
                         : 'frt<"bottom"lip>',
                 initComplete: function (settings, json) {

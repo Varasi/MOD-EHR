@@ -14,6 +14,7 @@ module.exports = (env) => {
             settingspanel: "./src/settingspanel.js",
             logs: "./src/logs.js",
             hospitals: "./src/hospitals.js",
+            bookTrip: "./src/bookTrip.js"
         },
         output: {
             filename: "[name].js",
