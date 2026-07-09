@@ -96,43 +96,125 @@ class AppointmentsMapperWithVia:
         self, address: str, trips: list, appointment_start_time: int, hospital_id: str
     ) -> dict:
         """
-        Returns the matching ride based on the address, trips, and appointment start time.
-        Args:
-            address (str): The address.
-            trips (list): The list of trips.
-            appointment_start_time (int): The appointment start timestamp.
-            hospital_id (str): The hospital tenant ID.
-        Returns:
-            The matching ride.
+        Returns the to-appointment matching ride: the trip whose dropoff_eta is
+        closest to appointment_start_time and whose dropoff location is within
+        LOCATION_DIFF km of the appointment address.
         """
+        print(f"Finding to-appointment ride for appointment at {address} with start time {appointment_start_time}")
         match_ride = {}
-        prev_diff = 1e9
-        prev_location_diff = 1e9
+        best_diff = 1e9
         prior_period = self.get_prior_period(hospital_id)
         subsequent_period = self.get_subsequent_period(hospital_id)
         for trip in trips:
-            cur_diff = int(appointment_start_time - trip["dropoff_eta"])
-            cur_location_diff = int(
-                LocationManager().get_distance_from_address_coords(
-                    address,
-                    [
-                        trip.get("dropoff", {}).get("lat", 0),
-                        trip.get("dropoff", {}).get("lng", 0),
-                    ],
-                )
+            print(f"Processing trip {trip['trip_id']}")
+
+            dropoff_eta = trip.get("dropoff_eta")
+            if dropoff_eta is None:
+                continue
+
+            cur_diff = int(appointment_start_time - dropoff_eta)
+
+            dropoff = trip.get("dropoff", {})
+            lat = dropoff.get("lat")
+            lng = dropoff.get("lng")
+            if lat is None or lng is None:
+                continue
+
+            pickup = trip.get("pickup", {})
+            pickup_lat = pickup.get("lat")
+            pickup_lng = pickup.get("lng")
+            if pickup_lat is None or pickup_lng is None:
+                continue
+
+            cur_location_diff_float = LocationManager().get_distance_from_address_coords(
+                address,
+                [lat, lng],
             )
+            pickup_location_diff_float = LocationManager().get_distance_from_address_coords(
+                address,
+                [pickup_lat, pickup_lng],
+            )
+
+            # Ensure the ride is actually heading towards the hospital
+            if pickup_location_diff_float <= cur_location_diff_float:
+                print(f"Skipping trip {trip['trip_id']} as it is heading away from the hospital")
+                continue
+
+            cur_location_diff = int(cur_location_diff_float)
+
             print(f"subsequent_period: {subsequent_period}, cur_diff: {cur_diff}, prior_period: {prior_period}")
-            print(f"cur_diff: {cur_diff}, prev_diff: {prev_diff}, cur_location_diff: {cur_location_diff}, prev_location_diff: {prev_location_diff}")
+            print(f"cur_diff: {cur_diff}, cur_location_diff: {cur_location_diff}")
             if (
                 subsequent_period <= cur_diff <= prior_period
-                and cur_diff < prev_diff
                 and cur_location_diff <= LOCATION_DIFF
-                and cur_location_diff <= prev_location_diff
             ):
-                prev_diff = cur_diff
-                match_ride = trip
-                prev_location_diff = cur_location_diff
-        print("Matched ride:", match_ride)
+                if abs(cur_diff) < best_diff:
+                    best_diff = abs(cur_diff)
+                    match_ride = trip
+        print("Matched to-appointment ride:", match_ride)
+        return match_ride
+
+    def get_matching_return_ride(
+        self, address: str, trips: list, appointment_end_time: int, hospital_id: str
+    ) -> dict:
+        """
+        Returns the from-appointment matching ride: the trip whose pickup_eta is
+        closest to appointment_end_time and whose pickup location is within
+        LOCATION_DIFF km of the appointment address.
+        """
+        print(f"Finding from-appointment ride for address: {address}, appointment_end_time: {appointment_end_time}, hospital_id: {hospital_id}")
+        match_ride = {}
+        best_diff = 1e9
+        prior_period = self.get_prior_period(hospital_id)
+        subsequent_period = self.get_subsequent_period(hospital_id)
+        for trip in trips:
+            print(f"Processing trip {trip['trip_id']}")
+
+            pickup_eta = trip.get("pickup_eta")
+            if pickup_eta is None:
+                continue
+
+            # Positive diff means pickup is after end_time (patient leaves after appt ends)
+            cur_diff = int(pickup_eta - appointment_end_time)
+
+            pickup = trip.get("pickup", {})
+            lat = pickup.get("lat")
+            lng = pickup.get("lng")
+            if lat is None or lng is None:
+                continue
+
+            dropoff = trip.get("dropoff", {})
+            dropoff_lat = dropoff.get("lat")
+            dropoff_lng = dropoff.get("lng")
+            if dropoff_lat is None or dropoff_lng is None:
+                continue
+
+            cur_location_diff_float = LocationManager().get_distance_from_address_coords(
+                address,
+                [lat, lng],
+            )
+            dropoff_location_diff_float = LocationManager().get_distance_from_address_coords(
+                address,
+                [dropoff_lat, dropoff_lng],
+            )
+
+            # Ensure the ride is actually heading away from the hospital
+            if dropoff_location_diff_float <= cur_location_diff_float:
+                print(f"Skipping trip {trip['trip_id']} as it is heading towards the hospital")
+                continue
+
+            cur_location_diff = int(cur_location_diff_float)
+
+            print(f"[return] subsequent_period: {subsequent_period}, cur_diff: {cur_diff}, prior_period: {prior_period}")
+            print(f"[return] cur_diff: {cur_diff}, cur_location_diff: {cur_location_diff}")
+            if (
+                subsequent_period <= cur_diff <= prior_period
+                and cur_location_diff <= LOCATION_DIFF
+            ):
+                if abs(cur_diff) < best_diff:
+                    best_diff = abs(cur_diff)
+                    match_ride = trip
+        print("Matched from-appointment ride:", match_ride)
         return match_ride
 
     def _map_participants_data(
@@ -248,23 +330,36 @@ class AppointmentsMapperWithVia:
                     ",,", ","
                 )
                 appointment_datetime = app.appointment_datetime.replace(tzinfo=central_tz).astimezone(utc_tz)
+                appointment_end_datetime = appointment_datetime + timedelta(minutes=app.appointment_duration)
+                trip_list = trips.get("trips", [])
+                to_ride = (
+                    self.get_matching_ride(
+                        location,
+                        trip_list,
+                        int(appointment_datetime.timestamp()),
+                        hospital_id,
+                    )
+                    or VIA_RIDE_MOCK["to_appointment"]
+                )
+                from_ride = (
+                    self.get_matching_return_ride(
+                        location,
+                        trip_list,
+                        int(appointment_end_datetime.timestamp()),
+                        hospital_id,
+                    )
+                    or VIA_RIDE_MOCK["from_appointment"]
+                )
                 appointment = Appointment(
                     id=app.appointment_id,
                     patient_id=app.patient_number,
                     patient_name=f"{app.patient_first_name} {app.patient_middle_initial} {app.patient_last_name}",
                     location=location,
                     start_time=appointment_datetime,
-                    end_time=appointment_datetime
-                    + timedelta(minutes=app.appointment_duration),
+                    end_time=appointment_end_datetime,
                     status=app.status,
                     provider="veradigm",
-                    ride=self.get_matching_ride(
-                        location,
-                        trips.get("trips", []),
-                        int(appointment_datetime.timestamp()),
-                    hospital_id
-                    )
-                    or VIA_RIDE_MOCK,
+                    ride={"to_appointment": to_ride, "from_appointment": from_ride},
                     hospital_id=hospital_id,
                 )
                 new_patients[appointment.patient_id] = appointment.patient_name
@@ -277,14 +372,20 @@ class AppointmentsMapperWithVia:
             )
         with Patient.batch_write() as batch:
             for patient_id, patient_name in new_patients.items():
-                batch.save(
-                    Patient(
-                        name=patient_name,
-                        patient_id=patient_id,
-                        provider="veradigm",
-                        hospital_id=hospital_id,
+                try:
+                    patient = Patient.get(hospital_id, patient_id)
+                    if patient.name != patient_name:
+                        patient.name = patient_name
+                        batch.save(patient)
+                except Patient.DoesNotExist:
+                    batch.save(
+                        Patient(
+                            name=patient_name,
+                            patient_id=patient_id,
+                            provider="veradigm",
+                            hospital_id=hospital_id,
+                        )
                     )
-                )
 
     def process_all(self, patient_mapping):
         print("Processing all appointments")
@@ -302,26 +403,52 @@ class AppointmentsMapperWithVia:
                 if trips is None:
                     trips = Via().get_trips(rider_id)
                     patient_trips[appointment.patient_id] = trips
+                end_time = int(appointment.end_time.timestamp())
+                trip_list = trips.get("trips", [])
                 existing_ride = getattr(appointment, "ride", {}) or {}
-                new_ride = (
+
+                new_to_ride = (
                     self.get_matching_ride(
-                        appointment.location, trips.get("trips", []), start_time, hospital_id
+                        appointment.location, trip_list, start_time, hospital_id
                     )
-                    or VIA_RIDE_MOCK
+                    or VIA_RIDE_MOCK["to_appointment"]
                 )
+                new_from_ride = (
+                    self.get_matching_return_ride(
+                        appointment.location, trip_list, end_time, hospital_id
+                    )
+                    or VIA_RIDE_MOCK["from_appointment"]
+                )
+
+                # Preserve driver/vehicle info when the matched trip hasn't changed.
+                # Handle both the new structured format and legacy flat-ride records.
+                existing_to = existing_ride.get("to_appointment") or existing_ride or {}
+                existing_from = existing_ride.get("from_appointment") or {}
+
                 if (
-                    existing_ride 
-                    and new_ride 
-                    and existing_ride.get("trip_id") 
-                    and new_ride.get("trip_id") 
-                    and existing_ride["trip_id"] == new_ride["trip_id"]
+                    existing_to.get("trip_id")
+                    and new_to_ride.get("trip_id")
+                    and existing_to["trip_id"] == new_to_ride["trip_id"]
                 ):
-                    
-                    if "driver_info" not in new_ride and "driver_info" in existing_ride:
-                        new_ride["driver_info"] = existing_ride["driver_info"]
-                    if "vehicle_info" not in new_ride and "vehicle_info" in existing_ride:
-                        new_ride["vehicle_info"] = existing_ride["vehicle_info"]
-                appointment.ride = new_ride
+                    if "driver_info" not in new_to_ride and "driver_info" in existing_to:
+                        new_to_ride["driver_info"] = existing_to["driver_info"]
+                    if "vehicle_info" not in new_to_ride and "vehicle_info" in existing_to:
+                        new_to_ride["vehicle_info"] = existing_to["vehicle_info"]
+
+                if (
+                    existing_from.get("trip_id")
+                    and new_from_ride.get("trip_id")
+                    and existing_from["trip_id"] == new_from_ride["trip_id"]
+                ):
+                    if "driver_info" not in new_from_ride and "driver_info" in existing_from:
+                        new_from_ride["driver_info"] = existing_from["driver_info"]
+                    if "vehicle_info" not in new_from_ride and "vehicle_info" in existing_from:
+                        new_from_ride["vehicle_info"] = existing_from["vehicle_info"]
+
+                appointment.ride = {
+                    "to_appointment": new_to_ride,
+                    "from_appointment": new_from_ride,
+                }
                 appointment_objs.append(appointment)
         with Appointment.batch_write() as batch:
             for appointment in appointment_objs:
@@ -355,29 +482,54 @@ class AppointmentsMapperWithViaMock(AppointmentsMapperWithVia):
             hospital_id = getattr(appointment, 'hospital_id', None)
             if rider_id := patient_mapping["epic"].get((hospital_id, appointment.patient_id)):
                 start_time = int(appointment.start_time.timestamp())
+                end_time = int(appointment.end_time.timestamp())
                 trips = patient_trips.get(appointment.patient_id)
                 if trips is None:
                     trips = Via().get_trips(rider_id)
                     patient_trips[appointment.patient_id] = trips
+                trip_list = trips.get("trips", [])
                 existing_ride = getattr(appointment, "ride", {}) or {}
-                new_ride = (
+
+                new_to_ride = (
                     self.get_matching_ride(
-                        appointment.location, trips.get("trips", []), start_time, hospital_id
+                        appointment.location, trip_list, start_time, hospital_id
                     )
-                    or VIA_RIDE_MOCK
+                    or VIA_RIDE_MOCK["to_appointment"]
                 )
+                new_from_ride = (
+                    self.get_matching_return_ride(
+                        appointment.location, trip_list, end_time, hospital_id
+                    )
+                    or VIA_RIDE_MOCK["from_appointment"]
+                )
+
+                existing_to = existing_ride.get("to_appointment") or existing_ride or {}
+                existing_from = existing_ride.get("from_appointment") or {}
+
                 if (
-                    existing_ride 
-                    and new_ride 
-                    and existing_ride.get("trip_id") 
-                    and new_ride.get("trip_id") 
-                    and existing_ride["trip_id"] == new_ride["trip_id"]
+                    existing_to.get("trip_id")
+                    and new_to_ride.get("trip_id")
+                    and existing_to["trip_id"] == new_to_ride["trip_id"]
                 ):
-                    if "driver_info" not in new_ride and "driver_info" in existing_ride:
-                        new_ride["driver_info"] = existing_ride["driver_info"]
-                    if "vehicle_info" not in new_ride and "vehicle_info" in existing_ride:
-                        new_ride["vehicle_info"] = existing_ride["vehicle_info"]
-                appointment.ride = new_ride
+                    if "driver_info" not in new_to_ride and "driver_info" in existing_to:
+                        new_to_ride["driver_info"] = existing_to["driver_info"]
+                    if "vehicle_info" not in new_to_ride and "vehicle_info" in existing_to:
+                        new_to_ride["vehicle_info"] = existing_to["vehicle_info"]
+
+                if (
+                    existing_from.get("trip_id")
+                    and new_from_ride.get("trip_id")
+                    and existing_from["trip_id"] == new_from_ride["trip_id"]
+                ):
+                    if "driver_info" not in new_from_ride and "driver_info" in existing_from:
+                        new_from_ride["driver_info"] = existing_from["driver_info"]
+                    if "vehicle_info" not in new_from_ride and "vehicle_info" in existing_from:
+                        new_from_ride["vehicle_info"] = existing_from["vehicle_info"]
+
+                appointment.ride = {
+                    "to_appointment": new_to_ride,
+                    "from_appointment": new_from_ride,
+                }
                 appointment_objs.append(appointment)
         with Appointment.batch_write() as batch:
             for appointment in appointment_objs:

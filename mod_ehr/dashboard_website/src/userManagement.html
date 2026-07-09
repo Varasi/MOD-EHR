@@ -33,13 +33,13 @@
           <div class="d-flex align-items-center gap-3">
             <img
                 id ="tenant-brand-logo"
-                src="/assets/tenants/admin/branding/logo.png"
+                src=""
                 class="brand-logo"
                 alt="brand-logo"
               />
             <div class="d-flex flex-column">
               <div id="hospital-name" class="hospital-name-text">
-                Health Connector
+                
               </div>
               <div class="top-nav-header-text"></div>
             </div>
@@ -103,7 +103,7 @@
                     >Appointments</a
                   >
                 </li>
-                <li id="hospitals-nav">
+            <li id="hospitals-nav" class="d-none">
                   <a class="nav-item" href="hospitals.html"
                     >Hospitals</a
                   >
@@ -115,6 +115,11 @@
                 </li>
                 <li id="logs-nav">
                     <a class="nav-item" href="logs.html">Logs</a>
+                </li>
+                <li id="book-trip-nav">
+                  <a class="nav-item" href="bookTrip.html"
+                    >Book Trip</a
+                  >
                 </li>
               </ul>
             </div>
@@ -261,20 +266,14 @@
                     <label for="role" class="form-label">
                       Role <span class="text-danger">*</span></label>
                     <select class="form-select" id="role" name="role" aria-label="Select an option" required>
-                      <option value="AppointmentsAdmin">
-                        Appointments Admin
+                      <option value="BookingAdmin">
+                        Booking Admin
                       </option>
-                      <option value="DallasCountyHealthDepartmentHealthNavigators">
-                        Dallas County Health Department Health Navigators
-                      </option>
-                      <option value="HealthcareFacilityStaff">
-                        Healthcare Facility Staff
-                      </option>
-                      <option value="HIRTAOperationsStaff">
-                        HIRTA Operations Staff
+                      <option value="ViewOnly">
+                        View Only
                       </option>
                       <option value="UserManagementAdmin" id="userMgmtAdminOption" class="d-none">
-                        UserManagementAdmin
+                        User Management Admin
                       </option>
                     </select>
                   </div>
@@ -378,20 +377,15 @@
                       Role <span class="text-danger">*</span></label>
                     <select class="form-select" id="changeRole" name="changeRole" aria-label="Select an option"
                       required>
-                      <option value="AppointmentsAdmin">
-                        Appointments Admin
+                      <option value="BookingAdmin">
+                        Booking Admin
                       </option>
-                      <option value="DallasCountyHealthDepartmentHealthNavigators">
-                        Dallas County Health Department Health Navigators
-                      </option>
-                      <option value="HealthcareFacilityStaff">
-                        Healthcare Facility Staff
-                      </option>
-                      <option value="HIRTAOperationsStaff">
-                        HIRTA Operations Staff
+                      <option value="ViewOnly">
+                        View Only
                       </option>
                       <option value="UserManagementAdmin" id="changeUserMgmtAdminOption" class="d-none">
-                        UserManagementAdmin
+                        User Management Admin
+                      </option>
                     </select>
                   </div>
                 </form>
@@ -409,7 +403,7 @@
         </div>
       </div>
       <div class="position-absolute settings-dialog-wrapper bg-white shadow-sm border d-none" id="settingsModal"
-        tabindex="-1" role="dialog" aria-labelledby="settingsModalLabel" aria-hidden="true">
+        tabindex="-1" role="dialog" aria-labelledby="settingsModalLabel" aria-hidden="true" style="z-index: 1070;">
         <div class="modal-body border-danger px-3 py-4">
           <form id="settingsForm">
             <table class="settings-form-table">

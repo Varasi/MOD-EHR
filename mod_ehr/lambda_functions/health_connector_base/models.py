@@ -11,7 +11,7 @@ from health_connector_base.custom_attributes import (
 from health_connector_base.custom_attributes import (
     CustomUTCDateTimeAttribute as UTCDateTimeAttribute,
 )
-from pynamodb.attributes import JSONAttribute, NumberAttribute, UnicodeAttribute
+from pynamodb.attributes import BooleanAttribute, JSONAttribute, NumberAttribute, UnicodeAttribute
 from pynamodb.expressions.condition import Condition
 from pynamodb.models import Model
 from pynamodb.indexes import GlobalSecondaryIndex, AllProjection
@@ -64,6 +64,9 @@ class Appointment(BaseModel):
     patient_last_name = UnicodeAttribute(null=True, default="")
     patient_phone_no = UnicodeAttribute(null=True, default="")
     patient_email = UnicodeAttribute(null=True, default="")
+    coordinator_notes = UnicodeAttribute(null=True, default="")
+    alt_transport_confirmed_to = BooleanAttribute(null=True, default=False)
+    alt_transport_confirmed_from = BooleanAttribute(null=True, default=False)
 
     class Meta:
         table_name = os.environ.get("APPOINTMENT_TABLE_NAME")

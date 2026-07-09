@@ -32,13 +32,13 @@
                 <div class="d-flex align-items-center gap-3">
             <img
                 id ="tenant-brand-logo"
-                src="/assets/tenants/admin/branding/logo.png"
+                src=""
                 class="brand-logo"
                 alt="brand-logo"
               />
             <div class="d-flex flex-column">
               <div id="hospital-name" class="hospital-name-text">
-                Health Connector
+                
               </div>
               <div class="top-nav-header-text"></div>
             </div>
@@ -74,16 +74,21 @@
                             <li id="appointments-nav">
                                 <a class="nav-item" href="appointments.html">Appointments</a>
                             </li>
-                            <li id="hospitals-nav">
+                        <li id="hospitals-nav" class="d-none">
                             <a class="nav-item" href="hospitals.html"
                                 >Hospitals</a
                             >
                             </li>
-                            <li id="user-management-nav">
+                            <li id="user-management-nav" class="d-none">
                                 <a class="nav-item" href="userManagement.html">User Management</a>
                             </li>
                             <li id="logs-nav">
                                 <a class="nav-item active" href="logs.html">Logs</a>
+                            </li>
+                            <li id="book-trip-nav">
+                                <a class="nav-item" href="bookTrip.html"
+                                    >Book Trip</a
+                                >
                             </li>
                         </ul>
                     </div>
@@ -140,6 +145,73 @@
                     </div>
                 </div>
                 <div id="custom-pagination"></div>
+            </div>
+        </section>
+        <section>
+            <div class="position-absolute settings-dialog-wrapper bg-white shadow-sm border d-none" id="settingsModal"
+                tabindex="-1" role="dialog" aria-labelledby="settingsModalLabel" aria-hidden="true" style="z-index: 1070;">
+                <div class="modal-body border-danger px-3 py-4">
+                    <form id="settingsForm">
+                        <table class="settings-form-table">
+                            <tbody>
+                                <tr>
+                                    <td>
+                                        <div class="d-flex flex-column">
+                                            <span class="skeleton-text form-label m-0 ">
+                                                Prior period to start time
+                                            </span>
+                                            <span class="form-label-help-text text-nowrap skeleton-text">
+                                                The ride that ends closest to the appointment start
+                                                time, or within <span id="prior_period_text">15</span> minutes
+                                                prior, will be matched.
+                                            </span>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="d-flex align-items-center gap-2">
+                                            <input type="number" class="form-control settings-input-field skeleton-text"
+                                                id="prior_period" name="patient_name" required min="15" placeholder="15"
+                                                value="15" />
+                                            <span> min </span>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <div class="d-flex flex-column">
+                                            <span class="form-label m-0 skeleton-text">
+                                                Subsequent period after the start time
+                                            </span>
+                                            <span class="form-label-help-text text-nowrap skeleton-text">
+                                                The ride that ends closest to the appointment start
+                                                time, or within
+                                                <span id="subsequent_period_text">15</span> minutes
+                                                following it will be matched.
+                                            </span>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="d-flex align-items-center gap-2">
+                                            <input type="number" class="form-control settings-input-field skeleton-text"
+                                                id="subsequent_period" name="patient_name" required min="15"
+                                                placeholder="15" value="15" />
+                                            <span> min </span>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </form>
+                </div>
+
+                <div class="modal-footer" id="modal-footer">
+                    <button type="button" id="closeSettingsModal" class="close button-secondary m-0"
+                        data-dismiss="modal">
+                        Close
+                    </button>
+                    <button type="button" id="settings-form-submit-btn" class="save button-primary m-0"
+                        disabled>Save</button>
+                </div>
             </div>
         </section>
     </div>

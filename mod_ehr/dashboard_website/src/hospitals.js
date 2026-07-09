@@ -149,7 +149,12 @@ async function saveEditHospital(){
     
 }
 async function addHospital(){
-    $("#hospitalIdForm").prop("disabled", false);
+    const newUuid = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+        const r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
+        return v.toString(16);
+    });
+    
+    $("#hospitalIdForm").val(newUuid).prop("disabled", false);
     $("#hospitalProviderForm").trigger("change");
     $("#saveNewHospital").removeClass("d-none");
     $("#saveEditHospital").addClass("d-none");
@@ -246,6 +251,11 @@ $(document).ready(async function () {
     $("#hospitalLocationForm").keydown(function (event) {
         if (event.keyCode === 13 ) { event.preventDefault() };
     });
+    
+    $("#hospitalSubdomainForm").on("input", function () {
+        $("#hospitalVeradigmProviderForm").val($(this).val());
+    });
+
     $("#hospitalProviderForm").on("change", function () {
         const selectedValue = $(this).val();
         console.log(selectedValue);
@@ -259,16 +269,22 @@ $(document).ready(async function () {
     });
     $(".add-hospital").click(addHospital);
     const userRole = await getUserGroup();
-    if (hospital_id === "admin") {
-        $("#user-management-nav").removeClass("invisible")
-        $("#user-management-nav").addClass("visible")
-        $("#appointments-nav").removeClass("invisible")
-        $("#appointments-nav").addClass("visible")
-        $("#patients-nav").removeClass("invisible")
-        $("#patients-nav").addClass("visible")
+    if (userRole === "ViewOnly") {
+        $("#book-trip-nav").removeClass("visible").addClass("d-none");
+    }
+    if (userRole === "UserManagementAdmin") {
+        $("#user-management-nav").removeClass("d-none").addClass("visible");
     }else{
+        $("#user-management-nav").removeClass("visible").addClass("d-none");
+    }
+    if (hospital_id === "admin") {
+        $("#user-management-nav").removeClass("d-none").addClass("visible");
+        $("#hospitals-nav").removeClass("d-none").addClass("visible");
+    }else{
+        $("#hospitals-nav").removeClass("visible").addClass("d-none");
         window.location.href = "dashboard.html";
     }
+    
     $("#logout").click(logoutUser);
     $("#hospitalForm").validate({
         rules: {
@@ -512,7 +528,7 @@ $(document).ready(async function () {
                     searchPlaceholder: "Search",
                 },
                 dom:
-                    userRole === "AppointmentsAdmin"
+                    (userRole === "BookingAdmin" || userRole === "UserManagementAdmin")
                         ? 'Bfrt<"bottom"lip>'
                         : 'frt<"bottom"lip>',
                 initComplete: function (settings, json) {
