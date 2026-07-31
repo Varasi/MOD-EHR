@@ -10,19 +10,39 @@ class LogsHandler(APIHandler):
     @classmethod
     def process_event(cls, event, *args, **kwargs):
 
-        query_params = event.get("queryStringParameters", {})
-        if query_params and "hospital_id" in query_params:
-            hospital_id = query_params["hospital_id"]
-            logs = []
-            if hospital_id and hospital_id != "admin":
-                logs = list(cls.model.query(hospital_id))
-                print(f"Queried logs for hospital_id {hospital_id}: {logs}")
-            else:
-                logs = list(cls.model.scan())
-            return Response(body=logs, status=Status.HTTP_200_OK)
-        
-        # Default behavior for other requests
-        return super().process_event(event, *args, **kwargs)
+        query_params = event.get("queryStringParameters") or {}
+        if "hospital_id" not in query_params:
+            # Default behavior for other requests
+            return super().process_event(event, *args, **kwargs)
+
+        hospital_id = query_params["hospital_id"]
+        if hospital_id and hospital_id != "admin":
+            logs = list(cls.model.query(hospital_id))
+        else:
+            logs = list(cls.model.scan())
+        records_total = len(logs)
+
+        search = (query_params.get("search") or "").strip().lower()
+        if search:
+            logs = [log for log in logs if search in log.name.lower()]
+        records_filtered = len(logs)
+
+        logs.sort(key=lambda log: log.server_last_modified, reverse=True)
+
+        draw = int(query_params.get("draw", 1))
+        start = int(query_params.get("start", 0))
+        length = int(query_params.get("length", 0) or records_filtered or 1)
+        page = logs[start:start + length]
+
+        return Response(
+            body={
+                "draw": draw,
+                "recordsTotal": records_total,
+                "recordsFiltered": records_filtered,
+                "data": page,
+            },
+            status=Status.HTTP_200_OK,
+        )
 
 @require_tenant_isolation
 def lambda_handler(event, context):

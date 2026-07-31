@@ -11,7 +11,8 @@ import {
     getAccesstokenAndCustomAttribute,
     loadTenantBranding,
     CUSTOM_DOMAIN,
-    getIdToken
+    getIdToken,
+    isProductionOrUAT,
 } from "./common";
 
 const VIA_LEG_MOCK = {
@@ -100,9 +101,12 @@ $(document).ready(async function () {
     toggleSideNavBar();
     
     const userRole = await getUserGroup();
-    if (userRole === "BookingAdmin" || userRole === "UserManagementAdmin" || userRole === "ViewOnly") {
-        $("#appointments-nav").removeClass("invisible").addClass("visible");
-        $("#patients-nav").removeClass("invisible").addClass("visible");
+    if ((userRole === "BookingAdmin" || userRole === "UserManagementAdmin" || userRole === "ViewOnly") && !isProductionOrUAT()) {
+        $("#appointments-nav").removeClass("d-none").addClass("visible");
+        $("#patients-nav").removeClass("d-none").addClass("visible");
+    }
+    if (!isProductionOrUAT()) {
+        $("#logs-nav").removeClass("d-none").addClass("visible");
     }
     if (userRole === "ViewOnly") {
         $("#book-trip-nav").removeClass("visible").addClass("d-none");
