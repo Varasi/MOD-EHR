@@ -76,6 +76,10 @@ async function renderHospitalColumn(accessToken) {
 }
 
 $(document).ready(async function () {
+    if (isProductionOrUAT()) {
+        window.location.href = "dashboard.html";
+        return;
+    }
     const hostname = window.location.hostname;
     const dns_tenant = hostname.split('.')[0];
     const [accessToken, hospital_id] = await getAccesstokenAndCustomAttribute("custom:hospital_id");
@@ -94,6 +98,11 @@ $(document).ready(async function () {
     }
     if (userRole !== "ViewOnly" && !isProductionOrUAT()) {
         $(".add-patient").removeClass("d-none").show();
+    }
+    if (!isProductionOrUAT()) {
+        $("#appointments-nav").removeClass("d-none").addClass("visible");
+        $("#patients-nav").removeClass("d-none").addClass("visible");
+        $("#logs-nav").removeClass("d-none").addClass("visible");
     }
     if (userRole === "ViewOnly") {
         $("#book-trip-nav").removeClass("visible").addClass("d-none");
