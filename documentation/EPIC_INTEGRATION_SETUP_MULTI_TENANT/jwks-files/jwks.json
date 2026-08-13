@@ -1,0 +1,10 @@
+{
+  "keys": [
+    {
+      "kty": "RSA",
+      "n": "wmeXya8gIK7mc5GvGEFLJmA3M2gF_3N6epPnUlXffD3w10dpBtmvtrQf5mk7o5XIZPAGSQGRisaC1WKjQRXXtya8MQ0rjmYAvmQgPrZ2rs2ZCN4nU1FA-q_-AoFx_O1nQ2yRqFOl82OHQiUHmcXxzRb6KglW9q3THgZBkoanpc4877stoz9yDLhd9Jyz8_oOe7NcwJjW8jwuFLXkgodio7ZL1Ym8nmpmdcIVuwWHTSwZtKOfRIh8n6rWXvWXmF0CrE-KWca-0BD4gvQi0tCm03stk6SZBY7H0-foVg-Uw9trDnJgMWuY1AJQdh8xoFC1Gcb5pGlCHRDYZlKR2lDInQ",
+      "e": "AQAB",
+      "kid": "hospital1003"
+    }
+  ]
+}

@@ -314,6 +314,10 @@ async function renderHospitalColumn(accessToken) {
     })
 }
 $(document).ready(async function () {
+    if (isProductionOrUAT()) {
+        window.location.href = "dashboard.html";
+        return;
+    }
     $('head').append(`<script src = "https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_KEY}&libraries=places&callback=googleMapsAutoComplete" async defer></script>`);
     const hostname = window.location.hostname;
     const dns_tenant = hostname.split('.')[0];
@@ -336,6 +340,11 @@ $(document).ready(async function () {
     }
     if (userRole !== "ViewOnly" && !isProductionOrUAT()) {
         $(".add-appointment").removeClass("d-none").show();
+    }
+    if (!isProductionOrUAT()) {
+        $("#appointments-nav").removeClass("d-none").addClass("visible");
+        $("#patients-nav").removeClass("d-none").addClass("visible");
+        $("#logs-nav").removeClass("d-none").addClass("visible");
     }
     if (userRole === "ViewOnly") {
         $("#book-trip-nav").removeClass("visible").addClass("d-none");
