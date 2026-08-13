@@ -14,6 +14,7 @@ import {
     GOOGLE_MAPS_KEY,
     CUSTOM_DOMAIN,
     getIdToken,
+    isProductionOrUAT,
 } from "./common";
 
 function renderSensitiveField(value) {
@@ -269,6 +270,11 @@ $(document).ready(async function () {
     });
     $(".add-hospital").click(addHospital);
     const userRole = await getUserGroup();
+    if (!isProductionOrUAT()) {
+        $("#appointments-nav").removeClass("d-none").addClass("visible");
+        $("#patients-nav").removeClass("d-none").addClass("visible");
+        $("#logs-nav").removeClass("d-none").addClass("visible");
+    }
     if (userRole === "ViewOnly") {
         $("#book-trip-nav").removeClass("visible").addClass("d-none");
     }
