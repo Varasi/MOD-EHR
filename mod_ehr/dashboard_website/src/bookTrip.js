@@ -13,7 +13,8 @@ import {
     CUSTOM_DOMAIN,
     getIdToken,
     toggleAlertMessage,
-    GOOGLE_MAPS_KEY
+    GOOGLE_MAPS_KEY,
+    isProductionOrUAT,
 } from "./common";
 import { DateTime } from "luxon";
 
@@ -41,9 +42,12 @@ $(document).ready(async function () {
         window.location.replace("dashboard.html");
         return;
     }
-    if (userRole === "BookingAdmin" || userRole === "UserManagementAdmin") {
+    if ((userRole === "BookingAdmin" || userRole === "UserManagementAdmin") && !isProductionOrUAT()) {
         $("#appointments-nav").removeClass("d-none").addClass("visible");
         $("#patients-nav").removeClass("d-none").addClass("visible");
+    }
+    if (!isProductionOrUAT()) {
+        $("#logs-nav").removeClass("d-none").addClass("visible");
     }
     if (userRole === "UserManagementAdmin") {
         $("#user-management-nav").removeClass("d-none").addClass("visible");

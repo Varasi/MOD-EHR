@@ -22,6 +22,7 @@ import {
   toggleAlertMessage,
   loadTenantBranding,
   CUSTOM_DOMAIN,
+  isProductionOrUAT,
 } from "./common";
 import AWS from 'aws-sdk';
 const iss = getIss()
@@ -346,6 +347,11 @@ $(document).ready(async function () {
     const userRole = await getUserGroup();
     if (userRole !== "UserManagementAdmin") {
         window.location.href = "dashboard.html";
+    }
+    if (!isProductionOrUAT()) {
+        $("#appointments-nav").removeClass("d-none").addClass("visible");
+        $("#patients-nav").removeClass("d-none").addClass("visible");
+        $("#logs-nav").removeClass("d-none").addClass("visible");
     }
     if (userRole === "ViewOnly") {
         $("#book-trip-nav").removeClass("visible").addClass("d-none");
